@@ -1,0 +1,633 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}[hidden]{display:none!important}img{max-width:100%}</style>
+<title>퍼포먼스 분석 플레이북</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+/* Layout: 운영 매뉴얼형 — 상단 고정 단계 내비 + 섹션별 '진단 도구' 카드. 숫자는 모노, 상태는 칩/색 띠로 표시 */
+:root{
+  --bg:#F4F6F9; --surface:#FFFFFF; --sunk:#E9EDF3; --line:#D5DBE5;
+  --fg:#141A24; --muted:#5D6778; --accent:#2D4FCF; --accent-soft:#E3E9FB;
+  --good:#16865C; --warn:#B9740B; --bad:#C2412F;
+  --good-soft:#DDF2E8; --warn-soft:#FBEFD9; --bad-soft:#F9E1DC;
+  --f-display:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --f-body:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0F131A; --surface:#171C25; --sunk:#1F2531; --line:#2C3443;
+  --fg:#E7EBF2; --muted:#98A2B3; --accent:#7D98FF; --accent-soft:#232C48;
+  --good:#4CC995; --warn:#E3A84A; --bad:#F07A66;
+  --good-soft:#173328; --warn-soft:#3A2D15; --bad-soft:#3D1F1A; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0F131A; --surface:#171C25; --sunk:#1F2531; --line:#2C3443;
+  --fg:#E7EBF2; --muted:#98A2B3; --accent:#7D98FF; --accent-soft:#232C48;
+  --good:#4CC995; --warn:#E3A84A; --bad:#F07A66;
+  --good-soft:#173328; --warn-soft:#3A2D15; --bad-soft:#3D1F1A; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.6;margin:0}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
+.wrap{max-width:1120px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header.top{padding-block:40px 24px}
+.eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);font-weight:600}
+h1{font-family:var(--f-display);font-size:clamp(26px,4vw,38px);line-height:1.25;margin:8px 0 12px;text-wrap:balance;font-weight:700}
+h2{font-family:var(--f-display);font-size:24px;margin:0 0 6px;text-wrap:balance}
+h3{font-size:16px;margin:0 0 8px}
+ul.lines{margin:0;padding-left:18px;display:grid;gap:4px}
+ul.lines li{color:var(--fg)}
+.muted{color:var(--muted)}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+nav.steps{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--surface);border-bottom:1px solid var(--line)}
+nav.steps .wrap{display:flex;gap:4px;overflow-x:auto;padding-block:8px;scrollbar-width:none}
+nav.steps a{flex:none;text-decoration:none;color:var(--muted);font-size:13px;padding:6px 12px;border-radius:999px;white-space:nowrap}
+nav.steps a:hover,nav.steps a:focus-visible{background:var(--accent-soft);color:var(--accent);outline:none}
+nav.steps a b{font-family:var(--f-mono);margin-right:6px;color:var(--accent)}
+section{padding-block:40px;border-bottom:1px solid var(--line);scroll-margin-top:60px}
+.sec-head{display:grid;gap:4px;margin-bottom:20px;max-width:760px}
+.step-no{font-family:var(--f-mono);font-size:12px;color:var(--accent);font-weight:600;letter-spacing:.06em}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,440px),1fr));gap:16px}
+.grid4{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:12px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px;min-width:0}
+.panel.tool{border-top:3px solid var(--accent)}
+.tag{display:inline-block;font-size:11px;font-weight:600;padding:2px 8px;border-radius:4px;background:var(--sunk);color:var(--muted);vertical-align:middle}
+.tag.ex{background:var(--warn-soft);color:var(--warn)}
+.chip{display:inline-block;font-size:12px;font-weight:600;padding:2px 9px;border-radius:999px;white-space:nowrap}
+.c-good{background:var(--good-soft);color:var(--good)} .c-warn{background:var(--warn-soft);color:var(--warn)} .c-bad{background:var(--bad-soft);color:var(--bad)} .c-acc{background:var(--accent-soft);color:var(--accent)}
+.tbl-wrap{overflow-x:auto;min-width:0}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{text-align:left;font-size:12px;color:var(--muted);font-weight:600;padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:none}
+td.num,th.num{text-align:right;font-family:var(--f-mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+svg{display:block;width:100%;height:auto;max-width:100%}
+svg text{fill:var(--muted);font-family:var(--f-body);font-size:11px}
+svg .lbl{fill:var(--fg);font-size:11px}
+.legend{display:flex;flex-wrap:wrap;gap:12px;font-size:12px;color:var(--muted);margin-top:8px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+/* flow */
+.flow{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,160px),1fr));gap:10px;counter-reset:f}
+.flow a{display:grid;gap:4px;text-decoration:none;color:var(--fg);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px}
+.flow a:hover,.flow a:focus-visible{border-color:var(--accent);outline:none}
+.flow .n{font-family:var(--f-mono);font-size:22px;font-weight:600;color:var(--accent)}
+.flow .t{font-weight:600}
+.flow .d{font-size:12.5px;color:var(--muted);line-height:1.5}
+.context{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr));gap:12px;margin-top:20px}
+.context .panel{font-size:13.5px}
+.context .when{font-family:var(--f-mono);font-size:12px;color:var(--accent);font-weight:600}
+/* calculator */
+.calc{display:grid;grid-template-columns:auto 1fr 1fr;gap:8px 12px;align-items:center;font-size:14px}
+.calc .h{font-size:12px;color:var(--muted);font-weight:600}
+.calc input{width:100%;min-width:0;font-family:var(--f-mono);font-size:14px;padding:7px 9px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--fg)}
+.calc input:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.result{display:flex;gap:16px;flex-wrap:wrap;align-items:baseline;margin:14px 0 6px}
+.result .big{font-family:var(--f-mono);font-size:28px;font-weight:600}
+.bars{display:grid;gap:10px;margin-top:10px}
+.bar-row{display:grid;grid-template-columns:76px 1fr 64px;gap:10px;align-items:center;font-size:13px}
+.bar-track{position:relative;height:16px;background:var(--sunk);border-radius:3px;overflow:hidden}
+.bar-track .mid{position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--line)}
+.bar-fill{position:absolute;top:2px;bottom:2px;border-radius:2px}
+.diag{margin-top:14px;padding:12px 14px;border-radius:8px;background:var(--accent-soft);font-size:14px}
+.diag b{color:var(--accent)}
+.formula{font-family:var(--f-mono);font-size:13px;background:var(--sunk);border-radius:8px;padding:12px 14px;overflow-x:auto;white-space:pre;line-height:1.7}
+.ctrl{display:flex;flex-wrap:wrap;gap:10px;align-items:center;font-size:13px;margin-bottom:8px}
+.ctrl input[type=range]{accent-color:var(--accent);width:160px}
+.qlist{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr));gap:10px;margin-top:12px;font-size:13px}
+.qlist > div{background:var(--sunk);border-radius:8px;padding:10px 12px}
+.qlist .kw{color:var(--muted);font-size:12.5px}
+.heat-legend{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);margin-top:8px}
+.heat-legend span.g{width:120px;height:10px;border-radius:2px;background:linear-gradient(90deg,var(--sunk),var(--accent))}
+.cal .panel h3{display:flex;justify-content:space-between;align-items:baseline}
+.cal .who{font-size:12px;color:var(--muted);font-weight:500}
+.note{font-size:12.5px;color:var(--muted);margin-top:10px}
+footer{padding-block:32px 48px;font-size:13px;color:var(--muted)}
+footer a{color:var(--accent)}
+footer ul{padding-left:18px;margin:6px 0 0}
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
+html{scroll-behavior:smooth}
+</style>
+</head>
+<body>
+
+
+<header class="top">
+  <div class="wrap">
+    <div class="eyebrow">Performance Analysis Playbook · 2026 하반기</div>
+    <h1>검색·디스플레이 광고 데이터 분석 실무 플레이북</h1>
+    <ul class="lines muted" style="max-width:760px">
+      <li>지표를 쪼개고, 문제 구간을 찾고, 매체·타겟·소재 중 원인을 좁혀 액션으로 연결하는 6단계 흐름입니다.</li>
+      <li>각 단계마다 바로 써볼 수 있는 진단 도구를 넣었고, 수치를 바꾸면 결과가 즉시 다시 계산됩니다.</li>
+      <li>차트의 데이터는 화장품 브랜드를 가정한 <b>예시 데이터</b>이며, 판단 기준값은 계정별로 조정이 필요한 <b>권장 기준(가정)</b>입니다.</li>
+    </ul>
+  </div>
+</header>
+
+<nav class="steps" aria-label="단계 이동">
+  <div class="wrap">
+    <a href="#prep"><b>1</b>데이터 점검</a>
+    <a href="#tree"><b>2</b>지표 분해</a>
+    <a href="#search"><b>3</b>검색광고</a>
+    <a href="#display"><b>4</b>디스플레이</a>
+    <a href="#target"><b>5</b>타겟</a>
+    <a href="#creative"><b>6</b>소재</a>
+    <a href="#diagnose">진단 매트릭스</a>
+    <a href="#cadence">운영 루틴</a>
+  </div>
+</nav>
+
+<main>
+<section id="overview">
+  <div class="wrap">
+    <div class="flow">
+      <a href="#prep"><span class="n">1</span><span class="t">데이터 점검</span><span class="d">전환 추적·기여 모델·샘플 크기 확인</span></a>
+      <a href="#tree"><span class="n">2</span><span class="t">지표 분해</span><span class="d">ROAS를 CPC·CVR·객단가로 쪼개 원인 지표 특정</span></a>
+      <a href="#search"><span class="n">3</span><span class="t">검색광고</span><span class="d">키워드 4분면, 검색어 정리, 시간대 가중치</span></a>
+      <a href="#display"><span class="n">4</span><span class="t">디스플레이</span><span class="d">빈도·신규/리타겟 분리·증분 검증</span></a>
+      <a href="#target"><span class="n">5</span><span class="t">타겟</span><span class="d">세그먼트별 CPA × 규모 매트릭스</span></a>
+      <a href="#creative"><span class="n">6</span><span class="t">소재</span><span class="d">요소 태깅, 태그별 성과, 피로도 감지</span></a>
+    </div>
+
+    <div class="context">
+      <div class="panel">
+        <div class="when">2026.03.30</div>
+        <ul class="lines"><li>네이버 검색광고와 성과형 디스플레이가 통합 광고주센터로 합쳐졌습니다.</li><li>화면은 통합이지만 캠페인·전환추적 운영 로직은 기존대로 분리되어 있어, 리포트를 합칠 때 기준을 맞춰야 합니다.</li></ul>
+      </div>
+      <div class="panel">
+        <div class="when">2026.07.21</div>
+        <ul class="lines"><li>네이버 AI 브리핑 지면에 ADVoost 검색광고 노출이 시작됐습니다.</li><li>문안·키워드·노출 위치를 AI가 정하므로 키워드 단위 분석 대신 캠페인 단위와 랜딩·전환 품질로 평가해야 합니다.</li></ul>
+      </div>
+      <div class="panel">
+        <div class="when">2026 메타</div>
+        <ul class="lines"><li>Advantage+가 타겟·입찰을 흡수하면서 사람이 조정할 핵심 변수가 소재로 이동했습니다.</li><li>"어떤 광고가 이겼나"보다 "어떤 요소가 이겼나"를 보는 태그 단위 분석이 표준이 되고 있습니다.</li></ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 1 -->
+<section id="prep">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="step-no">STEP 1</span>
+      <h2>분석 전 데이터 점검</h2>
+      <ul class="lines muted"><li>여기서 문제가 발견되면 이후 분석은 멈추고 측정부터 고칩니다.</li></ul>
+    </div>
+    <div class="panel tbl-wrap">
+      <table>
+        <thead><tr><th>점검 항목</th><th>어디서 확인</th><th>판단 기준 <span class="tag">가정</span></th><th>이상 시 조치</th><th>담당·소요</th></tr></thead>
+        <tbody>
+          <tr><td><b>전환 추적 정합성</b></td><td>매체 전환 수 vs 자사 주문 DB·GA4 (같은 기간·같은 기준)</td><td><span class="chip c-good">±10% 이내</span> <span class="chip c-warn">±10~20%</span> <span class="chip c-bad">±20% 초과</span></td><td>스크립트·픽셀 중복/누락 점검, 전환 API 설정 확인</td><td>운영자 + 개발 / 1~3일</td></tr>
+          <tr><td><b>기여 모델 통일</b></td><td>매체별 클릭·뷰 기여 기간 표</td><td>비교하는 매체끼리 클릭 기준 1일/7일 등으로 통일</td><td>리포트에 "매체 기준"과 "통합 기준(GA4·MMP)" 두 열 병기</td><td>분석 담당 / 0.5일</td></tr>
+          <tr><td><b>샘플 크기</b></td><td>비교 단위(키워드 그룹·세그먼트·소재)별 전환 수</td><td>전환 30건↑만 결론, 미만은 "관찰"</td><td>기간을 늘리거나 상위 단위로 묶어서 비교</td><td>운영자 / 즉시</td></tr>
+          <tr><td><b>외부 요인 표시</b></td><td>캘린더(프로모션·시즌·예산 변경·품절·사이트 장애)</td><td>분석 기간 내 이벤트 전부 기록</td><td>차트에 이벤트 마커 표시 후 전후 비교</td><td>운영자 + 광고주 / 0.5일</td></tr>
+          <tr><td><b>학습 상태</b></td><td>자동화 캠페인 학습 단계 표시</td><td>학습 중 캠페인은 성과 판단에서 제외</td><td>세팅 변경 최소화, 학습 완료 후 재평가</td><td>운영자 / 즉시</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- 2 -->
+<section id="tree">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="step-no">STEP 2</span>
+      <h2>지표 분해: ROAS가 왜 움직였나</h2>
+      <ul class="lines muted"><li>ROAS는 세 개의 곱으로 쪼개지므로, 어떤 지표가 변화를 만들었는지 비율로 계산할 수 있습니다.</li><li>CTR은 공식에 직접 없지만 품질지수를 통해 CPC와 유입량에 영향을 줍니다.</li></ul>
+    </div>
+    <div class="grid2">
+      <div class="panel">
+        <h3>공식</h3>
+        <div class="formula">ROAS = 매출 ÷ 광고비
+     = (클릭 × CVR × 객단가) ÷ (클릭 × CPC)
+     = <b style="color:var(--accent)">CVR × 객단가 ÷ CPC</b>
+
+기여도(%) = ln(지표 변화비) ÷ ln(ROAS 변화비)
+※ CPC는 분모라 상승하면 ROAS를 깎는 방향</div>
+        <div class="tbl-wrap" style="margin-top:14px">
+          <table>
+            <thead><tr><th>움직인 지표</th><th>주 원인 영역</th><th>먼저 볼 리포트</th></tr></thead>
+            <tbody>
+              <tr><td><span class="chip c-bad">CPC ↑</span></td><td>매체 경쟁·입찰·품질</td><td>노출 순위, 노출 점유율, 경쟁사 진입</td></tr>
+              <tr><td><span class="chip c-bad">CVR ↓</span></td><td>랜딩·유입 품질·상품</td><td>랜딩 이탈률, 검색어 보고서, 재고·가격</td></tr>
+              <tr><td><span class="chip c-bad">객단가 ↓</span></td><td>상품 믹스·프로모션</td><td>상품별 매출, 쿠폰 사용률</td></tr>
+              <tr><td><span class="chip c-warn">CTR ↓</span></td><td>소재·타겟 적합성</td><td>소재별 CTR 추이, 빈도</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="panel tool">
+        <h3>ROAS 변화 분해 계산기 <span class="tag ex">예시 값</span></h3>
+        <div class="calc" role="group" aria-label="지표 입력">
+          <span></span><span class="h">지난 기간</span><span class="h">이번 기간</span>
+          <label for="cpc0">CPC (원)</label><input id="cpc0" type="number" value="650"><input id="cpc1" type="number" value="780" aria-label="이번 기간 CPC">
+          <label for="cvr0">CVR (%)</label><input id="cvr0" type="number" step="0.1" value="2.8"><input id="cvr1" type="number" step="0.1" value="2.5" aria-label="이번 기간 CVR">
+          <label for="aov0">객단가 (원)</label><input id="aov0" type="number" value="42000"><input id="aov1" type="number" value="41000" aria-label="이번 기간 객단가">
+        </div>
+        <div class="result">
+          <span class="muted">ROAS</span>
+          <span class="big" id="roas0">–</span><span class="muted">→</span><span class="big" id="roas1">–</span>
+          <span class="chip" id="roasD">–</span>
+        </div>
+        <div class="bars" id="bars"></div>
+        <div class="legend"><span><i style="background:var(--bad)"></i>ROAS를 깎은 방향</span><span><i style="background:var(--good)"></i>ROAS를 올린 방향</span></div>
+        <div class="diag" id="diag"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 3 -->
+<section id="search">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="step-no">STEP 3</span>
+      <h2>검색광고 분석</h2>
+      <ul class="lines muted"><li>키워드는 개별로 보지 말고 광고비 × ROAS 4분면으로 나눠 그룹별 액션을 정합니다.</li><li>목표 ROAS를 움직이면 분류가 바뀝니다.</li></ul>
+    </div>
+    <div class="panel tool">
+      <h3>키워드 4분면 <span class="tag ex">예시 데이터 · 월간</span></h3>
+      <div class="ctrl"><label for="troas">목표 ROAS</label><input id="troas" type="range" min="150" max="600" step="10" value="300"><span class="mono" id="troasV">300%</span><span class="muted">· 세로 기준선은 광고비 중앙값</span></div>
+      <svg id="kwChart" viewBox="0 0 680 380" role="img" aria-label="키워드별 광고비와 ROAS 산점도"></svg>
+      <div class="qlist" id="kwList"></div>
+    </div>
+
+    <div class="grid2" style="margin-top:16px">
+      <div class="panel tool">
+        <h3>요일 × 시간대 전환율 <span class="tag ex">예시 데이터</span></h3>
+        <svg id="heat" viewBox="0 0 680 230" role="img" aria-label="요일과 시간대별 전환율 히트맵"></svg>
+        <div class="heat-legend"><span>낮은 CVR</span><span class="g"></span><span>높은 CVR</span></div>
+        <ul class="lines note"><li>평균 CVR 대비 +20% 이상 구간은 입찰 가중치 상향(110~130%) 후보입니다.</li><li>-30% 이하 구간은 가중치 하향(70~80%) 후보이며, 노출 자체를 끄는 것은 2주 검증 뒤 결정합니다.</li></ul>
+      </div>
+      <div class="panel">
+        <h3>검색광고 주간 체크리스트</h3>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>작업</th><th>기준 <span class="tag">가정</span></th><th>액션</th></tr></thead>
+            <tbody>
+              <tr><td>검색어 보고서</td><td>클릭 30회↑ & 전환 0</td><td>제외 키워드 등록</td></tr>
+              <tr><td>신규 검색어 발굴</td><td>전환 2건↑ 미등록 검색어</td><td>정확 일치로 신규 등록</td></tr>
+              <tr><td>순위별 효율</td><td>1위 대비 2~3위 ROAS가 더 높음</td><td>희망 순위 하향</td></tr>
+              <tr><td>브랜드 키워드</td><td>경쟁사 노출 여부</td><td>브랜드 방어 예산 별도 확보</td></tr>
+              <tr><td>쇼핑검색</td><td>상품별 클릭 대비 판매</td><td>저효율 상품 입찰↓, 상품명 개선</td></tr>
+              <tr><td>ADVoost·AI 광고</td><td>기존 캠페인과 동일 기간 CPA 비교</td><td>사이트명·schema·전환 스크립트 정비 후 예산 비중 결정</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 4 -->
+<section id="display">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="step-no">STEP 4</span>
+      <h2>디스플레이 분석</h2>
+      <ul class="lines muted"><li>디스플레이는 클릭보다 노출 빈도와 증분 효과가 핵심입니다.</li><li>신규 유입과 리타겟은 반드시 분리해서 평가합니다.</li></ul>
+    </div>
+    <div class="grid2">
+      <div class="panel tool">
+        <h3>빈도 구간별 CTR·CVR <span class="tag ex">예시 데이터</span></h3>
+        <svg id="freq" viewBox="0 0 520 280" role="img" aria-label="노출 빈도별 CTR과 CVR 추이"></svg>
+        <div class="legend"><span><i style="background:var(--accent)"></i>CTR</span><span><i style="background:var(--good)"></i>CVR</span><span><i style="background:var(--bad)"></i>빈도 1회 대비 CTR 70% 미만</span></div>
+        <ul class="lines note"><li>CTR이 첫 노출 대비 70% 아래로 내려가는 빈도를 상한선 후보로 봅니다.</li><li>이 예시에서는 주간 빈도 5~6회가 소재 교체 또는 빈도 제한 시점입니다.</li></ul>
+      </div>
+      <div class="panel">
+        <h3>디스플레이 분석 축</h3>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>분석 축</th><th>보는 법</th><th>액션</th></tr></thead>
+            <tbody>
+              <tr><td><b>신규 vs 리타겟</b></td><td>캠페인을 목적별로 분리하고 각자 목표 CPA 설정</td><td>리타겟 ROAS가 높아 보여도 신규 예산을 일정 비율(예: 60%↑) 유지</td></tr>
+              <tr><td><b>클릭 vs 뷰스루 전환</b></td><td>두 전환을 별도 열로 표시</td><td>뷰스루 비중 50% 초과 시 증분 테스트로 검증</td></tr>
+              <tr><td><b>지면·플레이스먼트</b></td><td>지면별 CTR 대비 CVR</td><td>CTR만 높고 CVR 낮은 지면 제외</td></tr>
+              <tr><td><b>증분 효과</b></td><td>지역·기간 홀드아웃, 매체 리프트 테스트</td><td>증분 ROAS 기준으로 매체 예산 재배분</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <h3 style="margin-top:16px">홀드아웃 테스트 설계 (4주)</h3>
+        <ul class="lines" style="font-size:14px">
+          <li>1주차: 성과가 비슷한 지역 두 그룹을 고르고 광고 집행 그룹과 중단 그룹으로 나눕니다.</li>
+          <li>2~3주차: 중단 그룹은 해당 매체만 끄고 나머지 매체는 동일하게 유지합니다.</li>
+          <li>4주차: 두 그룹의 매출 차이를 매체 광고비로 나눠 증분 ROAS를 계산합니다.</li>
+          <li>매체 리포트 ROAS와 증분 ROAS의 차이가 클수록 기여가 과대 집계된 매체입니다.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 5 -->
+<section id="target">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="step-no">STEP 5</span>
+      <h2>타겟 분석</h2>
+      <ul class="lines muted"><li>CPA가 좋다는 것만으로는 부족하고, 그 세그먼트에 확대할 규모가 있는지를 함께 봅니다.</li><li>자동 타겟팅 캠페인은 결과 분포를 소재 방향 결정에 활용합니다.</li></ul>
+    </div>
+    <div class="grid2">
+      <div class="panel tool">
+        <h3>세그먼트 CPA × 전환 규모 <span class="tag ex">예시 데이터</span></h3>
+        <div class="ctrl"><label for="tcpa">목표 CPA</label><input id="tcpa" type="range" min="15000" max="32000" step="500" value="22000"><span class="mono" id="tcpaV">22,000원</span></div>
+        <svg id="seg" viewBox="0 0 520 320" role="img" aria-label="세그먼트별 전환수와 CPA"></svg>
+      </div>
+      <div class="panel">
+        <h3>4분면별 액션</h3>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>분면</th><th>해당 세그먼트</th><th>액션</th></tr></thead>
+            <tbody id="segTbl"></tbody>
+          </table>
+        </div>
+        <ul class="lines note">
+          <li>네이버 검색광고는 연령·성별 입찰 가중치로, 메타는 소재 메시지 분리로 대응하는 것이 현실적입니다.</li>
+          <li>자동화 캠페인 학습 안정을 위해 주 50건 전환 이상을 낼 예산이 권장됩니다 (Madgicx 인용, 업체 자료).</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 6 -->
+<section id="creative">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="step-no">STEP 6</span>
+      <h2>소재 분석</h2>
+      <ul class="lines muted"><li>소재를 메시지·포맷·훅 같은 요소로 태깅한 뒤 태그별로 성과를 집계합니다.</li><li>엑셀 피벗만으로 시작할 수 있습니다.</li></ul>
+    </div>
+    <div class="grid2">
+      <div class="panel tool">
+        <h3>태그별 성과 매트릭스 <span class="tag ex">예시 데이터</span></h3>
+        <div class="tbl-wrap"><table id="tagTbl"></table></div>
+        <ul class="lines note"><li>색이 진할수록 해당 지표에서 상대적으로 유리합니다 (CPA는 낮을수록 진함).</li><li>이 예시에서는 후기형이 클릭을, 가격형이 전환을 만드는 역할이 분리되어 있습니다.</li><li>후기형 훅 + 가격형 CTA를 결합한 소재가 다음 테스트 1순위입니다.</li></ul>
+      </div>
+      <div class="panel tool">
+        <h3>소재 피로도 감지 <span class="tag ex">예시 데이터 · 단일 소재 21일</span></h3>
+        <svg id="fat" viewBox="0 0 520 280" role="img" aria-label="일별 CTR과 피로도 경보 시점"></svg>
+        <div class="legend"><span><i style="background:var(--muted)"></i>일별 CTR</span><span><i style="background:var(--accent)"></i>3일 이동평균</span><span><i style="background:var(--bad)"></i>경보선 (첫 주 평균의 80%)</span></div>
+        <ul class="lines note"><li>3일 평균 CTR이 첫 주 평균의 80% 아래로 떨어지면 교체 준비를 시작합니다.</li><li>교체 소재는 경보 3~5일 전에 미리 제작해 두어야 공백이 생기지 않습니다.</li></ul>
+      </div>
+    </div>
+    <div class="panel" style="margin-top:16px">
+      <h3>태깅 기준표 (엑셀 열 구성)</h3>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>열</th><th>값 예시</th><th>태깅 방법</th></tr></thead>
+          <tbody>
+            <tr><td>메시지 소구</td><td>가격 / 기능 / 후기 / 문제해결 / 한정</td><td>소재당 주 소구 1개만 선택</td></tr>
+            <tr><td>포맷</td><td>UGC 영상 / 제작 영상 / 단일 이미지 / 카루셀</td><td>매체 리포트의 포맷과 별도로 직접 기록</td></tr>
+            <tr><td>첫 3초 훅</td><td>질문형 / 비포애프터 / 제품 클로즈업 / 인물 등장</td><td>영상만 해당, 이미지는 헤드라인 유형으로 대체</td></tr>
+            <tr><td>CTA</td><td>구매하기 / 자세히 보기 / 쿠폰받기</td><td>버튼과 문구 중 하나로 통일</td></tr>
+            <tr><td>소재 ID 규칙</td><td>날짜_소구_포맷_버전 (예: 1029_후기_UGC_v2)</td><td>소재명에 태그를 넣으면 피벗이 자동화됨</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- diagnose -->
+<section id="diagnose">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="step-no">SUMMARY</span>
+      <h2>증상 → 원인 → 액션 진단 매트릭스</h2>
+      <ul class="lines muted"><li>주간 리포트에서 증상을 찾으면 이 표에서 바로 첫 액션을 고릅니다.</li></ul>
+    </div>
+    <div class="panel tbl-wrap">
+      <table>
+        <thead><tr><th>증상</th><th>가능한 원인 (가설)</th><th>확인 방법</th><th>1차 액션</th><th>담당·소요</th><th>긴급도</th></tr></thead>
+        <tbody>
+          <tr><td>CPC ↑, CTR 유지</td><td>경쟁 입찰 심화, 시즌 경쟁</td><td>노출 점유율, 경쟁사 노출</td><td>저효율 키워드 입찰↓, 롱테일 확대</td><td>운영자 / 1~2일</td><td><span class="chip c-warn">중</span></td></tr>
+          <tr><td>CTR ↓, 빈도 ↑</td><td>소재 피로</td><td>소재별 일별 CTR, 빈도</td><td>위너 태그 기반 신규 소재 2~3종 투입</td><td>운영+디자인 / 1주</td><td><span class="chip c-warn">중</span></td></tr>
+          <tr><td>CTR 유지, CVR ↓</td><td>랜딩·가격·재고 문제</td><td>랜딩 이탈률, 품절 여부</td><td>랜딩 점검, 광고주에 즉시 공유</td><td>운영+광고주 / 1주</td><td><span class="chip c-bad">상</span></td></tr>
+          <tr><td>전환 수 급감 (전 매체)</td><td>추적 오류, 사이트 장애</td><td>매체 vs 주문 DB 비교</td><td>스크립트 점검, 예산 일시 축소</td><td>운영+개발 / 당일</td><td><span class="chip c-bad">상</span></td></tr>
+          <tr><td>리타겟만 ROAS 높음</td><td>신규 유입 부족, 모수 고갈</td><td>리타겟 모수 추이</td><td>신규 캠페인 예산 비중 확대 테스트</td><td>운영자 / 2주</td><td><span class="chip c-warn">중</span></td></tr>
+          <tr><td>매체 전환 ↔ 실매출 괴리</td><td>매체 간 중복 기여</td><td>GA4·MMP 통합 기준 비교</td><td>홀드아웃 테스트, 통합 리포트 기준 전환</td><td>분석 담당 / 2~4주</td><td><span class="chip c-acc">계획</span></td></tr>
+          <tr><td>AI 광고 성과 들쭉날쭉</td><td>학습 데이터 부족</td><td>주간 전환 수</td><td>캠페인 통합으로 전환 수 확보, 세팅 변경 최소화</td><td>운영자 / 2주</td><td><span class="chip c-acc">계획</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- cadence -->
+<section id="cadence">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="step-no">ROUTINE</span>
+      <h2>운영 루틴</h2>
+      <ul class="lines muted"><li>분석은 한 번이 아니라 주기로 돌아야 효과가 납니다.</li></ul>
+    </div>
+    <div class="grid4 cal">
+      <div class="panel"><h3>일간 <span class="who mono">10분 · 운영자</span></h3><ul class="lines" style="font-size:14px"><li>예산 소진율 확인</li><li>전일 대비 ±30% 변동 캠페인 표시</li><li>전환 0건 캠페인 즉시 점검</li></ul></div>
+      <div class="panel"><h3>주간 <span class="who mono">1시간 · 운영자</span></h3><ul class="lines" style="font-size:14px"><li>ROAS 분해로 원인 지표 특정</li><li>검색어 제외·신규 등록</li><li>소재 피로도 점검과 교체</li></ul></div>
+      <div class="panel"><h3>월간 <span class="who mono">반나절 · 팀</span></h3><ul class="lines" style="font-size:14px"><li>키워드 4분면 재분류</li><li>세그먼트·태그 패턴 정리</li><li>다음 달 테스트 2~3개 확정</li></ul></div>
+      <div class="panel"><h3>분기 <span class="who mono">1~2일 · 팀장+광고주</span></h3><ul class="lines" style="font-size:14px"><li>증분 테스트 결과 반영</li><li>매체 믹스·예산 재배분</li><li>측정 체계 재점검</li></ul></div>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <b>출처</b>
+    <ul>
+      <li><a href="https://www.i-boss.co.kr/ab-6141-69668">i-boss · 네이버 통합 광고주센터 공지 정리 (2026.03)</a></li>
+      <li><a href="https://letter.wepick.kr/wiki/blog-naver-optimization">위픽 마케팅 위키 · 2026 네이버 최적화 (AI 브리핑 광고 일정)</a></li>
+      <li><a href="https://brunch.co.kr/@gpowold/58">브런치 · 네이버 AI 광고 출시와 사이트 구조</a></li>
+      <li><a href="https://segwise.ai/blog/scaling-meta-ads-2026-guide">Segwise · Scaling Meta Ads in 2026 (업체 자료)</a></li>
+      <li><a href="https://segwise.ai/blog/creative-strategist-guide-to-meta-ads-2026">Segwise · Creative Strategist's Guide 2026 (업체 자료)</a></li>
+      <li><a href="https://madgicx.com/blog/meta-advantage-plus-review">Madgicx · Meta Advantage+ Review 2026 (업체 자료)</a></li>
+    </ul>
+    <p>함께 보기: <a href="media-notes.html">매체·상품별 분석 노트</a></p>
+    <p>차트 데이터는 모두 예시이며, 판단 기준값은 실무 관행에 기반한 가정입니다. 계정 규모와 업종에 맞게 조정해서 사용하세요.</p>
+  </div>
+</footer>
+
+<script>
+(function(){
+const NS="http://www.w3.org/2000/svg";
+function el(tag,a,p){const e=document.createElementNS(NS,tag);for(const k in a)e.setAttribute(k,a[k]);if(p)p.appendChild(e);return e}
+function txt(p,x,y,s,a){const t=el("text",Object.assign({x,y},a||{}),p);t.textContent=s;return t}
+const fmt=n=>Math.round(n).toLocaleString("ko-KR");
+function clear(s){while(s.firstChild)s.removeChild(s.firstChild)}
+
+/* ---------- ROAS calculator ---------- */
+const ids=["cpc0","cpc1","cvr0","cvr1","aov0","aov1"];
+const map={
+  CPC:{area:"매체 경쟁·입찰",act:"노출 점유율과 경쟁사 진입을 확인하고, 저효율 키워드 입찰을 낮추며 롱테일 키워드로 유입을 보완하세요."},
+  CVR:{area:"랜딩·유입 품질",act:"랜딩 이탈률과 품절·가격 변동을 먼저 확인하고, 검색어 보고서에서 비전환 유입을 제외하세요."},
+  "객단가":{area:"상품 믹스·프로모션",act:"저가 상품으로 매출이 쏠렸는지 상품별 매출을 보고, 세트·번들 소재나 객단가 높은 상품 노출을 늘리세요."}
+};
+function calc(){
+  const v={};ids.forEach(i=>v[i]=parseFloat(document.getElementById(i).value)||0);
+  const r0=v.cvr0/100*v.aov0/v.cpc0*100, r1=v.cvr1/100*v.aov1/v.cpc1*100;
+  document.getElementById("roas0").textContent=isFinite(r0)?fmt(r0)+"%":"–";
+  document.getElementById("roas1").textContent=isFinite(r1)?fmt(r1)+"%":"–";
+  const d=(r1/r0-1)*100, chip=document.getElementById("roasD");
+  chip.textContent=(d>=0?"+":"")+d.toFixed(1)+"%";chip.className="chip "+(d>=0?"c-good":"c-bad");
+  const T=Math.log(r1/r0);
+  const parts=[["CPC",-Math.log(v.cpc1/v.cpc0),v.cpc1/v.cpc0-1],["CVR",Math.log(v.cvr1/v.cvr0),v.cvr1/v.cvr0-1],["객단가",Math.log(v.aov1/v.aov0),v.aov1/v.aov0-1]];
+  const bars=document.getElementById("bars");bars.innerHTML="";
+  const maxAbs=Math.max(...parts.map(p=>Math.abs(p[1])),1e-9);
+  parts.forEach(([n,l,ch])=>{
+    const row=document.createElement("div");row.className="bar-row";
+    const w=Math.abs(l)/maxAbs*50;
+    const share=Math.abs(T)>1e-9? l/T*100:0;
+    row.innerHTML=`<span>${n} <span class="muted mono" style="font-size:11px">${ch>=0?"+":""}${(ch*100).toFixed(1)}%</span></span>
+      <div class="bar-track"><span class="mid"></span><span class="bar-fill" style="${l<0?`right:50%`:`left:50%`};width:${w}%;background:var(${l<0?"--bad":"--good"})"></span></div>
+      <span class="mono" style="text-align:right">${isFinite(share)?share.toFixed(0):"–"}%</span>`;
+    bars.appendChild(row);
+  });
+  const worst=parts.slice().sort((a,b)=>a[1]-b[1])[0];
+  const diag=document.getElementById("diag");
+  if(worst[1]<0){const m=map[worst[0]];
+    diag.innerHTML=`<b>주 원인: ${worst[0]}</b> (${m.area}) · ROAS 변화의 약 ${Math.min(999,Math.abs(worst[1]/T*100)).toFixed(0)}%를 설명합니다.<br>${m.act}`;}
+  else diag.innerHTML=`<b>세 지표 모두 개선 방향입니다.</b> 개선을 만든 요인을 유지하면서 예산 확대 테스트를 검토하세요.`;
+}
+ids.forEach(i=>document.getElementById(i).addEventListener("input",calc));calc();
+
+/* ---------- Keyword quadrant ---------- */
+const kws=[["브랜드명",120,820],["브랜드+제품",80,640],["수분크림",420,310],["건성 수분크림 추천",150,520],["수분크림 1위",260,180],["경쟁사 브랜드",190,140],["민감성 크림",95,410],["크림 세일",310,230],["겨울 보습크림",60,380],["수분크림 가격비교",140,120]];
+const med=(a=>{const s=a.slice().sort((x,y)=>x-y);return (s[4]+s[5])/2})(kws.map(k=>k[1]));
+const Q={
+  core:{n:"핵심 확대",c:"--good",cls:"c-good",a:"예산 상한 해제, 유사 키워드 확장"},
+  opp:{n:"확장 기회",c:"--accent",cls:"c-acc",a:"입찰 상향으로 노출 늘리기"},
+  loss:{n:"손실 구간",c:"--bad",cls:"c-bad",a:"입찰 하향, 랜딩·검색어 점검"},
+  cut:{n:"정리 대상",c:"--warn",cls:"c-warn",a:"일시중지 또는 제외 키워드"}
+};
+function kwDraw(){
+  const t=+document.getElementById("troas").value;document.getElementById("troasV").textContent=t+"%";
+  const s=document.getElementById("kwChart");clear(s);
+  const L=56,R=664,Tp=16,B=340,xs=v=>L+v/450*(R-L),ys=v=>B-v/900*(B-Tp);
+  [0,150,300,450,600,750,900].forEach(v=>{el("line",{x1:L,x2:R,y1:ys(v),y2:ys(v),stroke:"var(--line)","stroke-width":1},s);txt(s,L-8,ys(v)+4,v+"%",{"text-anchor":"end"})});
+  [0,100,200,300,400].forEach(v=>txt(s,xs(v),B+18,v+"만",{"text-anchor":"middle"}));
+  txt(s,(L+R)/2,B+36,"월 광고비 (만원)",{"text-anchor":"middle"});
+  el("line",{x1:L,x2:R,y1:ys(t),y2:ys(t),stroke:"var(--fg)","stroke-dasharray":"5 4","stroke-width":1.2},s);
+  el("line",{x1:xs(med),x2:xs(med),y1:Tp,y2:B,stroke:"var(--fg)","stroke-dasharray":"5 4","stroke-width":1.2},s);
+  txt(s,R-4,ys(t)-6,"목표 "+t+"%",{"text-anchor":"end",class:"lbl"});
+  const groups={core:[],opp:[],loss:[],cut:[]};
+  kws.forEach(([n,sp,r],i)=>{
+    const q=r>=t?(sp>=med?"core":"opp"):(sp>=med?"loss":"cut");groups[q].push(n);
+    const cx=xs(sp),cy=ys(r);
+    el("circle",{cx,cy,r:7,fill:`var(${Q[q].c})`,"fill-opacity":.85,stroke:"var(--surface)","stroke-width":1.5},s);
+    const right=cx<R-130;
+    txt(s,right?cx+11:cx-11,cy+(i%2?13:-6),n,{class:"lbl","text-anchor":right?"start":"end"});
+  });
+  document.getElementById("kwList").innerHTML=["core","opp","loss","cut"].map(k=>`<div><span class="chip ${Q[k].cls}">${Q[k].n}</span> <span class="mono muted">${groups[k].length}개</span><div style="margin:6px 0 4px">${Q[k].a}</div><div class="kw">${groups[k].join(", ")||"해당 없음"}</div></div>`).join("");
+}
+document.getElementById("troas").addEventListener("input",kwDraw);kwDraw();
+
+/* ---------- Heatmap ---------- */
+(function(){
+  const s=document.getElementById("heat"),days=["월","화","수","목","금","토","일"];
+  const L=30,Tp=8,cw=(680-L-6)/24,ch=26;
+  const val=(d,h)=>{let b=1.2+0.9*Math.exp(-((h-21.5)**2)/8)+0.5*Math.exp(-((h-12.5)**2)/2)-(h<7?0.8:0);if(d>=5)b+=h>=10&&h<=17?0.35:-0.1;if(d===4&&h>=18)b-=0.3;return Math.max(0.3,b+((d*7+h*3)%5)*0.04)};
+  let mx=0,all=[];for(let d=0;d<7;d++)for(let h=0;h<24;h++){const v=val(d,h);all.push(v);mx=Math.max(mx,v)}
+  const avg=all.reduce((a,b)=>a+b)/all.length;
+  for(let d=0;d<7;d++){txt(s,L-8,Tp+d*ch+ch/2+4,days[d],{"text-anchor":"end"});
+    for(let h=0;h<24;h++){const v=val(d,h);
+      const r=el("rect",{x:L+h*cw+1,y:Tp+d*ch+1,width:cw-2,height:ch-2,rx:2,fill:"var(--accent)","fill-opacity":(0.08+0.92*(v-0.3)/(mx-0.3)).toFixed(2)},s);
+      const tt=el("title",{},r);tt.textContent=`${days[d]} ${h}시 · CVR ${v.toFixed(2)}% (평균 대비 ${((v/avg-1)*100).toFixed(0)}%)`;
+      if(v/avg>=1.2)el("circle",{cx:L+h*cw+cw/2,cy:Tp+d*ch+ch/2,r:2.2,fill:"var(--surface)"},s);
+    }}
+  [0,6,12,18,23].forEach(h=>txt(s,L+h*cw+cw/2,Tp+7*ch+16,h+"시",{"text-anchor":"middle"}));
+  txt(s,680-6,Tp+7*ch+34,"흰 점 = 평균 CVR 대비 +20% 이상 (입찰 가중치 상향 후보)",{"text-anchor":"end"});
+})();
+
+/* ---------- Frequency ---------- */
+(function(){
+  const s=document.getElementById("freq"),ctr=[1.2,1.15,1.05,.92,.8,.68,.58,.5,.44,.4],cvr=[2.6,2.7,2.6,2.4,2.1,1.8,1.5,1.3,1.1,1];
+  const L=44,R=470,Tp=16,B=240,xs=i=>L+i*(R-L)/9;
+  const y1=v=>B-v/1.4*(B-Tp),y2=v=>B-v/3*(B-Tp);
+  [0,.35,.7,1.05,1.4].forEach(v=>{el("line",{x1:L,x2:R,y1:y1(v),y2:y1(v),stroke:"var(--line)"},s);txt(s,L-6,y1(v)+4,v.toFixed(2)+"%",{"text-anchor":"end"})});
+  [0,1,2,3].forEach(v=>txt(s,R+6,y2(v)+4,v+"%",{}));
+  ctr.forEach((_,i)=>txt(s,xs(i),B+18,(i+1)+"회",{"text-anchor":"middle"}));
+  txt(s,(L+R)/2,B+36,"주간 노출 빈도",{"text-anchor":"middle"});
+  const th=ctr[0]*.7,cut=ctr.findIndex(v=>v<th);
+  el("rect",{x:xs(cut)-(R-L)/18,y:Tp,width:R-xs(cut)+(R-L)/18,height:B-Tp,fill:"var(--bad)","fill-opacity":.08},s);
+  txt(s,xs(cut)-(R-L)/18+6,Tp+14,"피로 구간",{class:"lbl"});
+  el("polyline",{points:cvr.map((v,i)=>xs(i)+","+y2(v)).join(" "),fill:"none",stroke:"var(--good)","stroke-width":2.2},s);
+  el("polyline",{points:ctr.map((v,i)=>xs(i)+","+y1(v)).join(" "),fill:"none",stroke:"var(--accent)","stroke-width":2.6},s);
+  ctr.forEach((v,i)=>el("circle",{cx:xs(i),cy:y1(v),r:3.5,fill:i>=cut?"var(--bad)":"var(--accent)"},s));
+  txt(s,L,10,"CTR",{});txt(s,R+6,10,"CVR",{});
+})();
+
+/* ---------- Segments ---------- */
+const segs=[["여 25-34",420,18000],["여 35-44",310,21000],["남 25-34",120,26000],["여 18-24",90,15500],["남 35-44",60,34000],["여 45-54",140,19500],["남 18-24",35,29000]];
+const SQ={
+  main:{n:"주력",cls:"c-good",c:"--good",a:"예산 우선 배분, 신규 소재 우선 테스트"},
+  test:{n:"확장 테스트",cls:"c-acc",c:"--accent",a:"입찰 가중치 110~120%로 규모 검증 2주"},
+  opt:{n:"효율 개선",cls:"c-warn",c:"--warn",a:"전용 메시지 소재 분리, 입찰 소폭 하향"},
+  drop:{n:"축소",cls:"c-bad",c:"--bad",a:"가중치 50~70%, 또는 제외"}
+};
+function segDraw(){
+  const t=+document.getElementById("tcpa").value;document.getElementById("tcpaV").textContent=fmt(t)+"원";
+  const s=document.getElementById("seg");clear(s);
+  const L=56,R=500,Tp=16,B=272,mc=(()=>{const a=segs.map(x=>x[1]).sort((x,y)=>x-y);return a[3]})();
+  const xs=v=>L+v/450*(R-L),ys=v=>Tp+(v-12000)/(36000-12000)*(B-Tp);
+  [12000,18000,24000,30000,36000].forEach(v=>{el("line",{x1:L,x2:R,y1:ys(v),y2:ys(v),stroke:"var(--line)"},s);txt(s,L-6,ys(v)+4,(v/1000)+"k",{"text-anchor":"end"})});
+  [0,150,300,450].forEach(v=>txt(s,xs(v),B+18,v+"건",{"text-anchor":"middle"}));
+  txt(s,(L+R)/2,B+36,"월 전환수 →",{"text-anchor":"middle"});txt(s,8,Tp+6,"CPA (낮을수록 위)",{});
+  el("line",{x1:L,x2:R,y1:ys(t),y2:ys(t),stroke:"var(--fg)","stroke-dasharray":"5 4"},s);
+  el("line",{x1:xs(mc),x2:xs(mc),y1:Tp,y2:B,stroke:"var(--fg)","stroke-dasharray":"5 4"},s);
+  const g={main:[],test:[],opt:[],drop:[]};
+  segs.forEach(([n,c,cpa])=>{const q=cpa<=t?(c>=mc?"main":"test"):(c>=mc?"opt":"drop");g[q].push(n);
+    const cx=xs(c),cy=ys(cpa);el("circle",{cx,cy,r:5+Math.sqrt(c)/2.2,fill:`var(${SQ[q].c})`,"fill-opacity":.75,stroke:"var(--surface)","stroke-width":1.5},s);
+    const right=cx<R-90;txt(s,right?cx+14:cx-14,cy+4,n,{class:"lbl","text-anchor":right?"start":"end"});});
+  document.getElementById("segTbl").innerHTML=["main","test","opt","drop"].map(k=>`<tr><td><span class="chip ${SQ[k].cls}">${SQ[k].n}</span></td><td>${g[k].join(", ")||"<span class='muted'>해당 없음</span>"}</td><td>${SQ[k].a}</td></tr>`).join("");
+}
+document.getElementById("tcpa").addEventListener("input",segDraw);segDraw();
+
+/* ---------- Creative tags ---------- */
+(function(){
+  const groups=[["메시지 소구",[["후기형",1.8,2.1,19000,42],["가격형",1.2,3.4,16000,38],["기능형",1.0,2.4,24000,25],["문제해결형",1.6,2.9,17000,31],["한정형",1.4,2.0,23000,18]]],
+                ["포맷",[["UGC 영상",1.9,2.8,17500,46],["제작 영상",1.3,2.5,21000,33],["단일 이미지",1.1,2.6,20500,52],["카루셀",1.4,3.0,18000,23]]]];
+  let h=`<thead><tr><th>태그</th><th class="num">CTR</th><th class="num">CVR</th><th class="num">CPA</th><th class="num">전환</th></tr></thead><tbody>`;
+  groups.forEach(([gn,rows])=>{
+    h+=`<tr><td colspan="5" style="background:var(--sunk);font-size:12px;font-weight:600;color:var(--muted)">${gn}</td></tr>`;
+    const col=(i,inv)=>{const vs=rows.map(r=>r[i]),mn=Math.min(...vs),mx=Math.max(...vs);return v=>{let p=(v-mn)/(mx-mn||1);if(inv)p=1-p;return (0.06+p*0.5).toFixed(2)}};
+    const c1=col(1),c2=col(2),c3=col(3,true);
+    rows.forEach(r=>{const low=r[4]<30;
+      h+=`<tr><td>${r[0]}${low?' <span class="tag">표본 적음</span>':''}</td>
+      <td class="num" style="background:color-mix(in srgb, var(--accent) ${c1(r[1])*100}%, transparent)">${r[1].toFixed(1)}%</td>
+      <td class="num" style="background:color-mix(in srgb, var(--accent) ${c2(r[2])*100}%, transparent)">${r[2].toFixed(1)}%</td>
+      <td class="num" style="background:color-mix(in srgb, var(--accent) ${c3(r[3])*100}%, transparent)">${fmt(r[3])}</td>
+      <td class="num">${r[4]}</td></tr>`});
+  });
+  document.getElementById("tagTbl").innerHTML=h+"</tbody>";
+})();
+
+/* ---------- Fatigue ---------- */
+(function(){
+  const s=document.getElementById("fat");
+  const d=[1.62,1.58,1.66,1.6,1.55,1.63,1.57,1.52,1.5,1.46,1.41,1.38,1.3,1.27,1.22,1.18,1.2,1.12,1.08,1.05,1.02];
+  const wk=d.slice(0,7).reduce((a,b)=>a+b)/7,th=wk*.8;
+  const ma=d.map((_,i)=>i<2?null:(d[i]+d[i-1]+d[i-2])/3);
+  const alert=ma.findIndex(v=>v!==null&&v<th);
+  const L=44,R=504,Tp=16,B=236,xs=i=>L+i*(R-L)/20,ys=v=>B-(v-0.8)/1.0*(B-Tp);
+  [0.8,1.05,1.3,1.55,1.8].forEach(v=>{el("line",{x1:L,x2:R,y1:ys(v),y2:ys(v),stroke:"var(--line)"},s);txt(s,L-6,ys(v)+4,v.toFixed(2)+"%",{"text-anchor":"end"})});
+  [1,7,14,21].forEach(x=>txt(s,xs(x-1),B+18,x+"일",{"text-anchor":"middle"}));
+  el("line",{x1:L,x2:R,y1:ys(th),y2:ys(th),stroke:"var(--bad)","stroke-dasharray":"5 4","stroke-width":1.4},s);
+  txt(s,R,ys(th)-6,"경보선 "+th.toFixed(2)+"%",{"text-anchor":"end",fill:"var(--bad)",style:"fill:var(--bad)"});
+  el("polyline",{points:d.map((v,i)=>xs(i)+","+ys(v)).join(" "),fill:"none",stroke:"var(--muted)","stroke-width":1.2,"stroke-opacity":.7},s);
+  d.forEach((v,i)=>el("circle",{cx:xs(i),cy:ys(v),r:2.2,fill:"var(--muted)"},s));
+  el("polyline",{points:ma.map((v,i)=>v===null?null:xs(i)+","+ys(v)).filter(Boolean).join(" "),fill:"none",stroke:"var(--accent)","stroke-width":2.6},s);
+  if(alert>0){const x=xs(alert);el("line",{x1:x,x2:x,y1:Tp,y2:B,stroke:"var(--bad)","stroke-width":1},s);
+    el("circle",{cx:x,cy:ys(ma[alert]),r:5,fill:"var(--bad)"},s);
+    txt(s,x-6,Tp+12,(alert+1)+"일차 경보",{"text-anchor":"end",style:"fill:var(--bad);font-weight:600"});
+    const prep=Math.max(0,alert-4);el("rect",{x:xs(prep),y:Tp,width:x-xs(prep),height:B-Tp,fill:"var(--warn)","fill-opacity":.1},s);
+    txt(s,xs(prep)+4,B-8,"교체 소재 준비",{style:"fill:var(--warn)"});}
+})();
+})();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,396 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}[hidden]{display:none!important}img{max-width:100%}</style>
+<title>매체·상품별 분석 노트</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+/* Layout: 상품 카드 레퍼런스 — 상단 포지셔닝 맵·비교 매트릭스 → 매체 필터 → 동일 골격의 상품 카드 9종. 매체는 좌측 색 코드로만 구분 */
+:root{
+  --bg:#F4F6F9; --surface:#FFFFFF; --sunk:#E9EDF3; --line:#D5DBE5;
+  --fg:#141A24; --muted:#5D6778; --accent:#2D4FCF; --accent-soft:#E3E9FB;
+  --good:#16865C; --warn:#B9740B; --bad:#C2412F;
+  --good-soft:#DDF2E8; --warn-soft:#FBEFD9; --bad-soft:#F9E1DC;
+  --naver:#12A05A; --kakao:#C99A00; --meta:#2F6BE0; --google:#D2453A;
+  --f-body:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0F131A; --surface:#171C25; --sunk:#1F2531; --line:#2C3443;
+  --fg:#E7EBF2; --muted:#98A2B3; --accent:#7D98FF; --accent-soft:#232C48;
+  --good:#4CC995; --warn:#E3A84A; --bad:#F07A66;
+  --good-soft:#173328; --warn-soft:#3A2D15; --bad-soft:#3D1F1A;
+  --naver:#3CCB82; --kakao:#F2C632; --meta:#6E9BFF; --google:#FF7A6E; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0F131A; --surface:#171C25; --sunk:#1F2531; --line:#2C3443;
+  --fg:#E7EBF2; --muted:#98A2B3; --accent:#7D98FF; --accent-soft:#232C48;
+  --good:#4CC995; --warn:#E3A84A; --bad:#F07A66;
+  --good-soft:#173328; --warn-soft:#3A2D15; --bad-soft:#3D1F1A;
+  --naver:#3CCB82; --kakao:#F2C632; --meta:#6E9BFF; --google:#FF7A6E; color-scheme:dark}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.6;margin:0}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
+.wrap{max-width:1120px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header.top{padding-block:40px 20px}
+.eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);font-weight:600}
+h1{font-size:clamp(26px,4vw,36px);line-height:1.25;margin:8px 0 12px;text-wrap:balance}
+h2{font-size:22px;margin:0 0 6px;text-wrap:balance}
+h3{font-size:15px;margin:0 0 8px}
+h4{font-size:12px;margin:0 0 6px;color:var(--muted);letter-spacing:.04em;font-weight:600}
+ul.lines{margin:0;padding-left:18px;display:grid;gap:4px}
+.muted{color:var(--muted)}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+section{padding-block:32px;border-bottom:1px solid var(--line);scroll-margin-top:64px}
+.sec-head{display:grid;gap:4px;margin-bottom:18px;max-width:780px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px;min-width:0}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,460px),1fr));gap:16px}
+.tbl-wrap{overflow-x:auto;min-width:0}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th{text-align:left;font-size:12px;color:var(--muted);font-weight:600;padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:none}
+.chip{display:inline-block;font-size:12px;font-weight:600;padding:2px 9px;border-radius:999px;white-space:nowrap;background:var(--sunk);color:var(--muted)}
+.c-good{background:var(--good-soft);color:var(--good)} .c-warn{background:var(--warn-soft);color:var(--warn)} .c-bad{background:var(--bad-soft);color:var(--bad)} .c-acc{background:var(--accent-soft);color:var(--accent)}
+.tag{display:inline-block;font-size:11px;font-weight:600;padding:2px 7px;border-radius:4px;background:var(--sunk);color:var(--muted)}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:0}
+svg{display:block;width:100%;height:auto}
+svg text{fill:var(--muted);font-family:var(--f-body);font-size:11px}
+svg .lbl{fill:var(--fg);font-size:11.5px;font-weight:600}
+/* sticky filter */
+nav.filter{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--surface);border-bottom:1px solid var(--line)}
+nav.filter .wrap{display:flex;gap:6px;flex-wrap:nowrap;overflow-x:auto;padding-block:8px;scrollbar-width:none;align-items:center}
+nav.filter button,nav.filter a{flex:none;font:inherit;font-size:13px;padding:6px 12px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--fg);cursor:pointer;text-decoration:none;white-space:nowrap}
+nav.filter button[aria-pressed="true"]{background:var(--fg);color:var(--surface);border-color:var(--fg)}
+nav.filter button:focus-visible,nav.filter a:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+nav.filter .sep{width:1px;height:20px;background:var(--line);flex:none;margin:0 4px}
+/* product cards */
+.cards{display:grid;gap:20px}
+.card{background:var(--surface);border:1px solid var(--line);border-left:5px solid var(--mc);border-radius:10px;padding:20px;scroll-margin-top:64px;min-width:0}
+.card-head{display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px;align-items:flex-start;margin-bottom:12px}
+.card-head h2{margin:2px 0 0}
+.media{font-size:12px;font-weight:700;color:var(--mc);letter-spacing:.04em}
+.meta-row{display:flex;flex-wrap:wrap;gap:6px}
+.update{background:var(--accent-soft);border-radius:8px;padding:10px 14px;font-size:13.5px;margin-bottom:14px}
+.update .when{font-family:var(--f-mono);font-weight:600;color:var(--accent);margin-right:8px}
+.update ul{margin:4px 0 0;padding-left:18px}
+.kpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:12px;margin-bottom:14px}
+.kpi > div{background:var(--sunk);border-radius:8px;padding:12px 14px}
+.kpi .chips{display:flex;flex-wrap:wrap;gap:6px}
+.kpi .chips span{font-size:13px;background:var(--surface);border:1px solid var(--line);padding:2px 9px;border-radius:6px}
+.kpi .primary span{border-color:var(--mc);font-weight:600}
+.body2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,460px),1fr));gap:16px}
+.pit{font-size:13.5px}
+.pit li::marker{color:var(--bad)}
+details.more{margin-top:14px}
+details.more summary{cursor:pointer;font-size:13px;color:var(--accent);font-weight:600}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:12px;color:var(--muted);margin-top:8px}
+.note{font-size:12.5px;color:var(--muted);margin-top:8px}
+footer{padding-block:32px 48px;font-size:13px;color:var(--muted)}
+footer a{color:var(--accent)}
+footer ul{padding-left:18px;margin:6px 0 0}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+
+
+<header class="top">
+  <div class="wrap">
+    <div class="eyebrow">Media Product Notes · 2026.10 기준</div>
+    <h1>매체·상품별 데이터 분석 노하우</h1>
+    <ul class="lines muted" style="max-width:780px">
+      <li>네이버·카카오·메타·구글의 9개 광고 상품을 같은 골격(1차 KPI, 분석 축, 함정, 증상별 액션)으로 정리했습니다.</li>
+      <li>상품마다 퍼널 위치와 자동화 수준이 달라서, 같은 ROAS라도 해석과 비교 방법이 달라집니다.</li>
+      <li>판단 기준 수치는 실무 관행 기반의 <b>가정</b>이며 계정 규모·업종에 맞게 조정해야 합니다.</li>
+    </ul>
+  </div>
+</header>
+
+<nav class="filter" aria-label="매체 필터와 상품 이동">
+  <div class="wrap" id="filterBar">
+    <button type="button" data-f="all" aria-pressed="true">전체</button>
+    <button type="button" data-f="naver" aria-pressed="false"><span class="dot" style="background:var(--naver)"></span>네이버</button>
+    <button type="button" data-f="kakao" aria-pressed="false"><span class="dot" style="background:var(--kakao)"></span>카카오</button>
+    <button type="button" data-f="meta" aria-pressed="false"><span class="dot" style="background:var(--meta)"></span>메타</button>
+    <button type="button" data-f="google" aria-pressed="false"><span class="dot" style="background:var(--google)"></span>구글</button>
+    <span class="sep"></span>
+    <a href="#map">포지셔닝</a><a href="#compare">통합 비교 규칙</a>
+  </div>
+</nav>
+
+<main>
+<section id="map">
+  <div class="wrap">
+    <div class="sec-head">
+      <h2>상품 포지셔닝 맵</h2>
+      <ul class="lines muted"><li>오른쪽으로 갈수록 구매 직전·재구매 단계, 위로 갈수록 AI가 타겟·입찰·소재를 정하는 비중이 큽니다.</li><li>위쪽 상품일수록 세부 단위 분석보다 입력 데이터(피드·소재·전환 신호) 품질과 증분 검증이 중요해집니다.</li><li>점을 누르면 해당 상품 노트로 이동합니다.</li></ul>
+    </div>
+    <div class="grid2">
+      <div class="panel"><svg id="posMap" viewBox="0 0 560 380" role="img" aria-label="광고 상품별 퍼널 위치와 자동화 수준"></svg>
+        <div class="legend"><span><span class="dot" style="background:var(--naver)"></span>네이버</span><span><span class="dot" style="background:var(--kakao)"></span>카카오</span><span><span class="dot" style="background:var(--meta)"></span>메타</span><span><span class="dot" style="background:var(--google)"></span>구글</span><span>위치는 운영 경험 기반의 상대적 배치(정성 판단)</span></div>
+      </div>
+      <div class="panel tbl-wrap">
+        <table>
+          <thead><tr><th>상품</th><th>주 역할</th><th>1차 KPI</th><th>분석 단위</th></tr></thead>
+          <tbody id="sumTbl"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="products">
+  <div class="wrap"><div class="cards" id="cards"></div></div>
+</section>
+
+<section id="compare">
+  <div class="wrap">
+    <div class="sec-head">
+      <h2>매체를 섞어 비교할 때의 규칙</h2>
+      <ul class="lines muted"><li>상품 노트를 다 읽은 뒤 크로스 매체 리포트를 만들 때 적용하는 공통 원칙입니다.</li></ul>
+    </div>
+    <div class="grid2">
+      <div class="panel tbl-wrap">
+        <h3>기여 기준 맞추기</h3>
+        <table>
+          <thead><tr><th>매체</th><th>확인할 설정</th><th>비교 시 조치</th></tr></thead>
+          <tbody>
+            <tr><td><span class="dot" style="background:var(--naver)"></span>네이버</td><td>전환 추적 기간, 직접/간접 전환 구분</td><td>직접 전환만 별도 열로 분리</td></tr>
+            <tr><td><span class="dot" style="background:var(--kakao)"></span>카카오</td><td>클릭·노출 기여 기간 설정값</td><td>노출 기여 전환은 분리 표기</td></tr>
+            <tr><td><span class="dot" style="background:var(--meta)"></span>메타</td><td>기본값 클릭 7일·조회 1일</td><td>클릭 1일 기준 열을 추가해 검색광고와 비교</td></tr>
+            <tr><td><span class="dot" style="background:var(--google)"></span>구글</td><td>전환 기간, 참여 조회 전환(EVC) 포함 여부</td><td>EVC 포함/제외 CPA를 함께 표기</td></tr>
+          </tbody>
+        </table>
+        <p class="note">계정마다 설정이 다를 수 있으니 리포트 작성 전에 실제 값을 확인해 주석으로 남겨 두세요.</p>
+      </div>
+      <div class="panel">
+        <h3>비교 원칙 5가지</h3>
+        <ul class="lines" style="font-size:14px">
+          <li>같은 퍼널 역할끼리만 효율을 비교합니다 (비즈보드 vs 파워링크 ROAS 직접 비교 금지).</li>
+          <li>매체 리포트 ROAS와 GA4·MMP·주문 DB 기준 ROAS를 나란히 둡니다.</li>
+          <li>자동화 상품(ADVoost·PMax·카탈로그)은 수동 상품과 합산 매출로 함께 평가합니다.</li>
+          <li>상단 퍼널 상품은 브랜드 검색량과 직접 유입 변화를 보조 지표로 붙입니다.</li>
+          <li>예산 재배분 전에는 홀드아웃 같은 증분 검증을 최소 분기 1회 실시합니다.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <b>출처</b>
+    <ul>
+      <li><a href="https://inside.ampm.co.kr/insight/61072">AMPM · 네이버 쇼핑검색광고 개편 분석 (2026.09)</a></li>
+      <li><a href="https://inside.ampm.co.kr/insight/61339">AMPM · 쇼핑검색광고 10월 업데이트, 스마트스토어 상세페이지 지면</a></li>
+      <li><a href="https://inside.ampm.co.kr/insight/61088">AMPM · ADVoost쇼핑과 쇼핑검색광고 공존 방법</a></li>
+      <li><a href="https://inside.ampm.co.kr/insight/12717">AMPM · 카카오톡 개편과 광고 지면 변화 (2025.09)</a></li>
+      <li><a href="https://inside.ampm.co.kr/insight/60358">AMPM · 카카오 광고 종류 총정리 (2026.07)</a></li>
+      <li><a href="https://www.i-boss.co.kr/ab-6141-69668">i-boss · 네이버 통합 광고주센터 공지 정리 (2026.03)</a></li>
+      <li><a href="https://letter.wepick.kr/wiki/blog-naver-optimization">위픽 마케팅 위키 · AI 브리핑 광고 일정</a></li>
+      <li><a href="https://www.jonloomer.com/?p=39833">Jon Loomer · Advantage+ 카탈로그 다이나믹 미디어</a></li>
+      <li><a href="https://support.google.com/google-ads/answer/16710258">Google Ads 고객센터 · PMax 채널 성과 리포트 (2025.11)</a></li>
+      <li><a href="https://strikesocial.com/blog/performance-max-updates-and-news/">Strike Social · 2026 Performance Max 업데이트 (업체 자료)</a></li>
+      <li><a href="https://ppcnewsfeed.com/ppc-news/2026-05/measurement-demand-gen-youtube/">PPC News Feed · Demand Gen 측정 업데이트 (GML 2026)</a></li>
+    </ul>
+    <p>함께 보기: <a href="./">퍼포먼스 분석 플레이북 (6단계 분석 흐름·진단 도구)</a></p>
+  </div>
+</footer>
+
+<script>
+(function(){
+const P=[
+{id:"powerlink",m:"naver",mn:"네이버",name:"파워링크",x:74,y:22,role:"검색 수요 수확",kpi1:"키워드 그룹별 ROAS·CPA",unit:"키워드 그룹·검색어",
+ meta:["하단 퍼널","CPC","수동 키워드 + AI 확장"],
+ upd:{when:"2026.03 / 07",items:["3/30 검색·디스플레이 광고주센터 통합 (운영 로직은 분리 유지)","7/21 AI 브리핑 지면에 ADVoost 검색광고 노출 시작, 문안·키워드는 AI가 결정"]},
+ primary:["ROAS","CPA","전환수"],diag:["CTR","CPC","노출 점유","평균 노출 순위","확장소재 클릭"],
+ axes:[["키워드 그룹","브랜드 / 일반 / 경쟁사 / 롱테일로 라벨링","브랜드가 평균을 끌어올리는지 그룹별로 분리해서 확인"],
+       ["검색어 보고서","실제 유입 검색어","클릭 30회↑·전환 0 검색어 제외 (가정)"],
+       ["요일·시간대","시간대 리포트","평균 CVR ±20~30% 구간에 입찰 가중치"],
+       ["디바이스·연령성별","인구통계 리포트","연령·성별 입찰 가중치로 조정"],
+       ["확장소재","확장소재별 클릭","서브링크·가격링크·이미지 중 클릭 기여 큰 유형 확대"]],
+ pits:["브랜드 키워드를 섞어 보면 일반 키워드 적자가 가려집니다.","평균 노출 순위 하락이 곧 성과 하락은 아니므로 CPA를 같이 봅니다.","AI 브리핑 광고 성과를 기존 키워드 리포트 기준으로 평가하면 오판합니다."],
+ acts:[["CTR↓, 순위 유지","제목·설명 문안 피로, 경쟁 문안 변화","문안 2~3종 교체 테스트, 확장소재 추가"],
+       ["CPC↑, 순위 동일","경쟁사 진입·입찰 상향","입찰 시뮬레이션 후 희망 순위 하향, 롱테일 확대"],
+       ["클릭 많고 전환 없음","검색 의도와 랜딩 불일치","검색어 제외, 키워드별 랜딩 URL 분리"],
+       ["AI 광고 CPA가 높음","전환 데이터 부족·사이트 정보 부족","사이트명·schema·전환 스크립트 정비 후 2주 재평가"]]},
+{id:"shopping",m:"naver",mn:"네이버",name:"쇼핑검색 (+ADVoost 쇼핑)",x:84,y:48,role:"상품 단위 구매 전환",kpi1:"상품별 ROAS + 스토어 합산 매출",unit:"상품·검색어·지면",
+ meta:["하단 퍼널","CPC","개인화 노출"],
+ upd:{when:"2026.09 / 10",items:["9월 개편: 고정 순위 보장이 사라지고 사용자별 개인화 노출로 전환, 연관성 낮으면 미노출 가능","리포트의 노출 순위는 평균 참고치로만 해석","10/28부터 스마트스토어·브랜드스토어 상세페이지 추천 영역에 쇼핑몰상품형·ADVoost 쇼핑 노출 (매체 노출 설정 확인 필요)"]},
+ primary:["상품별 ROAS","스토어 주문 기준 합산 ROAS"],diag:["상품 CTR","클릭당 구매율","지면별 CPC","리뷰·찜 수","가격 경쟁력"],
+ axes:[["상품 ABC","매출 상위 20%/중위/하위로 분류","A는 쇼검 수동, B·C는 ADVoost 쇼핑으로 분업"],
+       ["검색어","상품별 유입 검색어","비관련 검색어 제외로 개인화 노출 품질 유지"],
+       ["지면","통합검색·쇼핑탭·추천 지면","10/28 전후 동일 기간 CTR·CVR·ROAS 비교"],
+       ["쇼검 vs ADVoost","두 캠페인 합산","합산 광고비 대비 스토어 실매출로 판단"],
+       ["상품 정보","상품명·대표 이미지별 CTR","CTR 하위 상품은 입찰 전에 상품명·이미지부터 개선"]],
+ pits:["캠페인별 ROAS만 보고 쇼검이나 ADVoost 한쪽을 끄면 전체 매출이 줄기 쉽습니다.","두 캠페인에 같은 전환이 중복 집계되므로 합산 전환을 그대로 더하면 과대입니다.","가격·리뷰·배송 문제를 입찰가로 해결하려 하면 CPC만 오릅니다."],
+ acts:[["노출 급감","개인화 개편 후 연관성·반응 부족","상품명 키워드 정비, 대표 이미지 A/B, 비관련 검색어 제외"],
+       ["CPC 급등","수동 입찰 변경·경쟁·시즌","입찰 변경 이력 → 경쟁 → 수요 순으로 확인"],
+       ["클릭 많고 구매 적음","가격·리뷰·배송 경쟁력","최저가 대비 가격 확인, 리뷰 이벤트, 무료배송 조건 검토"],
+       ["ADVoost 성과 들쭉날쭉","학습 데이터 부족","일예산 급변 금지, 캠페인 수 축소, 최소 2주 유지"]]},
+{id:"bizboard",m:"kakao",mn:"카카오",name:"비즈보드",x:24,y:36,role:"대규모 도달·신규 유입",kpi1:"전환 CPA·신규 방문 비중",unit:"지면·오브젝트·랜딩",
+ meta:["상단~중단 퍼널","CPM·CPC / CPT","카카오모먼트"],
+ upd:{when:"2025.09.23",items:["카카오톡 25.8.0 개편으로 친구탭 비즈보드가 탭 최상단으로 이동","오픈채팅탭 포커스 풀뷰 종료, 예산 재배분 필요","4:5·9:16 세로형 이미지·영상 규격 추가 (디스플레이 지면)"]},
+ primary:["CPA","전환수","채널 친구 추가"],diag:["CTR","랜딩 도달률","체류·이탈","신규 방문 비중","빈도"],
+ axes:[["지면","채팅탭 / 친구탭 / 기타","개편 이후 지면별 CPA를 분리해 비교"],
+       ["오브젝트","이미지형·텍스트형·썸네일형","문구 길이와 오브젝트 유형별 CTR·CVR"],
+       ["랜딩 유형","웹 / 채널 / 비즈니스폼 / 톡캘린더","목적별로 랜딩 유형을 나눠 CPA 비교"],
+       ["오디언스","연령·관심사·픽셀 리타겟","40대 이상 도달 효율과 전환 효율을 따로 확인"],
+       ["시간대","시간대별 CTR 대비 CVR","출퇴근 시간 오클릭성 클릭 여부 확인"]],
+ pits:["CTR이 높게 나와도 오클릭이 섞일 수 있어 랜딩 도달률(클릭 대비 세션)로 보정해야 합니다.","비즈보드 단독 CPA로만 평가하면 이후 검색·리타겟으로 이어진 기여가 빠집니다.","CTR만 보고 소재를 고르면 전환 CPA가 높아지기 쉽습니다."],
+ acts:[["CTR 높고 CVR 낮음","오클릭·문구와 랜딩 불일치","랜딩 도달률 확인, 문구와 랜딩 첫 화면 일치"],
+       ["CPA 상승","소재 피로·빈도 과다","소재 2주 단위 교체, 빈도 상한 적용"],
+       ["리드 단가 높음","웹 랜딩 이탈","비즈니스폼으로 랜딩 전환 테스트"],
+       ["친구탭 성과 저조","지면 특성과 소재 불일치","지면 분리 캠페인 운영, 브랜딩형 메시지 테스트"]]},
+{id:"message",m:"kakao",mn:"카카오",name:"채널 메시지 (플친)",x:95,y:10,role:"재구매·CRM",kpi1:"발송당 매출·메시지 ROAS",unit:"발송 회차·세그먼트",
+ meta:["재구매 단계","발송 건당 과금","광고주 직접 설계"],upd:null,
+ primary:["발송당 매출","메시지 ROAS","구매 전환율"],diag:["클릭률","차단율","친구 수 순증","쿠폰 사용률"],
+ axes:[["발송 시간·요일","회차별 발송 시각","같은 메시지를 시간대만 바꿔 2회 이상 비교"],
+       ["메시지 유형","와이드 이미지·캐러셀·쿠폰형","유형별 클릭률과 구매 전환율"],
+       ["타겟","전체 vs 구매 이력·관심 그룹","세그먼트 발송 시 차단율·ROAS 변화"],
+       ["빈도","월 발송 횟수","발송 횟수 증가에 따른 차단율 추이"],
+       ["증분","미발송 대조군","일부 친구를 대조군으로 남겨 자연 구매 제외"]],
+ pits:["발송 직후 매출을 모두 메시지 성과로 잡으면 원래 살 사람의 구매까지 포함됩니다.","차단율이 누적되면 모수가 줄어 장기 매출이 떨어집니다.","쿠폰 메시지만 반복하면 할인 없이는 구매하지 않는 고객이 늘어납니다."],
+ acts:[["차단율↑","발송 과다·관련성 낮음","월 발송 횟수 축소, 세그먼트 발송 전환"],
+       ["클릭률 높고 구매 낮음","랜딩·쿠폰 조건 문제","랜딩을 상품 상세로 직행, 쿠폰 조건 단순화"],
+       ["친구 수 정체","유입 경로 부족","비즈보드·구매 완료 페이지에 친구 추가 혜택 연결"],
+       ["메시지 ROAS 과대 의심","자연 구매 포함","대조군 10% 설정 후 증분 매출 산출"]]},
+{id:"carousel",m:"meta",mn:"메타",name:"카루셀",x:48,y:58,role:"다상품·스토리 탐색",kpi1:"CPA·ROAS",unit:"카드·카드 순서",
+ meta:["중단 퍼널","CPM 기반","수동 구성 + 자동 정렬 옵션"],upd:null,
+ primary:["CPA","ROAS"],diag:["첫 카드 CTR","카드별 클릭","아웃바운드 CTR","빈도"],
+ axes:[["카드별 성과","광고 관리자 카드 단위 분석","클릭이 몰리는 카드와 전환이 나는 카드를 구분"],
+       ["첫 카드","첫 카드 이미지·문구","첫 카드만 바꾼 버전으로 A/B"],
+       ["구성 방식","상품 나열형 vs 스토리형","같은 상품 세트로 구성 방식만 비교"],
+       ["카드 수","3장·5장·10장","카드 수 증가 대비 CTR·CVR 변화"],
+       ["자동 정렬","성과 좋은 카드 먼저 표시 옵션","순서 테스트 중에는 끄고, 운영 단계에서 켬"]],
+ pits:["자동 정렬 옵션이 켜져 있으면 카드 순서 테스트 결과가 섞입니다.","링크 클릭과 아웃바운드 클릭을 혼동하면 CTR이 부풀려 보입니다.","카드별 클릭이 많다고 그 상품이 잘 팔린 것은 아니므로 상품별 구매와 대조합니다."],
+ acts:[["첫 카드 CTR 낮음","훅 부족","첫 카드에 문제 제기·후기형 이미지 테스트"],
+       ["뒤 카드 클릭이 높음","관심 상품이 뒤에 배치됨","해당 카드를 앞으로 이동한 버전 테스트"],
+       ["CTR 좋고 CPA 나쁨","카드별 랜딩 불일치","카드마다 해당 상품 상세로 직접 연결"],
+       ["빈도 상승 후 CPA 악화","소재 피로","카드 이미지 일부만 교체해 학습 유지"]]},
+{id:"collection",m:"meta",mn:"메타",name:"컬렉션",x:60,y:52,role:"모바일 몰입형 쇼핑",kpi1:"ROAS·구매 CPA",unit:"커버 미디어·상품 세트",
+ meta:["중단~하단 퍼널","CPM 기반","인스턴트 경험 + 카탈로그"],upd:null,
+ primary:["ROAS","구매 CPA"],diag:["인스턴트 경험 열람 시간","인스턴트 경험 열람률","아웃바운드 클릭","상품 그리드 클릭"],
+ axes:[["커버 미디어","영상 vs 이미지","커버 형식별 열람률과 구매 CPA"],
+       ["템플릿","스토어·룩북·커스텀","템플릿별 아웃바운드 클릭률"],
+       ["상품 세트","베스트·신상품·할인","세트별 ROAS와 객단가"],
+       ["2단계 이탈","열람 → 아웃바운드 → 구매","단계별 전환율로 병목 위치 확인"]],
+ pits:["인스턴트 경험 열람 시간이 길다고 구매 의향이 높은 것은 아닙니다.","인스턴트 경험과 실제 랜딩 두 단계를 거치므로 이탈이 이중으로 생깁니다.","카탈로그 다이나믹 미디어가 켜져 있으면 컬렉션 영상이 자동 생성될 수 있어 소재 변수 해석에 주의합니다."],
+ acts:[["열람률 낮음","커버 미디어 약함","첫 3초에 상품이 보이는 커버 영상 테스트"],
+       ["열람 많고 아웃바운드 적음","그리드 상품 매력 부족","상품 세트를 베스트셀러 위주로 교체"],
+       ["아웃바운드 많고 구매 적음","랜딩 2단계 이탈","인스턴트 경험 상품과 랜딩 상품 일치, 장바구니 직행"],
+       ["객단가 낮음","저가 상품 쏠림","세트·번들 상품 세트 별도 구성"]]},
+{id:"catalog",m:"meta",mn:"메타",name:"카탈로그 (Advantage+)",x:80,y:86,role:"피드 기반 리타겟·확장",kpi1:"ROAS + 신규 고객 비중",unit:"상품 세트·리타겟 기간",
+ meta:["하단 퍼널 중심","CPM 기반","AI 자동 (피드)"],
+ upd:{when:"다이나믹 미디어",items:["기능이 켜지면 메타가 카루셀/컬렉션 형식, 설명 문구, 상품 영상, 상품 태그를 사용자별로 자동 조정","같은 광고라도 사람마다 다른 형태로 노출되어 특정 소재 요소에 성과를 귀속하기 어려워짐"]},
+ primary:["ROAS","신규 고객 비중","구매 CPA"],diag:["상품 세트별 ROAS","피드 오류율","품절 상품 노출","리타겟 모수 크기"],
+ axes:[["상품 세트","카테고리·가격대·마진","마진 높은 세트에 예산 우선, 품절 세트 제외"],
+       ["리타겟 기간","장바구니 1~7일 vs 조회 14~30일","기간별 ROAS와 증분 차이"],
+       ["브로드 vs 리타겟","캠페인 분리","브로드에서 신규 구매 비중 확인"],
+       ["피드 품질","오류·누락 리포트","이미지·가격·재고 오류율 주 1회 점검"],
+       ["오버레이","가격·할인 표시 on/off","오버레이 유무별 CTR·CVR"]],
+ pits:["리타겟 ROAS가 높게 나와도 원래 살 고객 비중이 커서 증분은 낮을 수 있습니다.","다이나믹 미디어가 형식을 바꾸므로 카루셀 vs 컬렉션 비교 결론을 내기 어렵습니다.","피드 가격과 실제 판매가가 다르면 CVR 하락과 정책 이슈가 생깁니다."],
+ acts:[["ROAS 높은데 매출 정체","리타겟 모수 고갈","브로드 확장 캠페인 비중 확대"],
+       ["특정 상품만 노출","AI 쏠림","상품 세트 분리로 신상품·전략 상품 노출 확보"],
+       ["CVR 급락","품절·가격 불일치","피드 동기화 주기 단축, 품절 상품 자동 제외"],
+       ["형식 효과 판단 불가","다이나믹 미디어 개입","테스트 기간에는 기능을 끈 대조 광고 세트 운영"]]},
+{id:"demandgen",m:"google",mn:"구글",name:"디맨드젠",x:30,y:72,role:"유튜브 중심 수요 창출",kpi1:"CPA (EVC 분리) + 지연 전환",unit:"채널·소재 포맷·오디언스",
+ meta:["상단~중단 퍼널","CPC·CPM","AI 자동 + 채널 선택"],
+ upd:{when:"2026.05 GML",items:["다른 캠페인 유형과 함께 기여한 전환까지 보여주는 캠페인 유형 기여 리포트 발표","참여 조회 전환(5초 이상 시청 후 전환)의 중요성 강조","구글 발표 기준 디맨드젠 전환 중 첫 30일 내 발생은 40%뿐이라 긴 기여 기간이 필요"]},
+ primary:["CPA","전환수 (지연 포함)"],diag:["참여 조회 전환","조회율","채널별 CPA","브랜드 검색량 변화"],
+ axes:[["채널","쇼츠·인피드·인스트림·디스커버·Gmail","채널 리포트에서 CPA가 크게 다른 채널 제외 검토"],
+       ["전환 유형","클릭 전환 vs 참여 조회 전환","두 CPA를 나란히 표기"],
+       ["소재 포맷","가로·세로·정사각, 영상·이미지","포맷별 조회율과 CPA"],
+       ["오디언스","유사 세그먼트·맞춤 세그먼트·리마케팅","세그먼트별 신규 고객 비중"],
+       ["지연 전환","전환 지연 기간 분석","최소 4~6주 데이터로 평가 (가정)"]],
+ pits:["1~2주 성과로 끄면 늦게 일어나는 전환을 놓칩니다.","참여 조회 전환이 섞인 CPA를 검색광고 CPA와 같은 선에서 비교하면 안 됩니다.","디맨드젠 단독 ROAS보다 집행 후 브랜드 검색량과 검색광고 전환 변화를 함께 봐야 합니다."],
+ acts:[["CPA 높음 (집행 2주)","지연 전환 미반영","4주 이상 유지 후 재평가, 기여 기간 확인"],
+       ["조회율 낮음","첫 5초 훅 부족","첫 화면에 제품·문제 제시, 세로형 쇼츠 소재 추가"],
+       ["특정 채널 CPA 과다","채널 적합성","채널 컨트롤로 해당 채널 축소·제외 테스트"],
+       ["전환은 있는데 검색 전환 감소","기여 중복","캠페인 유형 기여 리포트로 보조 기여 확인"]]},
+{id:"pmax",m:"google",mn:"구글",name:"Performance Max",x:66,y:94,role:"전 채널 자동 전환",kpi1:"ROAS + 신규 고객 비중",unit:"채널·애셋 그룹·상품",
+ meta:["전 퍼널","CPC 기반 자동 입찰","AI 자동 (최상)"],
+ upd:{when:"2025.11 ~ 2026",items:["2025.11 채널 성과 리포트가 모든 PMax에 적용, 일괄 다운로드·세분화 지원","캠페인 단위 제외 키워드, 브랜드 제외, 1st-party 오디언스 제외, 고가치 신규 고객 모드 제공","애셋 A/B 테스트(베타), 애셋 그룹당 영상 한도 15개로 확대 (업체 자료 기준)"]},
+ primary:["ROAS","신규 고객 비중","전환 가치"],diag:["채널별 비용 비중","애셋 그룹별 ROAS","무노출 상품 비중","검색어 카테고리"],
+ axes:[["채널 분포","채널 성과 리포트","쇼핑·검색·디스플레이·유튜브 비용 비중과 전환 비중 비교"],
+       ["애셋 그룹","그룹별 전환 가치","카테고리·오디언스 테마별로 그룹 분리"],
+       ["상품","상품별 노출·클릭·전환","노출 0 상품 비중이 높으면 피드 개선 또는 별도 캠페인"],
+       ["검색어","검색어 인사이트","브랜드 검색어 비중이 높으면 브랜드 제외 검토"],
+       ["신규 vs 기존","신규 고객 획득 리포트","신규 고객 모드 전후 비교"]],
+ pits:["브랜드 검색을 잠식하면 ROAS가 높아 보여도 증분은 작습니다.","디스플레이·유튜브 비용 비중이 높은데 전환이 적으면 예산이 새고 있는 신호입니다.","애셋 그룹을 잘게 쪼개면 학습 데이터가 분산됩니다."],
+ acts:[["ROAS 높은데 전체 매출 정체","브랜드 검색 잠식","브랜드 제외 적용 후 검색 캠페인과 합산 비교"],
+       ["디스플레이 비중 과다","전환 신호 부족·피드 약함","전환 가치 설정 점검, 피드 품질 개선"],
+       ["상품 절반 이상 무노출","피드 품질·가격 경쟁력","상품명·이미지 개선, 무노출 상품 별도 캠페인"],
+       ["기존 고객 위주 전환","리타겟 쏠림","기존 고객 제외 또는 신규 고객 모드 적용"]]}
+];
+const col={naver:"var(--naver)",kakao:"var(--kakao)",meta:"var(--meta)",google:"var(--google)"};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+/* summary table */
+document.getElementById("sumTbl").innerHTML=P.map(p=>`<tr data-m="${p.m}"><td style="white-space:nowrap"><span class="dot" style="background:${col[p.m]}"></span><a href="#${p.id}" style="color:var(--fg)">${esc(p.name)}</a></td><td>${esc(p.role)}</td><td>${esc(p.kpi1)}</td><td>${esc(p.unit)}</td></tr>`).join("");
+
+/* cards */
+document.getElementById("cards").innerHTML=P.map(p=>`
+<article class="card" id="${p.id}" data-m="${p.m}" style="--mc:${col[p.m]}">
+  <div class="card-head">
+    <div><div class="media">${p.mn}</div><h2>${esc(p.name)}</h2></div>
+    <div class="meta-row">${p.meta.map(t=>`<span class="chip">${esc(t)}</span>`).join("")}</div>
+  </div>
+  ${p.upd?`<div class="update"><span class="when">${esc(p.upd.when)}</span><b>최근 변경</b><ul>${p.upd.items.map(i=>`<li>${esc(i)}</li>`).join("")}</ul></div>`:""}
+  <div class="kpi">
+    <div><h4>1차 KPI · 의사결정 기준</h4><div class="chips primary">${p.primary.map(t=>`<span>${esc(t)}</span>`).join("")}</div></div>
+    <div><h4>진단 지표 · 원인 추적용</h4><div class="chips">${p.diag.map(t=>`<span>${esc(t)}</span>`).join("")}</div></div>
+  </div>
+  <div class="body2">
+    <div class="tbl-wrap"><h3>분석 축</h3><table><thead><tr><th>축</th><th>어디서·무엇을</th><th>판단·활용</th></tr></thead><tbody>
+      ${p.axes.map(a=>`<tr><td style="white-space:nowrap"><b>${esc(a[0])}</b></td><td>${esc(a[1])}</td><td>${esc(a[2])}</td></tr>`).join("")}</tbody></table></div>
+    <div><h3>자주 하는 해석 실수</h3><ul class="lines pit">${p.pits.map(t=>`<li>${esc(t)}</li>`).join("")}</ul>
+      <h3 style="margin-top:16px">증상 → 원인 → 액션</h3>
+      <div class="tbl-wrap"><table><thead><tr><th>증상</th><th>원인 가설</th><th>1차 액션</th></tr></thead><tbody>
+      ${p.acts.map(a=>`<tr><td><span class="chip c-bad">${esc(a[0])}</span></td><td>${esc(a[1])}</td><td>${esc(a[2])}</td></tr>`).join("")}</tbody></table></div>
+    </div>
+  </div>
+</article>`).join("");
+
+/* map */
+(function(){
+  const NS="http://www.w3.org/2000/svg",s=document.getElementById("posMap");
+  const el=(t,a,p)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);(p||s).appendChild(e);return e};
+  const tx=(x,y,str,a,p)=>{const t=el("text",Object.assign({x,y},a||{}),p);t.textContent=str;return t};
+  const L=40,R=545,T=14,B=330,xs=v=>L+v/100*(R-L),ys=v=>B-v/100*(B-T);
+  el("rect",{x:L,y:T,width:R-L,height:B-T,fill:"var(--sunk)","fill-opacity":.5,rx:6});
+  el("line",{x1:xs(50),x2:xs(50),y1:T,y2:B,stroke:"var(--line)"});
+  el("line",{x1:L,x2:R,y1:ys(50),y2:ys(50),stroke:"var(--line)"});
+  ["인지","고려","전환","재구매"].forEach((t,i)=>tx(xs(12.5+i*25),B+18,t,{"text-anchor":"middle"}));
+  tx((L+R)/2,B+36,"퍼널 단계 →",{"text-anchor":"middle"});
+  tx(14,ys(95),"AI",{});tx(14,ys(8),"수동",{});
+  tx(xs(2),T+16,"입력 품질·증분 검증 중심",{style:"font-size:10.5px"});
+  tx(xs(98),B-8,"세부 단위 최적화 중심",{"text-anchor":"end",style:"font-size:10.5px"});
+  P.forEach(p=>{
+    const a=el("a",{href:"#"+p.id,"data-m":p.m});
+    const cx=xs(p.x),cy=ys(p.y);
+    el("circle",{cx,cy,r:9,fill:col[p.m],stroke:"var(--surface)","stroke-width":2},a);
+    const left=p.x>80;const short=p.name.replace(/ \(.*\)/,"");
+    tx(left?cx-13:cx+13,cy+(p.id==="collection"?14:p.id==="carousel"?-6:4),short,{class:"lbl","text-anchor":left?"end":"start"},a);
+    const ti=el("title",{},a);ti.textContent=p.name+" · "+p.role;
+  });
+})();
+
+/* filter */
+const bar=document.getElementById("filterBar");
+bar.addEventListener("click",e=>{const b=e.target.closest("button[data-f]");if(!b)return;
+  const f=b.dataset.f;bar.querySelectorAll("button[data-f]").forEach(x=>x.setAttribute("aria-pressed",x===b));
+  document.querySelectorAll("[data-m]").forEach(n=>{const show=f==="all"||n.dataset.m===f;
+    if(n.tagName==="a"||n.namespaceURI==="http://www.w3.org/2000/svg")n.style.opacity=show?1:.15;else n.hidden=!show;});
+  try{localStorage.setItem("mpn-filter",f)}catch(_){}
+});
+})();
+</script>
+
+</body>
+</html>
