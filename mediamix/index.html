@@ -1,0 +1,512 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}[hidden]{display:none!important}img{max-width:100%}body{margin:0}</style>
+<title>미디어믹스 플래너</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+/* Layout: planning-sheet tool — left brief panel, right results; table-first, ink on cool paper */
+:root{
+  --bg:#eceff3; --surface:#ffffff; --surface-2:#f6f7f9; --ink:#121823; --muted:#5a6375; --line:#d5dae2; --line-2:#e6e9ee;
+  --accent:#2c3fa8; --accent-soft:#e6e9f8; --accent-ink:#ffffff;
+  --good:#167a46; --good-bg:#e2f4ea; --warn:#9a5b00; --warn-bg:#fdf1dc; --bad:#b4232a; --bad-bg:#fbe5e6;
+  --m-meta:#3a6ad6; --m-criteo:#ec7a22; --m-google:#c8372d; --m-kakao:#d9b400; --m-naver:#13a957;
+  --f-ui:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+  --f-num:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f131a; --surface:#171c25; --surface-2:#1d2330; --ink:#e7eaf0; --muted:#9aa3b5; --line:#2c3443; --line-2:#242b38;
+  --accent:#8c9bf2; --accent-soft:#232a4a; --accent-ink:#0f131a;
+  --good:#5fd197; --good-bg:#14291f; --warn:#f0b459; --warn-bg:#2d2312; --bad:#f2777c; --bad-bg:#311a1c;
+  --m-meta:#6c95f0; --m-criteo:#f39a52; --m-google:#ec6a5f; --m-kakao:#f1d23c; --m-naver:#3fcf80; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f131a; --surface:#171c25; --surface-2:#1d2330; --ink:#e7eaf0; --muted:#9aa3b5; --line:#2c3443; --line-2:#242b38;
+  --accent:#8c9bf2; --accent-soft:#232a4a; --accent-ink:#0f131a;
+  --good:#5fd197; --good-bg:#14291f; --warn:#f0b459; --warn-bg:#2d2312; --bad:#f2777c; --bad-bg:#311a1c;
+  --m-meta:#6c95f0; --m-criteo:#f39a52; --m-google:#ec6a5f; --m-kakao:#f1d23c; --m-naver:#3fcf80; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-ui);font-size:14px;line-height:1.5}
+.num{font-family:var(--f-num);font-variant-numeric:tabular-nums}
+header.top{background:var(--surface);border-bottom:1px solid var(--line)}
+.top-in{max-width:1480px;margin:0 auto;padding-block:14px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-wrap:wrap;gap:12px 24px;align-items:center;justify-content:space-between}
+.brand h1{margin:0;font-size:20px;font-weight:700;letter-spacing:-.01em}
+.brand p{margin:2px 0 0;color:var(--muted);font-size:12.5px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--surface-2)}
+.seg button{border:0;background:transparent;color:var(--muted);font:500 13px var(--f-ui);padding:7px 12px;cursor:pointer}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.wrap{max-width:1480px;margin:0 auto;padding-block:18px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;grid-template-columns:300px minmax(0,1fr);gap:18px;align-items:start}
+@media (max-width:980px){.wrap{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px}
+.brief{padding:16px;display:flex;flex-direction:column;gap:14px;position:sticky;top:12px}
+@media (max-width:980px){.brief{position:static}}
+.brief h2,.sec h2{margin:0;font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.field{display:flex;flex-direction:column;gap:5px}
+.field label,.lbl{font-size:12.5px;font-weight:600;color:var(--ink)}
+.field small{color:var(--muted);font-size:11.5px}
+input,select{font:inherit;color:var(--ink);background:var(--surface-2);border:1px solid var(--line);border-radius:7px;padding:7px 9px;min-width:0;width:100%}
+input:focus-visible,select:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:999px;padding:5px 10px 5px 8px;font-size:12.5px;cursor:pointer;background:var(--surface-2);user-select:none}
+.chip input{display:none}
+.chip .dot{width:9px;height:9px;border-radius:50%}
+.chip:has(input:checked){border-color:var(--ink);background:var(--surface)}
+.chip:not(:has(input:checked)){opacity:.55}
+.btns{display:flex;flex-wrap:wrap;gap:8px}
+.btn{font:600 13px var(--f-ui);border-radius:7px;padding:8px 12px;cursor:pointer;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.ghost{background:transparent}
+.btn:hover{filter:brightness(.97)}
+.main{display:flex;flex-direction:column;gap:18px;min-width:0}
+.sec{padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.sec-h{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:baseline;justify-content:space-between}
+.sec-h p{margin:0;color:var(--muted);font-size:12.5px}
+.kpis{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+@media (max-width:1180px){.kpis{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (max-width:520px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.kpi{background:var(--surface);padding:12px 14px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.kpi .k{font-size:11.5px;color:var(--muted);font-weight:600;letter-spacing:.04em}
+.kpi .v{font-family:var(--f-num);font-size:20px;font-weight:600;letter-spacing:-.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kpi .s{font-size:11.5px;color:var(--muted)}
+.pill{display:inline-flex;align-items:center;gap:4px;border-radius:999px;padding:1px 8px;font-size:11.5px;font-weight:600;white-space:nowrap}
+.pill.good{background:var(--good-bg);color:var(--good)}.pill.warn{background:var(--warn-bg);color:var(--warn)}.pill.bad{background:var(--bad-bg);color:var(--bad)}
+.verdict{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;padding:10px 12px;border-radius:8px;background:var(--surface-2);font-size:13px}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px}
+@media (max-width:1180px){.grid2{grid-template-columns:minmax(0,1fr)}}
+.tbl-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:8px}
+table{border-collapse:collapse;width:100%;font-size:12.5px}
+th,td{padding:7px 9px;border-bottom:1px solid var(--line-2);text-align:right;white-space:nowrap}
+th{background:var(--surface-2);font-weight:600;color:var(--muted);font-size:11.5px;position:sticky;top:0;z-index:1}
+td.l,th.l{text-align:left}
+tbody tr:last-child td{border-bottom:0}
+tfoot td{background:var(--surface-2);font-weight:700;border-top:1px solid var(--line);border-bottom:0}
+.mtag{display:inline-flex;align-items:center;gap:6px;font-weight:600}
+.mtag i{width:8px;height:8px;border-radius:2px;display:inline-block}
+.plan td{padding:5px 6px;vertical-align:middle}
+.plan input,.plan select{padding:5px 6px;font-size:12.5px;border-radius:6px}
+.plan select.media{width:84px}.plan select.prod{width:210px}.plan select.tgt{width:178px}
+.plan input[type=date]{width:128px}
+.plan input.bud{width:118px;text-align:right}.plan input.shr{width:62px;text-align:right}
+.plan input.ov{width:78px;text-align:right}
+.plan input.ov.set{border-color:var(--accent);background:var(--accent-soft)}
+.plan td.sticky{position:sticky;left:0;background:var(--surface);z-index:1}
+.plan th.sticky{left:0;z-index:2}
+.plan .grp{border-left:1px solid var(--line)}
+.flag{display:inline-block;width:18px;text-align:center;border-radius:4px;font-weight:700;font-size:11px}
+.flag.w{background:var(--warn-bg);color:var(--warn)}.flag.b{background:var(--bad-bg);color:var(--bad)}
+.del{border:0;background:transparent;color:var(--muted);cursor:pointer;font-size:16px;line-height:1;padding:4px 6px;border-radius:5px}
+.del:hover{background:var(--bad-bg);color:var(--bad)}
+.share-bar{display:flex;height:28px;border-radius:6px;overflow:hidden;border:1px solid var(--line)}
+.share-bar div{display:flex;align-items:center;justify-content:center;font:600 11.5px var(--f-num);color:#fff;min-width:0;overflow:hidden;white-space:nowrap}
+.share-bar div.kakao{color:#1d1a00}
+.warns{display:flex;flex-direction:column;gap:6px;margin:0;padding:0;list-style:none}
+.warns li{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;align-items:start;padding:8px 10px;border-radius:7px;background:var(--surface-2);font-size:12.5px}
+.warns li b{font-weight:600}
+.empty{color:var(--muted);font-size:12.5px}
+.chart{width:100%;overflow-x:auto}
+.chart svg{display:block;min-width:560px;width:100%;height:auto}
+.legend{display:flex;flex-wrap:wrap;gap:12px;font-size:12px;color:var(--muted)}
+.notes{margin:0;padding-left:18px;color:var(--muted);font-size:12.5px;display:flex;flex-direction:column;gap:4px}
+.notes a{color:var(--accent)}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:9px 14px;border-radius:8px;font-size:13px;z-index:20}
+.hint{font-size:11.5px;color:var(--muted)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+
+<header class="top"><div class="top-in">
+  <div class="brand"><h1>미디어믹스 플래너</h1><p>메타 · 크리테오 · 구글 · 카카오 · 네이버 — 예산·목표 기반 배분과 지표 시뮬레이션</p></div>
+  <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center">
+    <span class="lbl" style="color:var(--muted)">시나리오</span>
+    <div class="seg" id="scenSeg" role="group" aria-label="시나리오">
+      <button data-v="cons" aria-pressed="false">보수</button><button data-v="base" aria-pressed="true">기본</button><button data-v="aggr" aria-pressed="false">공격</button>
+    </div>
+  </div>
+</div></header>
+
+<div class="wrap">
+  <aside class="panel brief" aria-label="캠페인 브리프">
+    <h2>캠페인 브리프</h2>
+    <div class="field"><label for="goal">캠페인 목표</label>
+      <select id="goal">
+        <option value="roas">매출 극대화 (ROAS)</option>
+        <option value="cpa">구매 전환 (CPA)</option>
+        <option value="lead">리드·DB 확보 (CPL)</option>
+        <option value="traffic">트래픽·유입 (CPC)</option>
+        <option value="aware">인지·도달 (CPM)</option>
+      </select></div>
+    <div class="field"><label for="industry">업종</label><select id="industry"></select><small id="indNote"></small></div>
+    <div class="field"><label for="budget">총 예산 (원, VAT 별도)</label><input id="budget" class="num" inputmode="numeric"><small id="budgetHint"></small></div>
+    <div class="row2">
+      <div class="field"><label for="start">시작일</label><input type="date" id="start"></div>
+      <div class="field"><label for="end">종료일</label><input type="date" id="end"></div>
+    </div>
+    <div class="row2">
+      <div class="field"><label for="aov" id="aovLbl">객단가 (원)</label><input id="aov" class="num" inputmode="numeric"></div>
+      <div class="field"><label for="target" id="targetLbl">목표 ROAS (%)</label><input id="target" class="num" inputmode="decimal"></div>
+    </div>
+    <div class="field"><span class="lbl">집행 매체</span><div class="chips" id="mediaChips"></div></div>
+    <div class="row2">
+      <div class="field"><label for="pacing">예산 페이싱</label>
+        <select id="pacing"><option value="even">균등 소진</option><option value="front">초반 집중 (런칭)</option><option value="back">후반 집중 (프로모션)</option></select></div>
+      <div class="field"><label for="dedupe">중복 전환 보정 (%)</label><input id="dedupe" class="num" inputmode="decimal"></div>
+    </div>
+    <small class="hint">중복 전환 보정: 매체별 리포트를 합산하면 같은 구매가 여러 매체에 잡힙니다. GA4·MMP 기준으로 볼 때 차감할 비율을 넣으세요.</small>
+    <div class="btns">
+      <button class="btn primary" id="btnRecommend">추천 믹스 생성</button>
+      <button class="btn" id="btnOptimize">효율 최적화 배분</button>
+    </div>
+    <small class="hint">추천 믹스는 목표 적합도·매체 비중·예산 규모로 상품을 고르고, 최적화는 같은 상품 안에서 한계 효율이 높은 쪽으로 예산을 다시 나눕니다.</small>
+  </aside>
+
+  <main class="main">
+    <section class="panel sec" aria-labelledby="sumH">
+      <div class="sec-h"><h2 id="sumH">시뮬레이션 요약</h2><p id="sumSub"></p></div>
+      <div class="kpis" id="kpis"></div>
+      <div class="verdict" id="verdict"></div>
+    </section>
+
+    <div class="grid2">
+      <section class="panel sec" aria-labelledby="scH">
+        <div class="sec-h"><h2 id="scH">시나리오 비교</h2><p>전제 가정이 달라지면 결과 범위도 달라집니다</p></div>
+        <div class="tbl-wrap"><table id="scenTbl"></table></div>
+        <small class="hint">보수: 단가 +12%, CTR −12%, CVR −15% · 공격: 단가 −7%, CTR +8%, CVR +12% (모두 가정치)</small>
+      </section>
+      <section class="panel sec" aria-labelledby="mxH">
+        <div class="sec-h"><h2 id="mxH">매체별 배분</h2><p id="mxSub"></p></div>
+        <div class="share-bar" id="shareBar"></div>
+        <div class="tbl-wrap"><table id="mediaTbl"></table></div>
+      </section>
+    </div>
+
+    <section class="panel sec" aria-labelledby="planH">
+      <div class="sec-h"><h2 id="planH">미디어 플랜 상세</h2>
+        <div class="btns"><button class="btn" id="btnAdd">+ 라인 추가</button><button class="btn" id="btnScale">예산 합계 맞추기</button><button class="btn ghost" id="btnCopy">CSV 복사</button></div></div>
+      <p class="hint" style="margin:0">단가·CTR·CVR 칸은 비워두면 벤치마크(업종·타겟팅 반영)를 쓰고, 값을 넣으면 실제 운영 데이터로 덮어씁니다. ⚠ 표시에 마우스를 올리면 이유가 보입니다.</p>
+      <div class="tbl-wrap"><table class="plan" id="planTbl"></table></div>
+    </section>
+
+    <div class="grid2">
+      <section class="panel sec" aria-labelledby="wkH">
+        <div class="sec-h"><h2 id="wkH">주차별 예산 플라이팅</h2><p id="wkSub"></p></div>
+        <div class="chart" id="weekChart"></div>
+        <div class="legend" id="weekLegend"></div>
+      </section>
+      <section class="panel sec" aria-labelledby="wnH">
+        <div class="sec-h"><h2 id="wnH">운영 체크포인트</h2><p>집행 전 확인할 리스크</p></div>
+        <ul class="warns" id="warns"></ul>
+      </section>
+    </div>
+
+    <section class="panel sec" aria-labelledby="srcH">
+      <div class="sec-h"><h2 id="srcH">벤치마크 기준과 출처</h2><p>2026년 10월 기준 조사</p></div>
+      <ul class="notes">
+        <li>매체·상품별 기본 단가는 국내 원화 집행을 전제로 한 <b>추정치</b>입니다. 해외 공개 벤치마크(미국 가중)는 국내보다 단가가 높아 그대로 쓰지 않고 방향성 참고로만 반영했습니다.</li>
+        <li>메타: 2026 전체 평균 CPM $14.19 · CTR 1.55% · CVR 8.20%, 트래픽 목적 CPC가 가장 낮음 — <a href="https://winspec.co.kr/community/freeboard/134373574" target="_blank" rel="noopener">winspec (get-ryze.ai 인용)</a></li>
+        <li>메타: 릴스 CPM이 피드보다 낮고(릴스 $4–8 / 피드 $8–14), 소재 피로가 평균 8.4일 후 시작 — <a href="https://creatify.ai/blog/what-is-a-good-cpc-cpm-and-ctr-for-meta-ads" target="_blank" rel="noopener">Creatify (AdRiseLab·Mintec 인용)</a></li>
+        <li>구글 검색: 2026 전 업종 CTR 6.64% · CPC $5.42 · 전환율 8.18% — <a href="https://whatagraph.com/blog/articles/ppc-benchmarks" target="_blank" rel="noopener">Whatagraph (WordStream·LocaliQ 인용)</a></li>
+        <li>네이버 GFA: 경쟁 심화로 CPC가 네 자릿수까지 오른 사례 — <a href="https://www.i-boss.co.kr/ab-6141-59434" target="_blank" rel="noopener">아이보스</a> · 애드부스트는 일 예산 5~8만 원 이상 권장 — <a href="https://inside.ampm.co.kr/video/4468" target="_blank" rel="noopener">AMPM</a> · 타겟을 좁힐수록 CPC 상승 — <a href="https://inside.ampm.co.kr/insight/59959" target="_blank" rel="noopener">AMPM</a></li>
+        <li>크리테오: 최소 집행 금액 100만 원, CPC 과금 기본 — <a href="https://inside.ampm.co.kr/item/96" target="_blank" rel="noopener">AMPM 매체 소개</a></li>
+        <li>카카오: 카카오톡 PC(Mac) 메인창 하단 비즈보드·디스플레이 지면이 2026년 10월 19일 추가 — <a href="https://www.i-boss.co.kr/ab-3208-1835" target="_blank" rel="noopener">아이보스</a> · 비즈보드 일 예산 최소 1만 원 — <a href="https://www.i-boss.co.kr/ab-1918-741" target="_blank" rel="noopener">아이보스</a></li>
+        <li>포화(체감 효율) 모델: 상품별 '포화 일예산'을 넘으면 단가는 오르고 CTR·CVR은 떨어지도록 거듭제곱 감쇠를 적용했습니다(가정). 메타 학습 단계 기준은 광고 세트당 주 50건 전환입니다.</li>
+        <li>실제 집행 전에는 해당 광고주의 최근 3개월 실적으로 단가·CTR·CVR 칸을 덮어써서 보정하는 것을 권장합니다.</li>
+      </ul>
+    </section>
+  </main>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+(function(){
+"use strict";
+const MEDIA={
+  meta:{name:"메타",prior:1.0},
+  criteo:{name:"크리테오",prior:0.55},
+  google:{name:"구글",prior:0.85},
+  kakao:{name:"카카오",prior:0.65},
+  naver:{name:"네이버",prior:1.0}
+};
+const MKEYS=Object.keys(MEDIA);
+// targeting sets: [label, costMult, ctrMult, cvrMult]
+const TSETS={
+  social:[["어드밴티지+ 브로드 (AI 자동)",1,1,1],["관심사·행동 타겟",1.1,1.0,0.92],["유사 타겟 (LAL 1~3%)",1.15,1.05,1.1],["리타겟팅 (사이트 방문 30일)",1.5,1.5,2.0],["고객 리스트 (CRM 업로드)",1.35,1.3,1.8]],
+  dpa:[["장바구니 이탈 (7일)",1.2,1.3,1.6],["상품 조회자 (14일)",1,1,1],["사이트 방문자 (30일)",0.9,0.85,0.75],["교차 판매 (구매자)",1.1,1.15,1.3]],
+  leadform:[["유사 타겟 (LAL 1~3%)",1,1,1],["관심사·행동 타겟",0.95,0.95,0.85],["어드밴티지+ 브로드",0.9,0.95,0.9]],
+  reach:[["연령·성별 브로드",1,1,1],["관심사 타겟",1.12,1.08,1.05],["유사 타겟 확장",1.18,1.1,1.1]],
+  crt:[["장바구니 이탈자",1.15,1.3,1.6],["상품 조회자 (7일)",1,1,1],["사이트 방문자 (30일)",0.9,0.85,0.75],["재구매 (CRM)",1.1,1.2,1.4]],
+  crp:[["유사 쇼퍼 (Lookalike)",1.1,1.1,1.15],["인마켓 관심사",1.05,1.05,1.05],["컨텍스추얼 (문맥)",1,1,1]],
+  search:[["구문·확장 일치",1,1,1],["정확 일치 핵심 키워드",1.15,1.2,1.2],["경쟁사 키워드",1.3,0.7,0.6],["지역·시간대 결합",1.05,1.1,1.1]],
+  brandkw:[["자사 브랜드 키워드",1,1,1],["브랜드 + 상품명 조합",1.1,0.9,1.05]],
+  pmax:[["피드 + 고객 리스트 신호",1,1,1],["신규 고객 획득 모드",1.2,0.95,0.8],["브랜드 키워드 제외",1.1,0.9,0.85]],
+  video:[["인마켓 오디언스",1,1,1],["맞춤 세그먼트 (검색어)",1.1,1.15,1.2],["리마케팅 시청자",1.3,1.5,1.8]],
+  display:[["연령·성별 + 관심사",1,1,1],["맞춤 타겟 (픽셀 방문자)",1.4,1.5,2.0],["유사 확장",1.15,1.05,1.15],["키워드 (검색 이력) 타겟",1.2,1.2,1.3],["자동 타겟 (AI 최적화)",0.95,1,1.05]],
+  rmkt:[["사이트 방문자 (30일)",1,1,1],["장바구니 이탈",1.2,1.3,1.5],["고객 리스트",1.1,1.15,1.3]],
+  msg:[["채널 친구 전체",1,1,1],["친구 그룹 (구매 고객)",1,1.3,1.6],["친구 그룹 (휴면 고객)",1,0.8,0.7]],
+  bsearch:[["자사 브랜드 키워드",1,1,1]]
+};
+// fit: roas,cpa,lead,traffic,aware (0-3). cost in KRW (CPM per 1000 or CPC). sat = daily saturation KRW
+const P=[
+ {id:"meta_asc",m:"meta",n:"어드밴티지+ 쇼핑 (구매 전환)",b:"CPM",c:9000,ctr:.011,cvr:.022,ts:"social",sat:3000000,fit:[3,3,1,1,1],com:1,learn:1,fat:1},
+ {id:"meta_conv",m:"meta",n:"판매 캠페인 (전환 최적화)",b:"CPM",c:8000,ctr:.010,cvr:.016,ts:"social",sat:2000000,fit:[2,3,2,2,1],learn:1,fat:1},
+ {id:"meta_dpa",m:"meta",n:"카탈로그 (DPA 리타겟팅)",b:"CPM",c:11000,ctr:.015,cvr:.035,ts:"dpa",sat:800000,fit:[3,2,0,1,0],com:1,learn:1,fat:0},
+ {id:"meta_lead",m:"meta",n:"잠재고객 (인스턴트 양식)",b:"CPM",c:7000,ctr:.013,cvr:.08,ts:"leadform",sat:1500000,fit:[0,1,3,1,1],learn:1,fat:1},
+ {id:"meta_reach",m:"meta",n:"릴스 도달·인지",b:"CPM",c:3500,ctr:.005,cvr:.004,ts:"reach",sat:5000000,fit:[0,0,0,1,3],fat:1},
+ {id:"criteo_rt",m:"criteo",n:"커머스 리타겟팅 (다이내믹)",b:"CPC",c:450,ctr:.006,cvr:.03,ts:"crt",sat:900000,fit:[3,3,1,1,0],com:1,minTotal:1000000},
+ {id:"criteo_pr",m:"criteo",n:"오디언스 확장 (신규 유입)",b:"CPC",c:350,ctr:.0035,cvr:.01,ts:"crp",sat:1500000,fit:[1,1,1,2,2],minTotal:1000000},
+ {id:"g_brand",m:"google",n:"검색 — 브랜드 키워드",b:"CPC",c:400,ctr:.08,cvr:.06,ts:"brandkw",sat:150000,fit:[3,3,3,1,0]},
+ {id:"g_gen",m:"google",n:"검색 — 일반·카테고리 키워드",b:"CPC",c:900,ctr:.035,cvr:.025,ts:"search",sat:1500000,fit:[2,2,3,2,1]},
+ {id:"g_pmax",m:"google",n:"실적 최대화 (PMax 쇼핑 피드)",b:"CPC",c:450,ctr:.012,cvr:.022,ts:"pmax",sat:2500000,fit:[3,3,2,2,1],learn:0},
+ {id:"g_dg",m:"google",n:"디맨드젠 (디스커버·쇼츠)",b:"CPM",c:4000,ctr:.008,cvr:.01,ts:"video",sat:2000000,fit:[1,2,2,3,2],fat:1},
+ {id:"g_yt",m:"google",n:"유튜브 인스트림 (건너뛸 수 있는)",b:"CPM",c:7000,ctr:.004,cvr:.003,ts:"video",sat:6000000,fit:[0,0,0,1,3],fat:1},
+ {id:"g_rmkt",m:"google",n:"GDN 리마케팅",b:"CPC",c:300,ctr:.005,cvr:.015,ts:"rmkt",sat:600000,fit:[2,2,2,1,0],fat:1},
+ {id:"k_biz",m:"kakao",n:"비즈보드 (채팅탭·PC 메인)",b:"CPC",c:400,ctr:.008,cvr:.012,ts:"display",sat:2500000,fit:[1,2,2,3,3],fat:1},
+ {id:"k_disp",m:"kakao",n:"디스플레이 (네이티브)",b:"CPC",c:250,ctr:.004,cvr:.009,ts:"display",sat:1500000,fit:[1,2,2,3,2],fat:1},
+ {id:"k_kw",m:"kakao",n:"카카오 키워드 (다음 검색)",b:"CPC",c:500,ctr:.02,cvr:.02,ts:"search",sat:500000,fit:[2,2,2,2,0]},
+ {id:"k_msg",m:"kakao",n:"카카오톡 채널 메시지",b:"CPM",c:15000,ctr:.03,cvr:.025,ts:"msg",sat:1000000,fit:[3,2,1,1,1]},
+ {id:"n_bs",m:"naver",n:"브랜드검색 (보장형)",b:"CPC",c:150,ctr:.25,cvr:.045,ts:"bsearch",sat:120000,fit:[3,3,2,1,2]},
+ {id:"n_plb",m:"naver",n:"파워링크 — 브랜드 키워드",b:"CPC",c:300,ctr:.06,cvr:.05,ts:"brandkw",sat:150000,fit:[3,3,3,1,0]},
+ {id:"n_plg",m:"naver",n:"파워링크 — 일반 키워드",b:"CPC",c:800,ctr:.015,cvr:.02,ts:"search",sat:2000000,fit:[2,2,3,2,1]},
+ {id:"n_shop",m:"naver",n:"쇼핑검색 (쇼핑몰 상품형)",b:"CPC",c:350,ctr:.012,cvr:.03,ts:"search",sat:1500000,fit:[3,3,0,2,0],com:1},
+ {id:"n_adv",m:"naver",n:"GFA 애드부스트 (쇼핑·전환)",b:"CPC",c:600,ctr:.006,cvr:.018,ts:"display",sat:2000000,fit:[3,2,1,1,0],com:1,minDaily:50000,learn:0,fat:1},
+ {id:"n_feed",m:"naver",n:"GFA 피드·스마트채널 (트래픽)",b:"CPM",c:3000,ctr:.004,cvr:.006,ts:"display",sat:3000000,fit:[1,1,1,3,3],fat:1}
+];
+const PM=Object.fromEntries(P.map(p=>[p.id,p]));
+const GI={roas:0,cpa:1,lead:2,traffic:3,aware:4};
+const IND={
+ fashion:{n:"패션·의류",c:.9,ctr:1.1,cvr:.9,aov:55000,com:1},
+ beauty:{n:"뷰티·화장품",c:1.1,ctr:1,cvr:1.1,aov:38000,com:1},
+ food:{n:"식품·건강기능식품",c:1,ctr:1,cvr:1.2,aov:32000,com:1},
+ living:{n:"리빙·가전",c:1,ctr:.9,cvr:.7,aov:120000,com:1},
+ edu:{n:"교육 (상담 신청)",c:1.2,ctr:.9,cvr:1,aov:60000,com:0},
+ fin:{n:"금융·보험 (DB)",c:1.6,ctr:.8,cvr:.9,aov:90000,com:0},
+ app:{n:"앱 (설치·가입)",c:.9,ctr:1.1,cvr:1.3,aov:15000,com:0},
+ b2b:{n:"B2B·SaaS (리드)",c:1.5,ctr:.7,cvr:.6,aov:150000,com:0}
+};
+const SCEN={cons:{n:"보수",c:1.12,ctr:.88,cvr:.85},base:{n:"기본",c:1,ctr:1,cvr:1},aggr:{n:"공격",c:.93,ctr:1.08,cvr:1.12}};
+const GOALDEF={roas:300,cpa:25000,lead:30000,traffic:500,aware:4000};
+
+// ---------- state ----------
+let uid=0;
+const S={goal:"roas",industry:"beauty",budget:50000000,start:"2026-11-02",end:"2026-11-29",aov:38000,target:300,
+  media:{meta:true,criteo:true,google:true,kakao:true,naver:true},pacing:"even",dedupe:15,scen:"base",rows:[]};
+try{const raw=localStorage.getItem("mmp_v1");if(raw){const o=JSON.parse(raw);if(o&&Array.isArray(o.rows))Object.assign(S,o);uid=S.rows.reduce((a,r)=>Math.max(a,r.id||0),0);}}catch(e){}
+function save(){try{localStorage.setItem("mmp_v1",JSON.stringify(S))}catch(e){}}
+
+// ---------- helpers ----------
+const $=s=>document.querySelector(s);
+const D=s=>{const [y,m,d]=s.split("-").map(Number);return Date.UTC(y,m-1,d)};
+const days=(a,b)=>Math.max(1,Math.round((D(b)-D(a))/864e5)+1);
+const iso=t=>new Date(t).toISOString().slice(0,10);
+const fmt=n=>isFinite(n)?Math.round(n).toLocaleString("ko-KR"):"–";
+const man=n=>{if(!isFinite(n))return"–";const a=Math.abs(n);if(a>=1e8)return(n/1e8).toFixed(2)+"억";if(a>=1e4)return fmt(n/1e4)+"만";return fmt(n)};
+const pct=(x,d=2)=>isFinite(x)?(x*100).toFixed(d)+"%":"–";
+const num=v=>{const x=parseFloat(String(v).replace(/[^0-9.\-]/g,""));return isFinite(x)?x:null};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const cssv=k=>`var(--m-${k})`;
+function toast(m){const t=$("#toast");t.textContent=m;t.hidden=false;clearTimeout(toast.h);toast.h=setTimeout(()=>t.hidden=true,1800)}
+
+// ---------- engine ----------
+function bench(r){const p=PM[r.product],ind=IND[S.industry],ts=TSETS[p.ts],t=ts[r.tgt]||ts[0];
+  return{cost:p.c*ind.c*t[1],ctr:Math.min(.6,p.ctr*ind.ctr*t[2]),cvr:Math.min(.6,p.cvr*ind.cvr*t[3])}}
+function calc(r,scen,bud){
+  const p=PM[r.product],s=SCEN[scen||S.scen],bm=bench(r),ov=r.ov||{};
+  const b=bud!=null?bud:r.budget,d=days(r.start,r.end),daily=b/d;
+  let cost=(ov.cost!=null?ov.cost:bm.cost)*s.c, ctr=(ov.ctr!=null?ov.ctr/100:bm.ctr)*s.ctr, cvr=(ov.cvr!=null?ov.cvr/100:bm.cvr)*s.cvr;
+  const eff=daily>p.sat?Math.pow(p.sat/daily,.35):1, se=Math.sqrt(eff);
+  cost/=se; if(p.b==="CPM"){ctr*=se;cvr*=Math.pow(eff,.25)}else{cvr*=se}
+  ctr=Math.min(ctr,.6);cvr=Math.min(cvr,.6);
+  let imp,clk;
+  if(b<=0){imp=0;clk=0}else if(p.b==="CPM"){imp=b/cost*1000;clk=imp*ctr}else{clk=b/cost;imp=clk/ctr}
+  const conv=clk*cvr,rev=conv*S.aov;
+  return{b,d,daily,imp,clk,conv,rev,cpm:imp?b/imp*1000:NaN,cpc:clk?b/clk:NaN,ctr:imp?clk/imp:NaN,cvr:clk?conv/clk:NaN,cpa:conv?b/conv:NaN,roas:b?rev/b:NaN,eff,bm}}
+function objective(x){switch(S.goal){case"roas":return x.rev;case"cpa":case"lead":return x.conv;case"traffic":return x.clk;default:return x.imp}}
+function totals(scen){const t={b:0,imp:0,clk:0,conv:0,rev:0};S.rows.forEach(r=>{const x=calc(r,scen);t.b+=x.b;t.imp+=x.imp;t.clk+=x.clk;t.conv+=x.conv;t.rev+=x.rev});
+  const k=1-(S.dedupe||0)/100;t.dconv=t.conv*k;t.drev=t.rev*k;
+  t.cpm=t.imp?t.b/t.imp*1000:NaN;t.cpc=t.clk?t.b/t.clk:NaN;t.ctr=t.imp?t.clk/t.imp:NaN;t.cvr=t.clk?t.conv/t.clk:NaN;
+  t.cpa=t.dconv?t.b/t.dconv:NaN;t.roas=t.b?t.drev/t.b:NaN;return t}
+
+function newRow(pid,share){const p=PM[pid];return{id:++uid,media:p.m,product:pid,tgt:0,start:S.start,end:S.end,budget:Math.round(S.budget*share),ov:{}}}
+
+function recommend(){
+  const gi=GI[S.goal],ind=IND[S.industry],d=days(S.start,S.end),monthly=S.budget/d*30;
+  let cands=P.filter(p=>S.media[p.m]&&p.fit[gi]>=2&&(!p.com||ind.com));
+  if(!cands.length)cands=P.filter(p=>S.media[p.m]&&p.fit[gi]>=1&&(!p.com||ind.com));
+  if(!cands.length){S.rows=[];return}
+  cands.forEach(p=>p._s=Math.pow(p.fit[gi],2)*MEDIA[p.m].prior*(p.sat<200000?.35:1));
+  cands.sort((a,b)=>b._s-a._s);
+  const maxRows=Math.max(2,Math.min(12,Math.floor(monthly/2500000)));
+  const pick=[],seen=new Set();
+  cands.forEach(p=>{if(!seen.has(p.m)&&pick.length<maxRows){pick.push(p);seen.add(p.m)}});
+  cands.forEach(p=>{if(!pick.includes(p)&&pick.length<maxRows)pick.push(p)});
+  // weights capped by saturation (2x sat over period)
+  let w=pick.map(p=>p._s),sum=w.reduce((a,b)=>a+b,0);let share=w.map(x=>x/sum);
+  for(let it=0;it<5;it++){let over=0,free=0;share=share.map((s,i)=>{const cap=pick[i].sat*2*d/S.budget;if(s>cap){over+=s-cap;return cap}free+=s;return s});
+    if(over<1e-6)break;share=share.map((s,i)=>{const cap=pick[i].sat*2*d/S.budget;return s<cap?s+over*s/free:s})}
+  S.rows=pick.map((p,i)=>newRow(p.id,share[i]));fixRounding();
+  // sensible default targeting for retargeting-type goals
+  S.rows.forEach(r=>{if(S.goal==="lead"&&PM[r.product].ts==="social")r.tgt=2});
+}
+function fixRounding(){const tot=S.rows.reduce((a,r)=>a+r.budget,0);if(S.rows.length&&tot!==S.budget){const big=S.rows.reduce((a,r)=>r.budget>a.budget?r:a);big.budget+=S.budget-tot}}
+function optimize(){
+  if(!S.rows.length)return;const n=S.rows.length,steps=60,step=S.budget/steps;
+  const mins=S.rows.map(r=>{const p=PM[r.product],d=days(r.start,r.end);let m=S.budget*.03;if(p.minTotal)m=Math.max(m,p.minTotal);if(p.minDaily)m=Math.max(m,p.minDaily*d);return Math.min(m,S.budget/n)});
+  let alloc=mins.slice(),left=S.budget-alloc.reduce((a,b)=>a+b,0);
+  if(left<0){alloc=alloc.map(()=>S.budget/n);left=0}
+  while(left>1){const st=Math.min(step,left);let best=-1,bi=0;
+    S.rows.forEach((r,i)=>{const g=objective(calc(r,"base",alloc[i]+st))-objective(calc(r,"base",alloc[i]));if(g>best){best=g;bi=i}});
+    alloc[bi]+=st;left-=st}
+  S.rows.forEach((r,i)=>r.budget=Math.round(alloc[i]));fixRounding();
+}
+
+// ---------- render ----------
+function goalLabels(){const g=S.goal;
+  $("#targetLbl").textContent={roas:"목표 ROAS (%)",cpa:"목표 CPA (원)",lead:"목표 CPL (원)",traffic:"목표 CPC (원)",aware:"목표 CPM (원)"}[g];
+  $("#aovLbl").textContent=IND[S.industry].com?"객단가 (원)":"전환 1건 가치 (원)";}
+function judge(t){const g=S.goal,T=S.target;let v,ok,txt;
+  if(g==="roas"){v=t.roas*100;ok=v/T;txt=`예상 ROAS ${v.toFixed(0)}% / 목표 ${fmt(T)}%`}
+  else if(g==="cpa"||g==="lead"){v=t.cpa;ok=T/v;txt=`예상 ${g==="lead"?"CPL":"CPA"} ₩${fmt(v)} / 목표 ₩${fmt(T)}`}
+  else if(g==="traffic"){v=t.cpc;ok=T/v;txt=`예상 CPC ₩${fmt(v)} / 목표 ₩${fmt(T)}`}
+  else{v=t.cpm;ok=T/v;txt=`예상 CPM ₩${fmt(v)} / 목표 ₩${fmt(T)}`}
+  const cls=ok>=1?"good":ok>=.85?"warn":"bad",lab=ok>=1?"목표 달성 예상":ok>=.85?"근접 (±15%)":"미달 위험";return{cls,lab,txt,ok}}
+function render(){
+  goalLabels();
+  ["goal","industry","start","end","pacing"].forEach(k=>{const el=$("#"+k);if(el.value!==S[k])el.value=S[k]});
+  $("#budget").value=fmt(S.budget);$("#aov").value=fmt(S.aov);$("#target").value=S.target;$("#dedupe").value=S.dedupe;
+  const d=days(S.start,S.end);$("#budgetHint").textContent=`${d}일 · 일평균 ₩${fmt(S.budget/d)} · 월 환산 ₩${man(S.budget/d*30)}`;
+  $("#indNote").textContent=`업종 보정: 단가 ×${IND[S.industry].c} · CTR ×${IND[S.industry].ctr} · CVR ×${IND[S.industry].cvr}${IND[S.industry].com?"":" · 쇼핑 상품 추천 제외"}`;
+  document.querySelectorAll("#scenSeg button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.v===S.scen));
+  const t=totals(S.scen),j=judge(t),alloc=S.rows.reduce((a,r)=>a+r.budget,0);
+  $("#sumSub").textContent=`${SCEN[S.scen].n} 시나리오 · ${S.start} ~ ${S.end} · ${S.rows.length}개 라인`;
+  const K=[["집행 예산","₩"+man(t.b),alloc!==S.budget?`배분 차이 ₩${fmt(alloc-S.budget)}`:"예산 100% 배분"],
+    ["노출",man(t.imp),"CPM ₩"+fmt(t.cpm)],["클릭",man(t.clk),"CTR "+pct(t.ctr)+" · CPC ₩"+fmt(t.cpc)],
+    ["전환 (보정)",fmt(t.dconv),"매체 합산 "+fmt(t.conv)+" · CVR "+pct(t.cvr)],
+    [IND[S.industry].com?"매출 (보정)":"전환 가치","₩"+man(t.drev),"CPA ₩"+fmt(t.cpa)],
+    ["ROAS (보정)",isFinite(t.roas)?(t.roas*100).toFixed(0)+"%":"–","매체 합산 "+(t.b?(t.rev/t.b*100).toFixed(0):"–")+"%"]];
+  $("#kpis").innerHTML=K.map(k=>`<div class="kpi"><span class="k">${k[0]}</span><span class="v">${k[1]}</span><span class="s">${k[2]}</span></div>`).join("");
+  $("#verdict").innerHTML=S.rows.length?`<span class="pill ${j.cls}">${j.lab}</span><span>${j.txt}</span><span class="hint">중복 전환 ${S.dedupe}% 차감 후 기준</span>`:`<span class="empty">왼쪽에서 '추천 믹스 생성'을 누르면 플랜이 만들어집니다.</span>`;
+  renderScen();renderMedia(t);renderPlan();renderWeeks();renderWarns();save();
+}
+function renderScen(){const cols=["cons","base","aggr"].map(k=>[k,totals(k)]);
+  const rows=[["클릭",x=>fmt(x.clk)],["CPC",x=>"₩"+fmt(x.cpc)],["전환 (보정)",x=>fmt(x.dconv)],["CPA",x=>"₩"+fmt(x.cpa)],[IND[S.industry].com?"매출":"전환 가치",x=>"₩"+man(x.drev)],["ROAS",x=>isFinite(x.roas)?(x.roas*100).toFixed(0)+"%":"–"],["목표 판정",x=>{const j=judge(x);return`<span class="pill ${j.cls}">${j.lab}</span>`}]];
+  $("#scenTbl").innerHTML=`<thead><tr><th class="l">지표</th>${cols.map(([k])=>`<th${k===S.scen?' style="color:var(--accent)"':""}>${SCEN[k].n}</th>`).join("")}</tr></thead><tbody>${rows.map(r=>`<tr><td class="l">${r[0]}</td>${cols.map(([k,x])=>`<td class="num">${r[1](x)}</td>`).join("")}</tr>`).join("")}</tbody>`}
+function renderMedia(t){const agg={};MKEYS.forEach(m=>agg[m]={b:0,imp:0,clk:0,conv:0,rev:0});
+  S.rows.forEach(r=>{const x=calc(r);const a=agg[r.media];a.b+=x.b;a.imp+=x.imp;a.clk+=x.clk;a.conv+=x.conv;a.rev+=x.rev});
+  const used=MKEYS.filter(m=>agg[m].b>0),tb=t.b||1;
+  $("#shareBar").innerHTML=used.map(m=>{const s=agg[m].b/tb;return`<div class="${m}" style="width:${(s*100).toFixed(2)}%;background:${cssv(m)}" title="${MEDIA[m].name} ${pct(s,1)}">${s>.07?MEDIA[m].name+" "+pct(s,0):""}</div>`}).join("")||`<div style="width:100%;color:var(--muted)">배분 없음</div>`;
+  $("#mxSub").textContent=used.length+"개 매체";
+  $("#mediaTbl").innerHTML=`<thead><tr><th class="l">매체</th><th>예산</th><th>비중</th><th>CTR</th><th>CPC</th><th>전환</th><th>CPA</th><th>ROAS</th></tr></thead><tbody>${used.map(m=>{const a=agg[m];return`<tr><td class="l"><span class="mtag"><i style="background:${cssv(m)}"></i>${MEDIA[m].name}</span></td><td class="num">₩${man(a.b)}</td><td class="num">${pct(a.b/tb,1)}</td><td class="num">${pct(a.clk/a.imp)}</td><td class="num">₩${fmt(a.b/a.clk)}</td><td class="num">${fmt(a.conv)}</td><td class="num">₩${fmt(a.b/a.conv)}</td><td class="num">${(a.rev/a.b*100).toFixed(0)}%</td></tr>`}).join("")}</tbody>`}
+function rowWarns(r,x){const p=PM[r.product],w=[];
+  if(p.minTotal&&x.b<p.minTotal)w.push(["b",`크리테오 최소 집행 금액(₩${fmt(p.minTotal)}) 미만`]);
+  if(p.minDaily&&x.daily<p.minDaily)w.push(["b",`일 예산 ₩${fmt(x.daily)} — 애드부스트 권장 일 ₩5~8만 미만, 학습 불안정`]);
+  if(p.learn&&x.conv/x.d*7<50&&S.goal!=="aware")w.push(["w",`주간 전환 약 ${fmt(x.conv/x.d*7)}건 — 메타 학습 기준(광고 세트당 주 50건) 미달. 세트 통합이나 상위 퍼널 이벤트 최적화 검토`]);
+  if(x.eff<.97)w.push(["w",`일 예산 ₩${fmt(x.daily)}가 포화선(₩${fmt(p.sat)})을 넘어 효율 약 ${((1-x.eff)*100).toFixed(0)}% 감쇠 — 라인 분할이나 타 상품 이전 검토`]);
+  if(x.d<7)w.push(["w",`집행 기간 ${x.d}일 — 머신러닝 학습에 짧음`]);
+  if(p.fat&&x.d>=10)w.push(["i",`소재 교체 약 ${Math.floor(x.d/9)}회 권장 (평균 8.4일 후 피로 시작 가정) — 런칭 시 소재 ${Math.min(6,Math.floor(x.d/9)+2)}종 이상 준비`]);
+  if(D(r.end)<D(r.start))w.push(["b","종료일이 시작일보다 빠름"]);
+  return w}
+function renderPlan(){
+  const head=`<thead><tr><th class="l sticky">매체</th><th class="l">광고 상품</th><th class="l">타겟팅</th><th>과금</th><th class="l">시작</th><th class="l">종료</th><th>예산 (원)</th><th>비중%</th>
+  <th class="grp">단가 입력</th><th>CTR% 입력</th><th>CVR% 입력</th>
+  <th class="grp">노출</th><th>클릭</th><th>CTR</th><th>CPM</th><th>CPC</th><th>전환</th><th>CVR</th><th>CPA</th><th>매출</th><th>ROAS</th><th class="l">체크</th><th></th></tr></thead>`;
+  const tot={b:0,imp:0,clk:0,conv:0,rev:0};
+  const body=S.rows.map(r=>{const p=PM[r.product],x=calc(r),ov=r.ov||{},bm=bench(r);tot.b+=x.b;tot.imp+=x.imp;tot.clk+=x.clk;tot.conv+=x.conv;tot.rev+=x.rev;
+    const w=rowWarns(r,x).filter(a=>a[0]!=="i"),fl=w.length?`<span class="flag ${w.some(a=>a[0]==="b")?"b":"w"}" title="${esc(w.map(a=>a[1]).join("\n"))}">⚠</span>`:`<span class="hint">—</span>`;
+    const mopt=MKEYS.map(m=>`<option value="${m}"${m===r.media?" selected":""}>${MEDIA[m].name}</option>`).join("");
+    const popt=P.filter(q=>q.m===r.media).map(q=>`<option value="${q.id}"${q.id===r.product?" selected":""}>${q.n}</option>`).join("");
+    const topt=TSETS[p.ts].map((t,i)=>`<option value="${i}"${i===r.tgt?" selected":""}>${t[0]}</option>`).join("");
+    const share=S.budget?r.budget/S.budget*100:0;
+    return`<tr data-id="${r.id}">
+    <td class="l sticky"><span class="mtag"><i style="background:${cssv(r.media)}"></i><select class="media" data-k="media" aria-label="매체">${mopt}</select></span></td>
+    <td class="l"><select class="prod" data-k="product" aria-label="광고 상품">${popt}</select></td>
+    <td class="l"><select class="tgt" data-k="tgt" aria-label="타겟팅">${topt}</select></td>
+    <td>${p.b}</td>
+    <td class="l"><input type="date" data-k="start" value="${r.start}" aria-label="시작일"></td>
+    <td class="l"><input type="date" data-k="end" value="${r.end}" aria-label="종료일"></td>
+    <td><input class="bud num" data-k="budget" value="${fmt(r.budget)}" inputmode="numeric" aria-label="예산"></td>
+    <td><input class="shr num" data-k="share" value="${share.toFixed(1)}" inputmode="decimal" aria-label="비중"></td>
+    <td class="grp"><input class="ov num${ov.cost!=null?" set":""}" data-k="ov.cost" value="${ov.cost!=null?fmt(ov.cost):""}" placeholder="${fmt(bm.cost)}" title="${p.b==="CPM"?"CPM":"CPC"} 벤치마크 ₩${fmt(bm.cost)}" aria-label="단가"></td>
+    <td><input class="ov num${ov.ctr!=null?" set":""}" data-k="ov.ctr" value="${ov.ctr!=null?ov.ctr:""}" placeholder="${(bm.ctr*100).toFixed(2)}" aria-label="CTR"></td>
+    <td><input class="ov num${ov.cvr!=null?" set":""}" data-k="ov.cvr" value="${ov.cvr!=null?ov.cvr:""}" placeholder="${(bm.cvr*100).toFixed(2)}" aria-label="CVR"></td>
+    <td class="num grp">${fmt(x.imp)}</td><td class="num">${fmt(x.clk)}</td><td class="num">${pct(x.ctr)}</td><td class="num">₩${fmt(x.cpm)}</td><td class="num">₩${fmt(x.cpc)}</td>
+    <td class="num">${fmt(x.conv)}</td><td class="num">${pct(x.cvr)}</td><td class="num">₩${fmt(x.cpa)}</td><td class="num">₩${man(x.rev)}</td><td class="num">${isFinite(x.roas)?(x.roas*100).toFixed(0)+"%":"–"}</td>
+    <td class="l">${fl}</td><td><button class="del" data-del="${r.id}" aria-label="라인 삭제">×</button></td></tr>`}).join("");
+  const foot=S.rows.length?`<tfoot><tr><td class="l sticky">합계</td><td class="l" colspan="5">매체 리포트 합산 (중복 보정 전)</td><td class="num">₩${fmt(tot.b)}</td><td class="num">${(tot.b/S.budget*100).toFixed(1)}</td><td class="grp" colspan="3"></td>
+  <td class="num grp">${fmt(tot.imp)}</td><td class="num">${fmt(tot.clk)}</td><td class="num">${pct(tot.clk/tot.imp)}</td><td class="num">₩${fmt(tot.b/tot.imp*1000)}</td><td class="num">₩${fmt(tot.b/tot.clk)}</td><td class="num">${fmt(tot.conv)}</td><td class="num">${pct(tot.conv/tot.clk)}</td><td class="num">₩${fmt(tot.b/tot.conv)}</td><td class="num">₩${man(tot.rev)}</td><td class="num">${(tot.rev/tot.b*100).toFixed(0)}%</td><td colspan="2"></td></tr></tfoot>`:"";
+  $("#planTbl").innerHTML=head+`<tbody>${body||`<tr><td class="l" colspan="23"><span class="empty">플랜 라인이 없습니다. '추천 믹스 생성' 또는 '+ 라인 추가'를 눌러 시작하세요.</span></td></tr>`}</tbody>`+foot}
+function renderWeeks(){
+  const box=$("#weekChart"),leg=$("#weekLegend");if(!S.rows.length){box.innerHTML=`<p class="empty">플랜이 생기면 주차별 소진 계획이 표시됩니다.</p>`;leg.innerHTML="";$("#wkSub").textContent="";return}
+  const t0=Math.min(...S.rows.map(r=>D(r.start))),t1=Math.max(...S.rows.map(r=>D(r.end)));
+  const nW=Math.ceil((Math.round((t1-t0)/864e5)+1)/7);const W=Array.from({length:nW},()=>Object.fromEntries(MKEYS.map(m=>[m,0])));const C=new Array(nW).fill(0);
+  S.rows.forEach(r=>{const x=calc(r),d=x.d,a=D(r.start);let ws=[];for(let i=0;i<d;i++){const f=d>1?i/(d-1):.5;ws.push(S.pacing==="front"?1.5-f:S.pacing==="back"?.5+f:1)}const sw=ws.reduce((p,q)=>p+q,0);
+    ws.forEach((w,i)=>{const wk=Math.floor((Math.round((a-t0)/864e5)+i)/7);if(wk<nW){const sp=x.b*w/sw;W[wk][r.media]+=sp;C[wk]+=x.b?x.conv*sp/x.b:0}})});
+  const tots=W.map(w=>MKEYS.reduce((a,m)=>a+w[m],0)),mx=Math.max(...tots,1),mc=Math.max(...C,1);
+  const vw=Math.max(560,nW*70),h=240,pl=56,pr=44,pt=16,pb=34,iw=vw-pl-pr,ih=h-pt-pb,bw=Math.min(44,iw/nW*.6);
+  const nice=v=>{const e=Math.pow(10,Math.floor(Math.log10(v))),f=v/e;return(f<=1?1:f<=2?2:f<=5?5:10)*e};const top=nice(mx),ctop=nice(mc);
+  let g="";for(let i=0;i<=4;i++){const y=pt+ih-ih*i/4;g+=`<line x1="${pl}" x2="${vw-pr}" y1="${y}" y2="${y}" stroke="var(--line-2)"/><text x="${pl-6}" y="${y+4}" text-anchor="end" font-size="10.5" fill="var(--muted)" font-family="IBM Plex Mono,monospace">${man(top*i/4)}</text><text x="${vw-pr+6}" y="${y+4}" font-size="10.5" fill="var(--muted)" font-family="IBM Plex Mono,monospace">${fmt(ctop*i/4)}</text>`}
+  let bars="",pts=[];W.forEach((w,i)=>{const cx=pl+iw*(i+.5)/nW;let y=pt+ih;MKEYS.forEach(m=>{const hh=ih*w[m]/top;if(hh>0){y-=hh;bars+=`<rect x="${cx-bw/2}" y="${y}" width="${bw}" height="${hh}" fill="${cssv(m)}"><title>${MEDIA[m].name} ₩${fmt(w[m])}</title></rect>`}});
+    const lab=iso(t0+i*7*864e5).slice(5).replace("-",".");bars+=`<text x="${cx}" y="${h-pb+15}" text-anchor="middle" font-size="10.5" fill="var(--muted)">W${i+1}</text><text x="${cx}" y="${h-pb+28}" text-anchor="middle" font-size="10" fill="var(--muted)" font-family="IBM Plex Mono,monospace">${lab}</text>`;pts.push([cx,pt+ih-ih*C[i]/ctop])});
+  const line=`<polyline points="${pts.map(p=>p.join(",")).join(" ")}" fill="none" stroke="var(--ink)" stroke-width="1.6"/>`+pts.map((p,i)=>`<circle cx="${p[0]}" cy="${p[1]}" r="${i===pts.length-1?3.5:2.5}" fill="var(--surface)" stroke="var(--ink)" stroke-width="1.5"><title>W${i+1} 전환 ${fmt(C[i])}</title></circle>`).join("");
+  box.innerHTML=`<svg viewBox="0 0 ${vw} ${h}" role="img" aria-label="주차별 매체 예산과 예상 전환">${g}${bars}${line}</svg>`;
+  leg.innerHTML=MKEYS.filter(m=>W.some(w=>w[m]>0)).map(m=>`<span class="mtag" style="font-weight:500"><i style="background:${cssv(m)}"></i>${MEDIA[m].name}</span>`).join("")+`<span class="mtag" style="font-weight:500"><i style="background:var(--ink);height:2px;width:14px"></i>예상 전환 (오른쪽 축)</span>`;
+  $("#wkSub").textContent=`${nW}주 · ${{even:"균등",front:"초반 집중",back:"후반 집중"}[S.pacing]} 페이싱`}
+function renderWarns(){const L=[];const alloc=S.rows.reduce((a,r)=>a+r.budget,0);
+  if(S.rows.length&&Math.abs(alloc-S.budget)>1)L.push(["w","예산 배분",`라인 합계 ₩${fmt(alloc)} ≠ 총 예산 ₩${fmt(S.budget)} — '예산 합계 맞추기'로 비례 조정`]);
+  S.rows.forEach(r=>{const x=calc(r);rowWarns(r,x).forEach(w=>L.push([w[0],`${MEDIA[r.media].name} · ${PM[r.product].n}`,w[1]]))});
+  const ms=new Set(S.rows.map(r=>r.media));if(ms.size>=3)L.push(["i","측정","3개 이상 매체 운영 — 매체별 기여 전환 합계가 실제보다 크게 잡힙니다. GA4·MMP 기준 보정율을 정기적으로 갱신하세요."]);
+  const hasRT=S.rows.some(r=>["meta_dpa","criteo_rt","g_rmkt"].includes(r.product)||(TSETS[PM[r.product].ts][r.tgt]||[""])[0].includes("리타겟"));
+  if(hasRT&&!S.rows.some(r=>["meta_reach","g_yt","k_biz","n_feed","g_dg","criteo_pr"].includes(r.product)))L.push(["w","퍼널 구조","리타겟팅 비중 대비 상단 퍼널(신규 유입) 라인이 없습니다 — 리타겟팅 모수가 고갈되면 단가가 오릅니다."]);
+  const ord={b:0,w:1,i:2};L.sort((a,b)=>ord[a[0]]-ord[b[0]]);
+  $("#warns").innerHTML=L.length?L.slice(0,14).map(w=>`<li><span class="pill ${w[0]==="b"?"bad":w[0]==="w"?"warn":"good"}">${w[0]==="b"?"필수":w[0]==="w"?"주의":"참고"}</span><span><b>${esc(w[1])}</b> — ${esc(w[2])}</span></li>`).join(""):`<li><span class="pill good">양호</span><span>현재 플랜에서 감지된 리스크가 없습니다.</span></li>`}
+
+// ---------- events ----------
+function bindBrief(){
+  $("#industry").innerHTML=Object.entries(IND).map(([k,v])=>`<option value="${k}">${v.n}</option>`).join("");
+  $("#mediaChips").innerHTML=MKEYS.map(m=>`<label class="chip"><input type="checkbox" data-m="${m}"${S.media[m]?" checked":""}><span class="dot" style="background:${cssv(m)}"></span>${MEDIA[m].name}</label>`).join("");
+  $("#goal").addEventListener("change",e=>{S.goal=e.target.value;S.target=GOALDEF[S.goal];render()});
+  $("#industry").addEventListener("change",e=>{S.industry=e.target.value;S.aov=IND[S.industry].aov;render()});
+  $("#budget").addEventListener("change",e=>{const v=num(e.target.value);if(v&&v>0){const old=S.rows.reduce((a,r)=>a+r.budget,0)||1;S.rows.forEach(r=>r.budget=Math.round(r.budget*v/old));S.budget=v;fixRounding()}render()});
+  ["start","end"].forEach(k=>$("#"+k).addEventListener("change",e=>{const old=S[k];S[k]=e.target.value;if(D(S.end)<D(S.start)){S[k]=old;toast("종료일은 시작일 이후여야 합니다")}else S.rows.forEach(r=>{if(r[k]===old)r[k]=S[k]});render()}));
+  $("#aov").addEventListener("change",e=>{const v=num(e.target.value);if(v>0)S.aov=v;render()});
+  $("#target").addEventListener("change",e=>{const v=num(e.target.value);if(v>0)S.target=v;render()});
+  $("#dedupe").addEventListener("change",e=>{const v=num(e.target.value);S.dedupe=v==null?0:Math.max(0,Math.min(60,v));render()});
+  $("#pacing").addEventListener("change",e=>{S.pacing=e.target.value;render()});
+  $("#mediaChips").addEventListener("change",e=>{const m=e.target.dataset.m;if(m){S.media[m]=e.target.checked}});
+  $("#scenSeg").addEventListener("click",e=>{const b=e.target.closest("button");if(b){S.scen=b.dataset.v;render()}});
+  $("#btnRecommend").addEventListener("click",()=>{recommend();render();toast(S.rows.length?`추천 믹스 ${S.rows.length}개 라인 생성`:"선택한 매체에 이 목표에 맞는 상품이 없습니다")});
+  $("#btnOptimize").addEventListener("click",()=>{if(!S.rows.length){toast("먼저 플랜 라인을 만드세요");return}optimize();render();toast("한계 효율 기준으로 재배분했습니다")});
+  $("#btnAdd").addEventListener("click",()=>{const m=MKEYS.find(k=>S.media[k])||"meta";const p=P.find(q=>q.m===m);S.rows.push(Object.assign(newRow(p.id,0),{budget:0}));render()});
+  $("#btnScale").addEventListener("click",()=>{const tot=S.rows.reduce((a,r)=>a+r.budget,0);if(!tot){toast("배분된 예산이 없습니다");return}S.rows.forEach(r=>r.budget=Math.round(r.budget*S.budget/tot));fixRounding();render();toast("총 예산에 맞춰 비례 조정했습니다")});
+  $("#btnCopy").addEventListener("click",copyCSV);
+  const tbl=$("#planTbl");
+  tbl.addEventListener("change",e=>{const tr=e.target.closest("tr[data-id]");if(!tr)return;const r=S.rows.find(x=>x.id==tr.dataset.id),k=e.target.dataset.k,v=e.target.value;if(!r||!k)return;
+    if(k==="media"){r.media=v;r.product=P.find(q=>q.m===v).id;r.tgt=0;r.ov={}}
+    else if(k==="product"){r.product=v;r.tgt=0;r.ov={}}
+    else if(k==="tgt")r.tgt=+v;
+    else if(k==="start"||k==="end"){r[k]=v}
+    else if(k==="budget"){const n=num(v);r.budget=n!=null&&n>=0?Math.round(n):r.budget}
+    else if(k==="share"){const n=num(v);if(n!=null&&n>=0)r.budget=Math.round(S.budget*n/100)}
+    else if(k.startsWith("ov.")){const f=k.slice(3),n=num(v);r.ov=r.ov||{};if(n==null||n<=0)delete r.ov[f];else r.ov[f]=n}
+    render()});
+  tbl.addEventListener("click",e=>{const b=e.target.closest("[data-del]");if(b){S.rows=S.rows.filter(r=>r.id!=b.dataset.del);render()}});
+}
+function copyCSV(){const H=["매체","광고상품","타겟팅","과금","시작","종료","예산","비중%","노출","클릭","CTR%","CPM","CPC","전환","CVR%","CPA","매출","ROAS%"];
+  const lines=[H.join(",")].concat(S.rows.map(r=>{const p=PM[r.product],x=calc(r);return[MEDIA[r.media].name,p.n,TSETS[p.ts][r.tgt][0],p.b,r.start,r.end,Math.round(x.b),(x.b/S.budget*100).toFixed(1),Math.round(x.imp),Math.round(x.clk),(x.ctr*100).toFixed(2),Math.round(x.cpm),Math.round(x.cpc),x.conv.toFixed(1),(x.cvr*100).toFixed(2),Math.round(x.cpa),Math.round(x.rev),(x.roas*100).toFixed(0)].map(v=>`"${String(v).replace(/"/g,'""')}"`).join(",")}));
+  const txt=lines.join("\n");
+  const fallback=()=>{const ta=document.createElement("textarea");ta.value=txt;ta.style.position="fixed";ta.style.opacity="0";document.body.appendChild(ta);ta.select();try{document.execCommand("copy");toast("CSV를 복사했습니다")}catch(e){toast("복사가 막혔습니다 — 표를 직접 선택해 주세요")}ta.remove()};
+  try{navigator.clipboard.writeText(txt).then(()=>toast("CSV를 복사했습니다 — 엑셀에 붙여넣기"),fallback)}catch(e){fallback()}}
+
+bindBrief();
+if(!S.rows.length){recommend()}
+render();
+})();
+</script>
+
+</body>
+</html>
