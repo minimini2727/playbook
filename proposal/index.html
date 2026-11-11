@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>퍼포먼스 제안서 작성 로직 가이드</title>
+<style>
+@font-face {
+  font-family: "Pretendard Variable";
+  src: url("fonts/PretendardVariable.woff2") format("woff2-variations"), url("fonts/PretendardVariable.woff2") format("woff2");
+  font-weight: 45 920;
+  font-style: normal;
+  font-display: swap;
+}
+/* 레이아웃: 좌측 고정 목차 + 우측 본문, 단계마다 '요약 → 도식 → 작성 방법 → 장표 → 체크' 동일 리듬 */
+:root {
+  --bg: #f6f7f9;
+  --surface: #ffffff;
+  --ink: #18202c;
+  --muted: #5d6878;
+  --line: #d9dee6;
+  --soft: #eef1f5;
+  --p1: #2b55d6;   /* 전략 */
+  --p1-bg: #e8eefc;
+  --p2: #0f8a7a;   /* 실행·측정 */
+  --p2-bg: #e3f4f1;
+  --p3: #b4630c;   /* 신뢰·설득 */
+  --p3-bg: #fbefe1;
+  --font: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #11151c; --surface: #181e27; --ink: #e7ebf1; --muted: #9aa5b5; --line: #2c3542; --soft: #1f2631;
+    --p1: #7d9bff; --p1-bg: #1c2747; --p2: #4cc7b5; --p2-bg: #14302c; --p3: #f0a65a; --p3-bg: #3a2814;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #11151c; --surface: #181e27; --ink: #e7ebf1; --muted: #9aa5b5; --line: #2c3542; --soft: #1f2631;
+  --p1: #7d9bff; --p1-bg: #1c2747; --p2: #4cc7b5; --p2-bg: #14302c; --p3: #f0a65a; --p3-bg: #3a2814;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font-family: var(--font); font-size: 15.5px; line-height: 1.7; letter-spacing: -0.01em;
+  -webkit-font-smoothing: antialiased;
+}
+.wrap { display: grid; grid-template-columns: 232px minmax(0, 1fr); gap: 40px; max-width: 1180px; margin: 0 auto; padding: 40px 24px 80px; }
+nav.toc { position: sticky; top: 24px; align-self: start; font-size: 13.5px; }
+nav.toc .lbl { font-weight: 700; font-size: 12px; color: var(--muted); letter-spacing: 0.04em; margin: 18px 0 6px; }
+nav.toc a { display: flex; gap: 8px; padding: 4px 8px; border-radius: 6px; color: var(--ink); text-decoration: none; }
+nav.toc a:hover, nav.toc a:focus-visible { background: var(--soft); outline: none; }
+nav.toc a span { font-variant-numeric: tabular-nums; color: var(--muted); width: 20px; }
+main { min-width: 0; }
+header.hero { padding-bottom: 28px; border-bottom: 1px solid var(--line); margin-bottom: 8px; }
+header.hero h1 { font-size: 34px; line-height: 1.25; margin: 0 0 10px; font-weight: 800; letter-spacing: -0.03em; text-wrap: balance; }
+header.hero .meta { color: var(--muted); font-size: 13.5px; }
+section { padding: 36px 0 8px; border-bottom: 1px solid var(--line); scroll-margin-top: 16px; }
+section:last-of-type { border-bottom: 0; }
+.sec-head { display: flex; align-items: baseline; gap: 14px; margin-bottom: 14px; }
+.num { font-weight: 800; font-size: 14px; font-variant-numeric: tabular-nums; padding: 3px 9px; border-radius: 999px; }
+.g1 .num { color: var(--p1); background: var(--p1-bg); }
+.g2 .num { color: var(--p2); background: var(--p2-bg); }
+.g3 .num { color: var(--p3); background: var(--p3-bg); }
+.g0 .num { color: var(--ink); background: var(--soft); }
+h2 { font-size: 24px; margin: 0; font-weight: 750; letter-spacing: -0.025em; text-wrap: balance; }
+h2 small { display: block; font-size: 14px; font-weight: 500; color: var(--muted); letter-spacing: 0; margin-top: 2px; }
+h3 { font-size: 14px; font-weight: 700; margin: 22px 0 8px; color: var(--muted); letter-spacing: 0.02em; }
+ul, ol { margin: 0; padding-left: 20px; }
+li { margin: 3px 0; }
+li::marker { color: var(--muted); }
+.lead { list-style: none; padding: 0; }
+.lead li { padding-left: 14px; position: relative; }
+.lead li::before { content: ""; position: absolute; left: 0; top: 0.72em; width: 5px; height: 5px; border-radius: 50%; background: var(--muted); }
+.cols { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
+.check { list-style: none; padding: 0; }
+.check li { padding-left: 26px; position: relative; }
+.check li::before { content: ""; position: absolute; left: 0; top: 0.36em; width: 14px; height: 14px; border: 1.5px solid var(--muted); border-radius: 4px; }
+figure { margin: 18px 0 6px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 20px 18px 12px; overflow-x: auto; }
+figure svg { display: block; width: 100%; height: auto; min-width: 620px; color: var(--ink); font-family: var(--font); }
+figcaption { font-size: 13px; color: var(--muted); margin-top: 10px; }
+.tbl { overflow-x: auto; margin: 10px 0; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { background: var(--soft); font-weight: 700; font-size: 13px; }
+tr:last-child td { border-bottom: 0; }
+td.n { font-variant-numeric: tabular-nums; white-space: nowrap; font-weight: 600; }
+.pill { display: inline-block; font-size: 12px; font-weight: 700; padding: 1px 8px; border-radius: 999px; }
+.pill.a { color: var(--p1); background: var(--p1-bg); }
+.pill.b { color: var(--p2); background: var(--p2-bg); }
+.pill.c { color: var(--p3); background: var(--p3-bg); }
+.note { font-size: 13px; color: var(--muted); }
+a { color: var(--p1); }
+.src a { word-break: break-all; }
+/* SVG 공용 */
+.bx { fill: var(--surface); stroke: var(--line); stroke-width: 1.2; }
+.bx1 { fill: var(--p1-bg); stroke: var(--p1); stroke-width: 1.2; }
+.bx2 { fill: var(--p2-bg); stroke: var(--p2); stroke-width: 1.2; }
+.bx3 { fill: var(--p3-bg); stroke: var(--p3); stroke-width: 1.2; }
+.bxs { fill: var(--soft); stroke: none; }
+.t { fill: var(--ink); font-size: 13px; }
+.tb { fill: var(--ink); font-size: 13.5px; font-weight: 700; }
+.tm { fill: var(--muted); font-size: 11.5px; }
+.t1 { fill: var(--p1); font-weight: 700; font-size: 12.5px; }
+.t2 { fill: var(--p2); font-weight: 700; font-size: 12.5px; }
+.t3 { fill: var(--p3); font-weight: 700; font-size: 12.5px; }
+.ln { stroke: var(--muted); stroke-width: 1.3; fill: none; }
+.ln-d { stroke: var(--muted); stroke-width: 1.2; fill: none; stroke-dasharray: 4 4; }
+.ar { fill: var(--muted); }
+@media (max-width: 860px) {
+  .wrap { grid-template-columns: 1fr; gap: 0; padding: 24px 16px 60px; }
+  nav.toc { position: static; display: none; }
+  .cols { grid-template-columns: 1fr; gap: 0; }
+  header.hero h1 { font-size: 27px; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav class="toc" aria-label="목차">
+  <div class="lbl">개요</div>
+  <a href="#overview"><span>00</span>전체 흐름</a>
+  <div class="lbl">전략의 뼈대</div>
+  <a href="#s01"><span>01</span>인트로</a>
+  <a href="#s02"><span>02</span>타겟 어프로치</a>
+  <a href="#s03"><span>03</span>커뮤니케이션 어프로치</a>
+  <div class="lbl">실행과 측정</div>
+  <a href="#s04"><span>04</span>매체 전략</a>
+  <a href="#s05"><span>05</span>운영 플랜</a>
+  <a href="#s06"><span>06</span>최적화</a>
+  <a href="#s07"><span>07</span>포캐스팅</a>
+  <a href="#s08"><span>08</span>기술 트래킹</a>
+  <div class="lbl">신뢰와 설득</div>
+  <a href="#s09"><span>09</span>리포트·업무 프로세스</a>
+  <a href="#s10"><span>10</span>서비스</a>
+  <a href="#s11"><span>11</span>어팬딕스</a>
+  <a href="#s12"><span>12</span>아웃트로</a>
+  <div class="lbl">실행 관리</div>
+  <a href="#schedule"><span>—</span>작성 일정·R&amp;R</a>
+  <a href="#final"><span>—</span>최종 점검</a>
+  <a href="#sources"><span>—</span>출처</a>
+</nav>
+
+<main>
+<header class="hero">
+  <h1>퍼포먼스 제안서 작성 로직 가이드</h1>
+  <div class="meta">2026년 11월 11일 기준 · 작성 강병민</div>
+</header>
+
+<!-- 00 개요 -->
+<section id="overview" class="g0">
+  <div class="sec-head"><span class="num">00</span><h2>전체 흐름<small>12단계는 앞 단계의 산출물이 다음 단계의 입력이 되는 하나의 논리입니다</small></h2></div>
+  <ul class="lead">
+    <li>제안서는 "미션 → 타겟 → 메시지 → 매체 → 운영 → 검증 → 신뢰 → 클로징" 순서로 이어집니다.</li>
+    <li>앞 단계가 흔들리면 뒤 단계를 모두 다시 써야 하므로, 01~03을 먼저 확정한 뒤 다음 단계로 넘어갑니다.</li>
+    <li>장표 분량은 전략 30% · 실행 45% · 신뢰 25% 내외를 권장합니다(내부 작성 기준 가정, RFP 평가 항목에 따라 조정).</li>
+  </ul>
+  <figure>
+    <svg viewBox="0 0 1000 330" role="img" aria-label="12단계를 전략, 실행과 측정, 신뢰와 설득 세 구간으로 묶고, 아웃트로가 인트로의 미션으로 되돌아가는 흐름">
+      <defs><marker id="a0" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="ar"/></marker></defs>
+      <!-- 구간 라벨 -->
+      <text x="20" y="24" class="t1">전략의 뼈대 · 30%</text>
+      <text x="20" y="134" class="t2">실행과 측정 · 45%</text>
+      <text x="20" y="244" class="t3">신뢰와 설득 · 25%</text>
+      <!-- 전략 -->
+      <rect x="20" y="36" width="220" height="62" rx="10" class="bx1"/><text x="36" y="62" class="tb">01 인트로</text><text x="36" y="82" class="tm">미션 스테이트먼트 1문장</text>
+      <rect x="290" y="36" width="220" height="62" rx="10" class="bx1"/><text x="306" y="62" class="tb">02 타겟 어프로치</text><text x="306" y="82" class="tm">코어·확장 타겟, 페르소나</text>
+      <rect x="560" y="36" width="220" height="62" rx="10" class="bx1"/><text x="576" y="62" class="tb">03 커뮤니케이션</text><text x="576" y="82" class="tm">VP, 소재 트랙·시안</text>
+      <line x1="240" y1="67" x2="286" y2="67" class="ln" marker-end="url(#a0)"/>
+      <line x1="510" y1="67" x2="556" y2="67" class="ln" marker-end="url(#a0)"/>
+      <!-- 실행 -->
+      <rect x="20" y="146" width="168" height="62" rx="10" class="bx2"/><text x="34" y="172" class="tb">04 매체 전략</text><text x="34" y="192" class="tm">퍼널별 매체 맵</text>
+      <rect x="210" y="146" width="168" height="62" rx="10" class="bx2"/><text x="224" y="172" class="tb">05 운영 플랜</text><text x="224" y="192" class="tm">캠페인 구조·로드맵</text>
+      <rect x="400" y="146" width="168" height="62" rx="10" class="bx2"/><text x="414" y="172" class="tb">06 최적화</text><text x="414" y="192" class="tm">소재·운영 룰</text>
+      <rect x="590" y="146" width="168" height="62" rx="10" class="bx2"/><text x="604" y="172" class="tb">07 포캐스팅</text><text x="604" y="192" class="tm">시나리오별 미디어믹스</text>
+      <rect x="780" y="146" width="180" height="62" rx="10" class="bx2"/><text x="794" y="172" class="tb">08 기술 트래킹</text><text x="794" y="192" class="tm">측정 진단·개선</text>
+      <line x1="188" y1="177" x2="206" y2="177" class="ln" marker-end="url(#a0)"/>
+      <line x1="378" y1="177" x2="396" y2="177" class="ln" marker-end="url(#a0)"/>
+      <line x1="568" y1="177" x2="586" y2="177" class="ln" marker-end="url(#a0)"/>
+      <line x1="758" y1="177" x2="776" y2="177" class="ln" marker-end="url(#a0)"/>
+      <!-- 03 -> 04 -->
+      <path d="M670 98 V120 H104 V142" class="ln" marker-end="url(#a0)"/>
+      <text x="380" y="114" class="tm" text-anchor="middle">타겟·소재가 매체 선택의 근거</text>
+      <!-- 신뢰 -->
+      <rect x="20" y="256" width="200" height="62" rx="10" class="bx3"/><text x="34" y="282" class="tb">09 리포트·프로세스</text><text x="34" y="302" class="tm">레버 엑스퍼트, 미팅 체계</text>
+      <rect x="250" y="256" width="200" height="62" rx="10" class="bx3"/><text x="264" y="282" class="tb">10 서비스</text><text x="264" y="302" class="tm">수수료·제작비 조건</text>
+      <rect x="480" y="256" width="200" height="62" rx="10" class="bx3"/><text x="494" y="282" class="tb">11 어팬딕스</text><text x="494" y="302" class="tm">레퍼런스·솔루션</text>
+      <rect x="760" y="256" width="200" height="62" rx="10" class="bx1"/><text x="774" y="282" class="tb">12 아웃트로</text><text x="774" y="302" class="tm">미션 재호출, 클로징</text>
+      <line x1="220" y1="287" x2="246" y2="287" class="ln" marker-end="url(#a0)"/>
+      <line x1="450" y1="287" x2="476" y2="287" class="ln" marker-end="url(#a0)"/>
+      <line x1="680" y1="287" x2="756" y2="287" class="ln" marker-end="url(#a0)"/>
+      <!-- 08 -> 09 -->
+      <path d="M870 208 V232 H120 V252" class="ln" marker-end="url(#a0)"/>
+      <!-- 12 -> 01 피드백 -->
+      <path d="M960 270 H972 V20 H130 V32" class="ln-d" marker-end="url(#a0)"/>
+      <text x="986" y="100" class="tm" transform="rotate(90 986 100)">미션으로 회귀</text>
+    </svg>
+    <figcaption>세 구간으로 묶은 12단계. 점선은 아웃트로가 인트로의 미션 문장을 다시 불러와 처음과 끝을 닫는다는 뜻입니다.</figcaption>
+  </figure>
+  <div class="tbl"><table>
+    <thead><tr><th>No</th><th>단계</th><th>핵심 질문</th><th>주요 입력</th><th>핵심 산출물</th></tr></thead>
+    <tbody>
+      <tr><td class="n">01</td><td>인트로</td><td>이번 제안이 풀어야 할 단 하나의 미션은?</td><td>RFP, 광고주 브리핑</td><td>미션 스테이트먼트</td></tr>
+      <tr><td class="n">02</td><td>타겟 어프로치</td><td>누구에게 팔 것인가?</td><td>RFP, 팩트북, 검색·소셜 데이터</td><td>코어/확장 타겟, 페르소나</td></tr>
+      <tr><td class="n">03</td><td>커뮤니케이션</td><td>그 타겟에게 무엇을 말할 것인가?</td><td>타겟 인사이트, 제품 USP</td><td>VP, 소재 트랙·시안</td></tr>
+      <tr><td class="n">04</td><td>매체 전략</td><td>어디서, 어떤 퍼널로 만날 것인가?</td><td>타겟·소재, 매체 특성</td><td>퍼널별 매체 맵</td></tr>
+      <tr><td class="n">05</td><td>운영 플랜</td><td>각 매체를 어떻게 세팅·운영할 것인가?</td><td>퍼널 맵, 예산 범위</td><td>캠페인 구조, 운영 로드맵</td></tr>
+      <tr><td class="n">06</td><td>최적화</td><td>무엇을 기준으로 개선할 것인가?</td><td>운영 플랜, KPI</td><td>최적화 룰</td></tr>
+      <tr><td class="n">07</td><td>포캐스팅</td><td>얼마를 쓰면 얼마가 나오는가?</td><td>벤치마크, 과거 성과</td><td>시나리오별 미디어믹스</td></tr>
+      <tr><td class="n">08</td><td>기술 트래킹</td><td>성과를 정확히 측정할 수 있는가?</td><td>사이트·앱 태그 현황</td><td>트래킹 진단표</td></tr>
+      <tr><td class="n">09</td><td>리포트·프로세스</td><td>어떻게 함께 일할 것인가?</td><td>사내 체계</td><td>리포트 체계, R&amp;R</td></tr>
+      <tr><td class="n">10</td><td>서비스</td><td>왜 우리 조건이 유리한가?</td><td>수수료·제작비 정책</td><td>서비스 패키지</td></tr>
+      <tr><td class="n">11</td><td>어팬딕스</td><td>실제로 해낸 적이 있는가?</td><td>레퍼런스, 자체 솔루션</td><td>베스트 케이스</td></tr>
+      <tr><td class="n">12</td><td>아웃트로</td><td>왜 우리여야 하는가?</td><td>01~11 전체</td><td>클로징 메시지</td></tr>
+    </tbody>
+  </table></div>
+  <ul class="lead">
+    <li>2026년에는 메타 Advantage+, 구글 PMax 같은 자동 운영이 기본값이 되면서, 세팅보다 시그널 데이터 품질과 크리에이티브 조합이 성과를 좌우한다는 시각이 확산되었습니다(<a href="https://inside.ampm.co.kr/insight/13358">AMPM</a>).</li>
+    <li>그래서 이 로직은 03 커뮤니케이션과 08 기술 트래킹의 비중을 예전보다 높게 둡니다.</li>
+  </ul>
+</section>
+
+<!-- 01 -->
+<section id="s01" class="g1">
+  <div class="sec-head"><span class="num">01</span><h2>인트로<small>RFP를 관통하는 미션 정립</small></h2></div>
+  <ul class="lead">
+    <li>제안서 전체를 하나로 묶는 미션 스테이트먼트 1문장을 정의하는 단계입니다.</li>
+    <li>이후 모든 장표는 이 미션을 달성하기 위한 근거로 쓰여야 합니다.</li>
+  </ul>
+  <figure>
+    <svg viewBox="0 0 900 250" role="img" aria-label="RFP의 명시 목표와 숨은 고민을 합쳐 미션 1문장을 만들고, 이를 North Star KPI 하나와 보조 KPI로 나누는 구조">
+      <defs><marker id="a1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="ar"/></marker></defs>
+      <rect x="10" y="20" width="200" height="64" rx="10" class="bx"/><text x="26" y="46" class="tb">명시 목표</text><text x="26" y="66" class="tm">RFP의 목표·KPI 수치</text>
+      <rect x="10" y="110" width="200" height="64" rx="10" class="bx"/><text x="26" y="136" class="tb">숨은 고민</text><text x="26" y="156" class="tm">행간에 있는 진짜 과제</text>
+      <path d="M210 52 H240 V97 H262" class="ln" marker-end="url(#a1)"/>
+      <path d="M210 142 H240 V97" class="ln"/>
+      <rect x="266" y="56" width="330" height="84" rx="12" class="bx1"/>
+      <text x="282" y="82" class="t1">미션 스테이트먼트</text>
+      <text x="282" y="106" class="tb">[누구에게] [무엇으로]</text>
+      <text x="282" y="126" class="tb">[어떤 성과를] 만든다</text>
+      <line x1="596" y1="98" x2="640" y2="98" class="ln" marker-end="url(#a1)"/>
+      <rect x="644" y="62" width="240" height="72" rx="10" class="bx1"/><text x="660" y="90" class="tb">North Star KPI 1개</text><text x="660" y="112" class="tm">예: 신규 구매 고객 수</text>
+      <line x1="764" y1="134" x2="764" y2="160" class="ln"/>
+      <line x1="684" y1="160" x2="844" y2="160" class="ln"/>
+      <line x1="684" y1="160" x2="684" y2="176" class="ln" marker-end="url(#a1)"/>
+      <line x1="764" y1="160" x2="764" y2="176" class="ln" marker-end="url(#a1)"/>
+      <line x1="844" y1="160" x2="844" y2="176" class="ln" marker-end="url(#a1)"/>
+      <rect x="644" y="180" width="80" height="44" rx="8" class="bx"/><text x="684" y="207" class="t" text-anchor="middle">CPA</text>
+      <rect x="724" y="180" width="80" height="44" rx="8" class="bx" transform="translate(4 0)"/><text x="768" y="207" class="t" text-anchor="middle">ROAS</text>
+      <rect x="804" y="180" width="80" height="44" rx="8" class="bx" transform="translate(8 0)"/><text x="852" y="207" class="t" text-anchor="middle">신규 비중</text>
+      <text x="266" y="180" class="tm">미션은 12 아웃트로에서 그대로 다시 불러옵니다</text>
+    </svg>
+    <figcaption>명시 목표와 숨은 고민을 한 문장으로 합치고, 그 문장을 측정할 KPI 트리로 내립니다. 보조 KPI는 예시입니다.</figcaption>
+  </figure>
+  <div class="cols">
+    <div>
+      <h3>작성 방법</h3>
+      <ol>
+        <li>RFP에서 광고주가 명시한 목표와 KPI 수치를 그대로 뽑습니다.</li>
+        <li>RFP 행간에 숨은 진짜 고민을 한 줄로 정리합니다.</li>
+        <li>둘을 합쳐 "[누구에게] [무엇으로] [어떤 성과를] 만든다" 형식의 미션 1문장을 씁니다.</li>
+        <li>North Star KPI 1개와 보조 KPI 2~3개를 정합니다.</li>
+      </ol>
+      <h3>장표 구성 · 2~3p</h3>
+      <ul>
+        <li>RFP 요약: 목표 · 예산 · 기간 · KPI.</li>
+        <li>우리가 읽은 과제: 표면 목표와 핵심 과제 대비.</li>
+        <li>미션 스테이트먼트와 KPI 트리.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>체크포인트</h3>
+      <ul class="check">
+        <li>미션 문장에 KPI 수치와 기한이 들어갔는가?</li>
+        <li>아웃트로에서 다시 불러올 수 있는 문장인가?</li>
+        <li>광고주가 RFP에 쓴 용어를 그대로 사용했는가?</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 02 -->
+<section id="s02" class="g1">
+  <div class="sec-head"><span class="num">02</span><h2>타겟 어프로치<small>RFP·팩트북 기반 타겟 설정</small></h2></div>
+  <ul class="lead">
+    <li>미션을 달성하려면 누구를 움직여야 하는지 데이터로 정의하는 단계입니다.</li>
+    <li>인구통계뿐 아니라 구매 동기, 검색 행동, 구매 장벽까지 담아야 03 VP로 이어집니다.</li>
+  </ul>
+  <figure>
+    <svg viewBox="0 0 900 240" role="img" aria-label="세 가지 데이터 소스로 코어 타겟과 확장 타겟을 정의하고, 각 타겟의 구매 여정 네 단계에 터치포인트를 표시하는 구조">
+      <defs><marker id="a2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="ar"/></marker></defs>
+      <text x="10" y="18" class="tm">입력 데이터</text>
+      <rect x="10" y="28" width="170" height="50" rx="8" class="bx"/><text x="24" y="58" class="t">RFP 타겟 정의</text>
+      <rect x="10" y="90" width="170" height="50" rx="8" class="bx"/><text x="24" y="120" class="t">팩트북·CRM</text>
+      <rect x="10" y="152" width="170" height="50" rx="8" class="bx"/><text x="24" y="182" class="t">검색·소셜·리뷰</text>
+      <line x1="180" y1="53" x2="222" y2="110" class="ln"/>
+      <line x1="180" y1="115" x2="222" y2="115" class="ln" marker-end="url(#a2)"/>
+      <line x1="180" y1="177" x2="222" y2="120" class="ln"/>
+      <circle cx="320" cy="115" r="92" class="bx1" style="fill-opacity:.45"/>
+      <circle cx="320" cy="115" r="48" class="bx1"/>
+      <text x="320" y="112" class="t1" text-anchor="middle">코어</text>
+      <text x="320" y="130" class="tm" text-anchor="middle">전환 기여 최대</text>
+      <text x="320" y="44" class="t1" text-anchor="middle">확장</text>
+      <text x="320" y="60" class="tm" text-anchor="middle">신규 유입원</text>
+      <line x1="414" y1="115" x2="456" y2="115" class="ln" marker-end="url(#a2)"/>
+      <text x="462" y="58" class="tm">타겟별 구매 여정과 터치포인트</text>
+      <rect x="462" y="80" width="98" height="70" rx="8" class="bxs"/><text x="511" y="110" class="tb" text-anchor="middle">인지</text><text x="511" y="130" class="tm" text-anchor="middle">숏폼·피드</text>
+      <rect x="570" y="80" width="98" height="70" rx="8" class="bxs"/><text x="619" y="110" class="tb" text-anchor="middle">탐색</text><text x="619" y="130" class="tm" text-anchor="middle">검색·리뷰</text>
+      <rect x="678" y="80" width="98" height="70" rx="8" class="bxs"/><text x="727" y="110" class="tb" text-anchor="middle">구매</text><text x="727" y="130" class="tm" text-anchor="middle">상세·혜택</text>
+      <rect x="786" y="80" width="98" height="70" rx="8" class="bxs"/><text x="835" y="110" class="tb" text-anchor="middle">재구매</text><text x="835" y="130" class="tm" text-anchor="middle">CRM·리타겟</text>
+      <line x1="560" y1="115" x2="568" y2="115" class="ln" marker-end="url(#a2)"/>
+      <line x1="668" y1="115" x2="676" y2="115" class="ln" marker-end="url(#a2)"/>
+      <line x1="776" y1="115" x2="784" y2="115" class="ln" marker-end="url(#a2)"/>
+      <text x="462" y="180" class="tm">→ 각 터치포인트가 04 매체 전략의 퍼널 단계가 됩니다</text>
+    </svg>
+    <figcaption>세 갈래 데이터로 코어/확장 타겟을 나누고, 타겟마다 구매 여정의 터치포인트를 찍습니다. 터치포인트 예시는 업종에 따라 바뀝니다.</figcaption>
+  </figure>
+  <div class="cols">
+    <div>
+      <h3>작성 방법</h3>
+      <ol>
+        <li>RFP의 타겟 정의와 팩트북(구매자 데이터, CRM, 제품 정보)을 교차 확인합니다.</li>
+        <li>검색 데이터(네이버 데이터랩 등), 소셜 리스닝, 리뷰로 니즈와 불만을 뽑습니다.</li>
+        <li>코어 타겟과 확장 타겟으로 나누고, 각각 페르소나 1명씩 정의합니다.</li>
+        <li>타겟별 구매 여정의 주요 터치포인트를 표시합니다.</li>
+      </ol>
+      <h3>장표 구성 · 3~4p</h3>
+      <ul>
+        <li>데이터 인사이트: 검색량 추이, 연관 키워드, 리뷰 키워드를 장표 1개에 하나씩.</li>
+        <li>타겟 정의: 코어/확장 조건과 규모 추정.</li>
+        <li>페르소나와 구매 여정 맵.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>체크포인트</h3>
+      <ul class="check">
+        <li>모든 인사이트에 데이터 출처와 조회 기간이 표기되었는가?</li>
+        <li>타겟 조건이 실제 매체 타겟팅(관심사, 키워드, 리타겟팅)으로 구현 가능한가?</li>
+        <li>매체 AI 자동 확장을 쓸 경우, 타겟 정의를 "소재 메시지 설계 기준"으로 연결했는가?</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 03 -->
+<section id="s03" class="g1">
+  <div class="sec-head"><span class="num">03</span><h2>커뮤니케이션 어프로치<small>타겟 기반 VP 도출 및 소재 제안</small></h2></div>
+  <ul class="lead">
+    <li>타겟 니즈와 제품 강점이 만나는 지점에서 VP를 뽑고, 실제 소재로 보여주는 단계입니다.</li>
+    <li>매체 AI는 소재를 배분할 뿐 만들지는 않으므로, 자동화 환경일수록 소재력이 성과 차이를 만듭니다(<a href="https://inside.ampm.co.kr/insight/13379">AMPM</a>).</li>
+  </ul>
+  <figure>
+    <svg viewBox="0 0 900 250" role="img" aria-label="타겟 니즈와 제품 USP가 겹치는 지점에서 VP를 도출하고, VP를 2~3개 소재 트랙으로 나눠 각 트랙에 검증 가설을 붙이는 구조">
+      <defs><marker id="a3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="ar"/></marker></defs>
+      <circle cx="110" cy="120" r="82" class="bx" style="fill-opacity:.7"/>
+      <circle cx="210" cy="120" r="82" class="bx" style="fill-opacity:.7"/>
+      <text x="76" y="116" class="tb" text-anchor="middle">타겟 니즈</text><text x="76" y="134" class="tm" text-anchor="middle">02 인사이트</text>
+      <text x="246" y="116" class="tb" text-anchor="middle">제품 USP</text><text x="246" y="134" class="tm" text-anchor="middle">팩트북</text>
+      <text x="160" y="124" class="t1" text-anchor="middle">VP</text>
+      <line x1="300" y1="120" x2="350" y2="120" class="ln" marker-end="url(#a3)"/>
+      <rect x="354" y="88" width="160" height="64" rx="10" class="bx1"/><text x="370" y="114" class="tb">VP 1문장</text><text x="370" y="134" class="tm">타겟별로 1개씩</text>
+      <line x1="514" y1="120" x2="540" y2="120" class="ln"/>
+      <line x1="540" y1="48" x2="540" y2="192" class="ln"/>
+      <line x1="540" y1="48" x2="566" y2="48" class="ln" marker-end="url(#a3)"/>
+      <line x1="540" y1="120" x2="566" y2="120" class="ln" marker-end="url(#a3)"/>
+      <line x1="540" y1="192" x2="566" y2="192" class="ln" marker-end="url(#a3)"/>
+      <rect x="570" y="20" width="320" height="56" rx="8" class="bx"/><text x="584" y="43" class="tb">트랙 A · 기능 소구</text><text x="584" y="63" class="tm">가설: 스펙 비교가 탐색 단계 CTR을 올린다</text>
+      <rect x="570" y="92" width="320" height="56" rx="8" class="bx"/><text x="584" y="115" class="tb">트랙 B · 감성·라이프스타일</text><text x="584" y="135" class="tm">가설: 사용 장면이 인지 단계 도달 효율을 올린다</text>
+      <rect x="570" y="164" width="320" height="56" rx="8" class="bx"/><text x="584" y="187" class="tb">트랙 C · 혜택·사회적 증거</text><text x="584" y="207" class="tm">가설: 리뷰·혜택이 전환 단계 CVR을 올린다</text>
+    </svg>
+    <figcaption>VP 하나를 소구점이 다른 트랙 2~3개로 나누고, 트랙마다 06 최적화에서 검증할 가설을 붙입니다. 트랙명과 가설은 예시입니다.</figcaption>
+  </figure>
+  <div class="cols">
+    <div>
+      <h3>작성 방법</h3>
+      <ol>
+        <li>02의 타겟 니즈·불만과 제품 USP를 두 열로 놓고 연결되는 지점을 찾습니다.</li>
+        <li>타겟별 VP를 1문장으로 정리하고 소구점(기능·감성·혜택·사회적 증거)을 나눕니다.</li>
+        <li>소재 트랙을 2~3개로 구성하고 트랙별 카피·비주얼 시안을 만듭니다.</li>
+        <li>소재마다 활용 퍼널과 포맷(숏폼, 이미지, 카탈로그)을 태깅합니다.</li>
+      </ol>
+      <h3>장표 구성 · 4~6p</h3>
+      <ul>
+        <li>니즈 × USP 매핑과 VP 도출 과정.</li>
+        <li>소재 트랙 개요: 메시지 · 타겟 · 퍼널.</li>
+        <li>실제 지면 목업 시안(메타 피드, 구글 디맨드젠, 네이버 배너 등).</li>
+      </ul>
+    </div>
+    <div>
+      <h3>체크포인트</h3>
+      <ul class="check">
+        <li>VP가 타겟 인사이트 장표의 데이터에서 논리적으로 이어지는가?</li>
+        <li>트랙마다 검증할 가설이 분명한가?</li>
+        <li>매체 AI가 조합할 수 있도록 소구점이 다양한 소재 묶음으로 제안되었는가?</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 04 -->
+<section id="s04" class="g2">
+  <div class="sec-head"><span class="num">04</span><h2>매체 전략<small>타겟·소재 기반 퍼널 전략</small></h2></div>
+  <ul class="lead">
+    <li>타겟을 어디서 만나고, 어떤 소재를 어떤 퍼널 단계에 태울지 정하는 단계입니다.</li>
+    <li>매체를 나열하지 않고 퍼널 단계별 역할로 설명해야 07 예산 배분의 근거가 됩니다.</li>
+  </ul>
+  <figure>
+    <svg viewBox="0 0 900 290" role="img" aria-label="인지, 고려, 전환, 리텐션 네 단계 퍼널에 각 단계의 대표 매체, 소재 트랙, 핵심 KPI를 붙인 퍼널 맵">
+      <text x="16" y="18" class="tm">퍼널 단계</text>
+      <text x="400" y="18" class="tm">대표 매체(예시)</text>
+      <text x="640" y="18" class="tm">소재 트랙</text>
+      <text x="770" y="18" class="tm">핵심 KPI</text>
+      <polygon points="10,30 370,30 340,90 40,90" class="bx2"/>
+      <polygon points="42,96 338,96 310,156 70,156" class="bx2" style="fill-opacity:.8"/>
+      <polygon points="72,162 308,162 282,222 98,222" class="bx2" style="fill-opacity:.6"/>
+      <polygon points="100,228 280,228 258,280 122,280" class="bx2" style="fill-opacity:.4"/>
+      <text x="190" y="66" class="tb" text-anchor="middle">인지</text>
+      <text x="190" y="132" class="tb" text-anchor="middle">고려</text>
+      <text x="190" y="198" class="tb" text-anchor="middle">전환</text>
+      <text x="190" y="260" class="tb" text-anchor="middle">리텐션</text>
+      <line x1="370" y1="60" x2="392" y2="60" class="ln-d"/><line x1="338" y1="126" x2="392" y2="126" class="ln-d"/><line x1="308" y1="192" x2="392" y2="192" class="ln-d"/><line x1="280" y1="254" x2="392" y2="254" class="ln-d"/>
+      <text x="400" y="56" class="t">메타 릴스, 유튜브 디맨드젠</text><text x="400" y="74" class="tm">수요 창출</text>
+      <text x="400" y="122" class="t">네이버 검색, 쇼핑검색</text><text x="400" y="140" class="tm">탐색 포착</text>
+      <text x="400" y="188" class="t">구글 PMax, 메타 Advantage+</text><text x="400" y="206" class="tm">구매 의도 전환</text>
+      <text x="400" y="250" class="t">크리테오, 카카오 친구톡</text><text x="400" y="268" class="tm">재방문·재구매</text>
+      <text x="640" y="60" class="t">B 감성</text>
+      <text x="640" y="126" class="t">A 기능</text>
+      <text x="640" y="192" class="t">C 혜택·리뷰</text>
+      <text x="640" y="254" class="t">C 혜택</text>
+      <text x="770" y="60" class="t2">도달 · CTR</text>
+      <text x="770" y="126" class="t2">유입 · CPC</text>
+      <text x="770" y="192" class="t2">CPA · ROAS</text>
+      <text x="770" y="254" class="t2">재구매율</text>
+    </svg>
+    <figcaption>퍼널 한 단계에 매체·소재·KPI가 한 줄로 묶입니다. 매체 배치는 예시이며, 업종과 예산에 맞춰 바꿉니다.</figcaption>
+  </figure>
+  <div class="cols">
+    <div>
+      <h3>작성 방법</h3>
+      <ol>
+        <li>퍼널을 인지 → 고려 → 전환 → 리텐션 4단계로 나눕니다.</li>
+        <li>단계별로 02의 터치포인트에 맞는 매체·상품을 배치합니다.</li>
+        <li>단계별 핵심 KPI를 지정합니다.</li>
+        <li>03의 소재 트랙을 단계별 매체에 매핑합니다.</li>
+      </ol>
+      <h3>장표 구성 · 2~3p</h3>
+      <ul>
+        <li>퍼널 맵: 단계 × 매체 × 소재 × KPI 한 장 요약.</li>
+        <li>매체 선정 근거: 타겟 도달 규모, 업종 벤치마크, 과거 성과.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>체크포인트</h3>
+      <ul class="check">
+        <li>매체별 역할이 겹치지 않는가(Advantage+는 수요 창출, PMax는 높은 의도 포착 등)?</li>
+        <li>검색 중심에 머물지 않고 디맨드젠·숏폼 같은 수요 창출 단계를 포함했는가(<a href="https://inside.ampm.co.kr/insight/58725">AMPM</a>)?</li>
+        <li>소액 예산이라면 매체를 2~3개로 집중했는가?</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 05 -->
+<section id="s05" class="g2">
+  <div class="sec-head"><span class="num">05</span><h2>운영 플랜<small>퍼널별 매체 운영 제안</small></h2></div>
+  <ul class="lead">
+    <li>04의 퍼널 맵을 실제 계정 세팅 수준으로 내리는 단계입니다.</li>
+    <li>광고주가 "다음 주부터 바로 돌릴 수 있겠다"고 느낄 만큼 구체적이어야 합니다.</li>
+  </ul>
+  <figure>
+    <svg viewBox="0 0 900 200" role="img" aria-label="런칭 전 준비, 1~2주 학습, 3~4주 테스트, 2개월차 스케일업으로 이어지는 운영 로드맵과 단계별 게이트 조건">
+      <defs><marker id="a5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="ar"/></marker></defs>
+      <line x1="20" y1="60" x2="880" y2="60" class="ln" marker-end="url(#a5)"/>
+      <circle cx="40" cy="60" r="6" class="bx2"/><circle cx="250" cy="60" r="6" class="bx2"/><circle cx="470" cy="60" r="6" class="bx2"/><circle cx="690" cy="60" r="6" class="bx2"/>
+      <text x="40" y="40" class="t2">D-14 ~ D-1</text><text x="250" y="40" class="t2">1~2주차</text><text x="470" y="40" class="t2">3~4주차</text><text x="690" y="40" class="t2">2개월차~</text>
+      <rect x="20" y="82" width="200" height="96" rx="10" class="bx"/><text x="34" y="106" class="tb">런칭 준비</text><text x="34" y="128" class="tm">계정·픽셀·피드 세팅</text><text x="34" y="146" class="tm">소재 제작·검수</text><text x="34" y="164" class="tm">트래킹 점검(08)</text>
+      <rect x="236" y="82" width="200" height="96" rx="10" class="bx"/><text x="250" y="106" class="tb">학습기</text><text x="250" y="128" class="tm">자동 입찰 학습</text><text x="250" y="146" class="tm">구조 변경 최소화</text><text x="250" y="164" class="tm">효율 변동 사전 고지</text>
+      <rect x="452" y="82" width="200" height="96" rx="10" class="bx"/><text x="466" y="106" class="tb">테스트기</text><text x="466" y="128" class="tm">소재 트랙 A/B</text><text x="466" y="146" class="tm">타겟·입찰 비교</text><text x="466" y="164" class="tm">위너 판정(06 기준)</text>
+      <rect x="668" y="82" width="212" height="96" rx="10" class="bx2"/><text x="682" y="106" class="tb">스케일업</text><text x="682" y="128" class="tm">위너 소재·매체 증액</text><text x="682" y="146" class="tm">신규 매체 테스트</text><text x="682" y="164" class="tm">월간 리뷰로 재배분</text>
+    </svg>
+    <figcaption>런칭 전 2주 준비와 런칭 후 3개 국면. 국면이 넘어가는 시점마다 06 최적화의 판단 기준을 적용합니다. 기간은 일반적인 예시입니다.</figcaption>
+  </figure>
+  <div class="cols">
+    <div>
+      <h3>작성 방법</h3>
+      <ol>
+        <li>매체별 캠페인 구조(캠페인 → 광고그룹 → 소재)를 도식화합니다.</li>
+        <li>타겟팅 옵션, 입찰 전략(타겟 CPA/ROAS, 수동 CPC 등), 학습 기간 예산을 명시합니다.</li>
+        <li>런칭 후 주차별 운영 로드맵을 작성합니다.</li>
+        <li>런칭 전 준비사항과 소요 기간을 정리합니다.</li>
+      </ol>
+      <h3>장표 구성 · 매체당 1~2p</h3>
+      <ul>
+        <li>매체별 캠페인 구조도와 세팅표.</li>
+        <li>주차별 운영 로드맵과 런칭 전 준비 일정.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>체크포인트</h3>
+      <ul class="check">
+        <li>계정 구조를 지나치게 쪼개지 않았는가(2026년 권장 원칙은 "더 적게, 더 크게", 메타 캠페인 2~3개 — <a href="https://www.digitalmarketer.co.kr/insights/data-driven-google-meta-campaign-strategy-2">디지털마케터</a>)?</li>
+        <li>학습 기간 동안 성과가 낮을 수 있다는 점을 미리 알렸는가?</li>
+        <li>런칭 일정이 광고주 소재 제공·개발 일정과 맞는가?</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 06 -->
+<section id="s06" class="g2">
+  <div class="sec-head"><span class="num">06</span><h2>최적화<small>소재 및 운영 최적화 방식</small></h2></div>
+  <ul class="lead">
+    <li>"어떤 기준으로, 얼마나 자주, 무엇을 바꿀지"를 룰로 보여주는 단계입니다.</li>
+    <li>자동화 매체 비중이 커질수록 입찰 조정보다 소재 테스트와 시그널(전환 데이터) 품질 관리가 핵심입니다.</li>
+  </ul>
+  <figure>
+    <svg viewBox="0 0 900 260" role="img" aria-label="가설, 테스트, 판단, 반영 네 단계가 반복되는 최적화 루프와, 판단 단계의 조건별 액션 규칙">
+      <defs><marker id="a6" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="ar"/></marker></defs>
+      <rect x="130" y="16" width="150" height="54" rx="10" class="bx2"/><text x="205" y="40" class="tb" text-anchor="middle">① 가설</text><text x="205" y="58" class="tm" text-anchor="middle">03 트랙별 가설</text>
+      <rect x="250" y="104" width="150" height="54" rx="10" class="bx2"/><text x="325" y="128" class="tb" text-anchor="middle">② 테스트</text><text x="325" y="146" class="tm" text-anchor="middle">변수 1개씩 A/B</text>
+      <rect x="130" y="192" width="150" height="54" rx="10" class="bx2"/><text x="205" y="216" class="tb" text-anchor="middle">③ 판단</text><text x="205" y="234" class="tm" text-anchor="middle">최소 표본 충족 후</text>
+      <rect x="10" y="104" width="150" height="54" rx="10" class="bx2"/><text x="85" y="128" class="tb" text-anchor="middle">④ 반영</text><text x="85" y="146" class="tm" text-anchor="middle">예산·소재 교체</text>
+      <path d="M280 43 Q330 50 325 100" class="ln" marker-end="url(#a6)"/>
+      <path d="M325 158 Q330 210 284 219" class="ln" marker-end="url(#a6)"/>
+      <path d="M130 219 Q80 212 85 162" class="ln" marker-end="url(#a6)"/>
+      <path d="M85 104 Q80 50 126 43" class="ln" marker-end="url(#a6)"/>
+      <text x="205" y="136" class="tm" text-anchor="middle">주간 사이클</text>
+      <line x1="420" y1="130" x2="460" y2="130" class="ln-d"/>
+      <text x="470" y="26" class="tm">③ 판단 룰 예시 (If → Then)</text>
+      <rect x="470" y="38" width="420" height="48" rx="8" class="bx"/><text x="484" y="60" class="t">CTR이 3일 연속 기준 대비 20% 이상 하락</text><text x="484" y="77" class="t2">→ 소재 피로로 보고 신규 소재 교체</text>
+      <rect x="470" y="94" width="420" height="48" rx="8" class="bx"/><text x="484" y="116" class="t">CPA가 목표의 130% 초과, 전환 30건 이상</text><text x="484" y="133" class="t2">→ 해당 광고그룹 예산 축소, 위너로 이동</text>
+      <rect x="470" y="150" width="420" height="48" rx="8" class="bx"/><text x="484" y="172" class="t">ROAS가 목표 초과, 예산 소진률 90% 이상</text><text x="484" y="189" class="t2">→ 주 단위 증액(학습 리셋 주의)</text>
+      <rect x="470" y="206" width="420" height="48" rx="8" class="bx"/><text x="484" y="228" class="t">학습 중이거나 표본 미달</text><text x="484" y="245" class="t2">→ 판단 보류, 구조 변경 금지</text>
+    </svg>
+    <figcaption>최적화는 주간 단위로 도는 루프입니다. 오른쪽 수치(20%, 130%, 30건 등)는 예시 기준으로, 광고주 KPI와 볼륨에 맞춰 정합니다.</figcaption>
+  </figure>
+  <div class="cols">
+    <div>
+      <h3>작성 방법</h3>
+      <ol>
+        <li>03의 트랙별 가설을 A/B 테스트 설계로 바꾸고 판단 기준을 정합니다.</li>
+        <li>빈도·CTR 하락 기준으로 소재 교체 주기를 제안합니다.</li>
+        <li>예산 재배분, 타겟 확장·축소, 키워드 정리를 If → Then 룰로 정리합니다.</li>
+        <li>주간·월간 최적화 사이클을 정하고 09 리포트 체계와 연결합니다.</li>
+      </ol>
+      <h3>장표 구성 · 2~3p</h3>
+      <ul>
+        <li>소재 테스트 로드맵: 변수 · 기간 · 판단 기준.</li>
+        <li>운영 최적화 룰표.</li>
+        <li>최적화 사이클(일/주/월).</li>
+      </ul>
+    </div>
+    <div>
+      <h3>체크포인트</h3>
+      <ul class="check">
+        <li>판단 기준에 최소 표본(노출·전환 수)이 포함되었는가?</li>
+        <li>자동화 캠페인에서 마케터가 통제할 수 있는 영역(소재, 피드, 전환 가치, 제외 타겟)을 명시했는가?</li>
+        <li>학습 기간을 해치는 잦은 변경을 막는 규칙이 있는가?</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 07 -->
+<section id="s07" class="g2">
+  <div class="sec-head"><span class="num">07</span><h2>포캐스팅<small>미디어믹스</small></h2></div>
+  <ul class="lead">
+    <li>예산을 매체·퍼널별로 나누고, 그 결과 예상되는 성과를 수치로 제시하는 단계입니다.</li>
+    <li>01에서 정한 KPI를 달성할 수 있는지가 이 장표에서 검증됩니다.</li>
+  </ul>
+  <figure>
+    <svg viewBox="0 0 900 230" role="img" aria-label="단가 가정에서 예산 배분과 예상 성과로 이어지는 계산 흐름과, 보수적, 기본, 공격적 세 시나리오">
+      <defs><marker id="a7" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="ar"/></marker></defs>
+      <rect x="10" y="20" width="190" height="80" rx="10" class="bx"/><text x="24" y="46" class="tb">단가 가정</text><text x="24" y="66" class="tm">CPM · CPC · CTR</text><text x="24" y="84" class="tm">CVR · 객단가</text>
+      <line x1="200" y1="60" x2="236" y2="60" class="ln" marker-end="url(#a7)"/>
+      <rect x="240" y="20" width="190" height="80" rx="10" class="bx"/><text x="254" y="46" class="tb">퍼널별 예산 배분</text><text x="254" y="66" class="tm">04 매체 맵 기준</text><text x="254" y="84" class="tm">비중 근거 명시</text>
+      <line x1="430" y1="60" x2="466" y2="60" class="ln" marker-end="url(#a7)"/>
+      <rect x="470" y="20" width="190" height="80" rx="10" class="bx"/><text x="484" y="46" class="tb">예상 성과</text><text x="484" y="66" class="tm">노출 → 클릭 → 전환</text><text x="484" y="84" class="tm">매출 · ROAS · CPA</text>
+      <line x1="660" y1="60" x2="696" y2="60" class="ln" marker-end="url(#a7)"/>
+      <rect x="700" y="20" width="190" height="80" rx="10" class="bx1"/><text x="714" y="46" class="tb">01 KPI와 대조</text><text x="714" y="66" class="tm">달성 가능 범위</text><text x="714" y="84" class="tm">부족분 대응안</text>
+      <text x="10" y="138" class="tm">세 가지 시나리오로 펼쳐 제시</text>
+      <rect x="10" y="150" width="280" height="66" rx="10" class="bx"/><text x="24" y="176" class="tb">보수적</text><text x="24" y="198" class="tm">RFP 하한 · 전환 매체 집중</text>
+      <rect x="310" y="150" width="280" height="66" rx="10" class="bx2"/><text x="324" y="176" class="tb">기본 (권장)</text><text x="324" y="198" class="tm">RFP 기준 · 풀퍼널</text>
+      <rect x="610" y="150" width="280" height="66" rx="10" class="bx"/><text x="624" y="176" class="tb">공격적</text><text x="624" y="198" class="tm">증액안 · 신규 매체 테스트</text>
+    </svg>
+    <figcaption>계산은 단가 가정에서 시작해 01의 KPI와 대조하며 끝납니다. 시나리오는 3개로 펼치고 기본안을 권장안으로 둡니다.</figcaption>
+  </figure>
+  <div class="tbl"><table>
+    <thead><tr><th>항목</th><th>보수적</th><th>기본</th><th>공격적</th></tr></thead>
+    <tbody>
+      <tr><td>예산</td><td>RFP 하한</td><td>RFP 기준</td><td>RFP + 증액안</td></tr>
+      <tr><td>매체 구성</td><td>전환 매체 집중</td><td>풀퍼널</td><td>풀퍼널 + 신규 매체 테스트</td></tr>
+      <tr><td>예상 성과 단가</td><td>벤치마크 하위 적용</td><td>벤치마크 평균</td><td>벤치마크 상위 + 규모 효과</td></tr>
+      <tr><td>리스크</td><td>신규 유입 둔화</td><td>학습기 효율 변동</td><td>한계 효율 체감</td></tr>
+    </tbody>
+  </table></div>
+  <div class="cols">
+    <div>
+      <h3>작성 방법</h3>
+      <ol>
+        <li>매체별 단가 가정을 업종 벤치마크와 자사 운영 데이터로 설정합니다.</li>
+        <li>퍼널 역할에 따라 예산 비중을 배분합니다.</li>
+        <li>세 시나리오로 예산과 예상 성과를 나눕니다.</li>
+        <li>학습기 효율 하락을 포함한 월별 성과 흐름을 표시합니다.</li>
+      </ol>
+    </div>
+    <div>
+      <h3>체크포인트</h3>
+      <ul class="check">
+        <li>모든 단가 가정에 출처 또는 "자사 데이터 기반 추정"이 표기되었는가?</li>
+        <li>예상 성과를 단일 값이 아닌 범위로 제시하고 전제 조건을 밝혔는가?</li>
+        <li>08 트래킹이 미비하면 측정 성과가 실제보다 낮게 잡힐 수 있다는 점을 연결했는가?</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 08 -->
+<section id="s08" class="g2">
+  <div class="sec-head"><span class="num">08</span><h2>기술 트래킹<small>GA/GTM 등 트래킹 점검</small></h2></div>
+  <ul class="lead">
+    <li>광고주의 현재 측정 환경을 진단하고, 성과를 정확히 재기 위한 개선안을 제시하는 단계입니다.</li>
+    <li>2026년에는 메타 전환 API(CAPI)가 사실상 기본 요건이 되었고, 픽셀만 쓰면 iOS 제한·동의 배너·광고 차단기 때문에 전환이 누락됩니다(<a href="https://www.wetracked.io/post/2025-how-to-set-up-facebook-conversion-api-or-serverside-tracking-with-gtm">WeTracked</a>).</li>
+    <li>자동 입찰은 전환 데이터로 학습하므로, 트래킹 품질이 곧 운영 성과로 이어집니다.</li>
+  </ul>
+  <figure>
+    <svg viewBox="0 0 900 270" role="img" aria-label="사이트 이벤트가 브라우저 경로와 서버 경로 두 갈래로 매체에 전달되고, 매체가 event_id로 중복을 제거하는 권장 트래킹 구조">
+      <defs><marker id="a8" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="ar"/></marker></defs>
+      <rect x="10" y="100" width="150" height="70" rx="10" class="bx"/><text x="24" y="128" class="tb">광고주 사이트·앱</text><text x="24" y="150" class="tm">구매·가입 이벤트</text>
+      <text x="200" y="40" class="tm">브라우저 경로 (기존)</text>
+      <rect x="200" y="50" width="200" height="56" rx="10" class="bx"/><text x="214" y="74" class="tb">웹 GTM</text><text x="214" y="94" class="tm">픽셀 · gtag</text>
+      <text x="200" y="168" class="t2">서버 경로 (보강)</text>
+      <rect x="200" y="178" width="200" height="56" rx="10" class="bx2"/><text x="214" y="202" class="tb">서버 GTM</text><text x="214" y="222" class="tm">sGTM 컨테이너</text>
+      <path d="M160 125 H180 V78 H196" class="ln" marker-end="url(#a8)"/>
+      <path d="M160 145 H180 V206 H196" class="ln" marker-end="url(#a8)"/>
+      <rect x="470" y="20" width="200" height="50" rx="8" class="bx"/><text x="484" y="50" class="t">메타 픽셀</text>
+      <rect x="470" y="80" width="200" height="50" rx="8" class="bx"/><text x="484" y="110" class="t">GA4 · 구글 Ads 태그</text>
+      <rect x="470" y="150" width="200" height="50" rx="8" class="bx2"/><text x="484" y="180" class="t">메타 CAPI</text>
+      <rect x="470" y="210" width="200" height="50" rx="8" class="bx2"/><text x="484" y="240" class="t">GA4 MP · 향상된 전환</text>
+      <line x1="400" y1="70" x2="466" y2="45" class="ln" marker-end="url(#a8)"/>
+      <line x1="400" y1="86" x2="466" y2="105" class="ln" marker-end="url(#a8)"/>
+      <line x1="400" y1="198" x2="466" y2="175" class="ln" marker-end="url(#a8)"/>
+      <line x1="400" y1="214" x2="466" y2="235" class="ln" marker-end="url(#a8)"/>
+      <rect x="740" y="90" width="150" height="90" rx="10" class="bx1"/><text x="754" y="118" class="tb">매체 학습</text><text x="754" y="140" class="tm">event_id로</text><text x="754" y="158" class="tm">중복 제거</text>
+      <path d="M670 45 H705 V120 H736" class="ln"/>
+      <path d="M670 175 H705 V140 H736" class="ln" marker-end="url(#a8)"/>
+      <path d="M670 105 H705" class="ln"/><path d="M670 235 H705 V140" class="ln"/>
+    </svg>
+    <figcaption>같은 이벤트를 브라우저와 서버 두 경로로 보내고, 매체가 event_id로 중복을 제거하는 권장 구조입니다. 초록색이 이번에 보강할 서버 경로입니다.</figcaption>
+  </figure>
+  <div class="tbl"><table>
+    <thead><tr><th>진단 항목</th><th>확인 내용</th><th>심각도 기준</th></tr></thead>
+    <tbody>
+      <tr><td>핵심 전환 이벤트</td><td>구매·가입·장바구니가 GA4와 매체에 모두 수집되는가</td><td><span class="pill c">긴급</span> 누락 시</td></tr>
+      <tr><td>데이터 정합성</td><td>매체 · GA4 · 실제 매출 간 차이</td><td><span class="pill c">긴급</span> 차이가 크면</td></tr>
+      <tr><td>서버 사이드</td><td>메타 CAPI, 구글 향상된 전환 적용 여부</td><td><span class="pill b">권장</span></td></tr>
+      <tr><td>중복 제거</td><td>픽셀·CAPI 병행 시 event_id 설정</td><td><span class="pill b">권장</span></td></tr>
+      <tr><td>동의 모드</td><td>쿠키 동의 신호 반영 여부</td><td><span class="pill a">선택</span> 업종에 따라</td></tr>
+    </tbody>
+  </table></div>
+  <div class="cols">
+    <div>
+      <h3>작성 방법</h3>
+      <ol>
+        <li>사이트·앱의 태그 현황(GA4, GTM, 매체 픽셀, MMP)을 점검합니다.</li>
+        <li>핵심 전환 이벤트 수집 여부와 매체·GA4·실제 매출 간 차이를 비교합니다.</li>
+        <li>문제를 긴급/권장/선택으로 나눠 진단표를 만듭니다.</li>
+        <li>개선 로드맵(서버 GTM, CAPI, 향상된 전환, 동의 모드)을 단계별로 제안합니다.</li>
+      </ol>
+    </div>
+    <div>
+      <h3>체크포인트</h3>
+      <ul class="check">
+        <li>픽셀과 CAPI를 함께 쓸 때 중복 제거 설계를 포함했는가?</li>
+        <li>광고주 개발 리소스가 필요한 작업과 대행사 단독 작업을 나눠 표기했는가?</li>
+        <li>사이트 접근이 어려우면 "수주 후 2주 내 정밀 진단" 같은 실행 계획으로 대체했는가?</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 09 -->
+<section id="s09" class="g3">
+  <div class="sec-head"><span class="num">09</span><h2>리포트 · 업무 프로세스<small>레버 엑스퍼트, 미팅 프로세스 정립</small></h2></div>
+  <ul class="lead">
+    <li>수주 이후 어떻게 함께 일하는지 구체적으로 보여주어 운영 안정성에 대한 신뢰를 주는 단계입니다.</li>
+    <li>레버 엑스퍼트 등 사내 리포트 솔루션으로 데이터 투명성과 보고 자동화를 강조합니다.</li>
+  </ul>
+  <figure>
+    <svg viewBox="0 0 900 220" role="img" aria-label="일간 대시보드, 주간 리포트, 월간 리뷰, 분기 QBR로 주기가 길어질수록 내용이 운영에서 전략으로 옮겨가는 리포트 체계">
+      <defs><marker id="a9" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="ar"/></marker></defs>
+      <line x1="20" y1="196" x2="880" y2="196" class="ln" marker-end="url(#a9)"/>
+      <text x="20" y="214" class="tm">운영 모니터링</text><text x="880" y="214" class="tm" text-anchor="end">전략 의사결정</text>
+      <rect x="20" y="118" width="200" height="66" rx="10" class="bx3"/><text x="34" y="142" class="tb">일간 · 대시보드</text><text x="34" y="164" class="tm">레버 엑스퍼트 KPI 모니터링</text>
+      <rect x="240" y="84" width="200" height="100" rx="10" class="bx3"/><text x="254" y="108" class="tb">주간 · 정기 리포트</text><text x="254" y="130" class="tm">성과 요약, 최적화 내역</text><text x="254" y="148" class="tm">다음 주 액션</text><text x="254" y="166" class="tm">+ 주간 미팅</text>
+      <rect x="460" y="50" width="200" height="134" rx="10" class="bx3"/><text x="474" y="74" class="tb">월간 · 인사이트</text><text x="474" y="96" class="tm">타겟·소재 인사이트</text><text x="474" y="114" class="tm">다음 달 플랜</text><text x="474" y="132" class="tm">+ 월간 리뷰 미팅</text>
+      <rect x="680" y="16" width="200" height="168" rx="10" class="bx3"/><text x="694" y="40" class="tb">분기 · QBR</text><text x="694" y="62" class="tm">목표 대비 성과</text><text x="694" y="80" class="tm">예산·전략 재조정</text><text x="694" y="98" class="tm">+ 분기 전략 문서</text>
+    </svg>
+    <figcaption>주기가 길어질수록 다루는 내용이 운영 지표에서 전략 판단으로 옮겨갑니다. 상자 높이는 다루는 범위의 넓이를 뜻합니다.</figcaption>
+  </figure>
+  <div class="cols">
+    <div>
+      <h3>작성 방법</h3>
+      <ol>
+        <li>리포트 체계를 일간·주간·월간·분기로 나눕니다.</li>
+        <li>레버 엑스퍼트의 대시보드 화면과 제공 지표를 캡처로 보여줍니다.</li>
+        <li>미팅 프로세스(킥오프 → 주간 → 월간 → QBR)와 안건을 정합니다.</li>
+        <li>담당 조직도와 R&amp;R, 이슈 대응 SLA(예: 긴급 이슈 2시간 내 회신)를 제시합니다.</li>
+      </ol>
+    </div>
+    <div>
+      <h3>체크포인트</h3>
+      <ul class="check">
+        <li>RFP가 요구한 리포트 주기·형식을 모두 충족하는가?</li>
+        <li>담당자 실명·직급·경력이 들어간 조직도인가?</li>
+        <li>레버 엑스퍼트 화면이 최신 버전 캡처인가?</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 10 -->
+<section id="s10" class="g3">
+  <div class="sec-head"><span class="num">10</span><h2>서비스<small>수수료 및 제작비 관련 어필</small></h2></div>
+  <ul class="lead">
+    <li>거래 조건을 명확히 제시해 가격 경쟁력과 투명성을 보여주는 단계입니다.</li>
+    <li>단순 할인보다 "이 조건으로 얻는 가치"를 함께 보여주는 것이 핵심입니다.</li>
+  </ul>
+  <figure>
+    <svg viewBox="0 0 900 170" role="img" aria-label="기본 조건인 수수료와 제작비 위에 무상 부가 서비스를 쌓아 서비스 패키지 총 가치로 보여주는 구조">
+      <rect x="10" y="110" width="560" height="48" rx="8" class="bx"/><text x="24" y="139" class="tb">기본 조건</text><text x="140" y="139" class="t">매체별 대행 수수료 · 월 소재 제작 수량·포맷·수정 횟수</text>
+      <rect x="10" y="56" width="560" height="48" rx="8" class="bx3"/><text x="24" y="85" class="tb">무상 부가</text><text x="140" y="85" class="t">트래킹 세팅 · 레버 엑스퍼트 대시보드 · 월간 인사이트 리포트</text>
+      <rect x="10" y="2" width="560" height="48" rx="8" class="bx3" style="fill-opacity:.55"/><text x="24" y="31" class="tb">예산 티어</text><text x="140" y="31" class="t">월 예산 구간별 추가 혜택</text>
+      <path d="M590 6 H610 V154 H590" class="ln"/>
+      <rect x="630" y="44" width="260" height="74" rx="10" class="bx1"/><text x="646" y="72" class="tb">서비스 패키지 총 가치</text><text x="646" y="96" class="tm">항목별 환산 금액으로 제시</text>
+      <line x1="610" y1="80" x2="626" y2="80" class="ln"/>
+    </svg>
+    <figcaption>기본 조건 위에 부가 서비스와 예산 티어 혜택을 쌓아 하나의 패키지 가치로 보여줍니다.</figcaption>
+  </figure>
+  <div class="cols">
+    <div>
+      <h3>작성 방법</h3>
+      <ol>
+        <li>매체별 대행 수수료 구조(매체 수수료, 별도 운영료 여부)를 표로 정리합니다.</li>
+        <li>소재 제작 범위(월 제작 수량, 포맷, 수정 횟수)와 비용 조건을 명시합니다.</li>
+        <li>무상 부가 서비스를 묶어 서비스 패키지로 보여줍니다.</li>
+        <li>예산 규모별 티어를 제시합니다.</li>
+      </ol>
+    </div>
+    <div>
+      <h3>체크포인트</h3>
+      <ul class="check">
+        <li>제안 조건이 사내 영업·재무 담당자 승인을 받았는가?</li>
+        <li>RFP의 가격 평가 항목·양식에 맞춰 작성했는가?</li>
+        <li>무상 제공 항목의 범위와 기간이 모호하지 않은가?</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 11 -->
+<section id="s11" class="g3">
+  <div class="sec-head"><span class="num">11</span><h2>어팬딕스<small>베스트 레퍼런스 / 별도 솔루션 어필</small></h2></div>
+  <ul class="lead">
+    <li>"실제로 해낸 적이 있다"는 근거와, 본문에 다 담지 못한 추가 역량을 보여주는 단계입니다.</li>
+    <li>본문 흐름을 끊지 않도록 상세 자료는 이곳에 모읍니다.</li>
+  </ul>
+  <figure>
+    <svg viewBox="0 0 900 110" role="img" aria-label="레퍼런스 한 건을 과제, 전략, 실행, 성과 네 칸으로 쓰는 구조">
+      <defs><marker id="a11" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="ar"/></marker></defs>
+      <rect x="10" y="20" width="190" height="72" rx="10" class="bx"/><text x="24" y="48" class="tb">과제</text><text x="24" y="70" class="tm">광고주와 비슷한 상황</text>
+      <rect x="236" y="20" width="190" height="72" rx="10" class="bx"/><text x="250" y="48" class="tb">전략</text><text x="250" y="70" class="tm">우리가 내린 판단</text>
+      <rect x="462" y="20" width="190" height="72" rx="10" class="bx"/><text x="476" y="48" class="tb">실행</text><text x="476" y="70" class="tm">매체·소재·운영</text>
+      <rect x="688" y="20" width="202" height="72" rx="10" class="bx3"/><text x="702" y="48" class="tb">성과</text><text x="702" y="70" class="tm">전후 수치 비교</text>
+      <line x1="200" y1="56" x2="232" y2="56" class="ln" marker-end="url(#a11)"/>
+      <line x1="426" y1="56" x2="458" y2="56" class="ln" marker-end="url(#a11)"/>
+      <line x1="652" y1="56" x2="684" y2="56" class="ln" marker-end="url(#a11)"/>
+    </svg>
+    <figcaption>레퍼런스는 업종·과제가 가장 비슷한 2~3건만 고르고, 한 건을 이 네 칸으로 씁니다.</figcaption>
+  </figure>
+  <div class="cols">
+    <div>
+      <h3>작성 방법</h3>
+      <ol>
+        <li>광고주와 업종·과제가 가장 비슷한 레퍼런스 2~3건을 고릅니다.</li>
+        <li>과제 → 전략 → 실행 → 성과(전후 수치) 구조로 씁니다.</li>
+        <li>자체 솔루션(레버 엑스퍼트, 내부 데이터·AI 툴)을 "이 광고주의 어떤 과제를 푸는지" 기준으로 소개합니다.</li>
+        <li>매체 세팅 상세, 키워드 리스트, 소재 원본 등 보조 자료를 첨부합니다.</li>
+      </ol>
+    </div>
+    <div>
+      <h3>체크포인트</h3>
+      <ul class="check">
+        <li>레퍼런스 수치가 공개 가능한 범위인가(기존 광고주 동의, 비식별화)?</li>
+        <li>솔루션 소개가 본문 01~08의 과제와 연결되는가?</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 12 -->
+<section id="s12" class="g1">
+  <div class="sec-head"><span class="num">12</span><h2>아웃트로<small>클로징 임팩트</small></h2></div>
+  <ul class="lead">
+    <li>01의 미션을 다시 불러와 "왜 우리여야 하는가"를 한 번에 각인시키는 단계입니다.</li>
+    <li>심사위원이 마지막으로 보는 장표이므로, 가장 기억에 남을 한 문장이 필요합니다.</li>
+  </ul>
+  <figure>
+    <svg viewBox="0 0 900 150" role="img" aria-label="미션 재호출, 다섯 개 키워드 압축, 30/60/90일 약속, 클로징 카피 순서의 아웃트로 구성">
+      <defs><marker id="a12" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" class="ar"/></marker></defs>
+      <rect x="10" y="30" width="190" height="90" rx="10" class="bx1"/><text x="24" y="58" class="tb">미션 재호출</text><text x="24" y="80" class="tm">01 문장 그대로</text>
+      <rect x="236" y="30" width="190" height="90" rx="10" class="bx"/><text x="250" y="58" class="tb">5개 키워드</text><text x="250" y="80" class="tm">타겟 · 메시지 · 매체</text><text x="250" y="98" class="tm">측정 · 파트너십</text>
+      <rect x="462" y="30" width="190" height="90" rx="10" class="bx"/><text x="476" y="58" class="tb">30/60/90일 약속</text><text x="476" y="80" class="tm">30일 트래킹 정비</text><text x="476" y="98" class="tm">60일 소재 위너 도출</text>
+      <rect x="688" y="30" width="202" height="90" rx="10" class="bx1"/><text x="702" y="58" class="tb">클로징 카피</text><text x="702" y="80" class="tm">이 광고주만을 위한</text><text x="702" y="98" class="tm">한 문장</text>
+      <line x1="200" y1="75" x2="232" y2="75" class="ln" marker-end="url(#a12)"/>
+      <line x1="426" y1="75" x2="458" y2="75" class="ln" marker-end="url(#a12)"/>
+      <line x1="652" y1="75" x2="684" y2="75" class="ln" marker-end="url(#a12)"/>
+    </svg>
+    <figcaption>처음의 미션으로 시작해 광고주만을 위한 한 문장으로 끝냅니다. 30/60/90일 약속은 05 운영 로드맵과 같아야 합니다.</figcaption>
+  </figure>
+  <div class="cols">
+    <div>
+      <h3>작성 방법</h3>
+      <ol>
+        <li>01 미션 문장을 다시 제시합니다.</li>
+        <li>02~10의 핵심을 3~5개 키워드로 압축합니다.</li>
+        <li>런칭 후 30/60/90일 약속을 제시합니다.</li>
+        <li>클로징 카피 1문장으로 마무리합니다.</li>
+      </ol>
+    </div>
+    <div>
+      <h3>체크포인트</h3>
+      <ul class="check">
+        <li>클로징 카피가 다른 광고주에게도 쓸 수 있는 일반론이 아닌가?</li>
+        <li>30/60/90일 약속이 05 운영 로드맵과 일치하는가?</li>
+        <li>"무조건 ROAS 2배" 같은 단정 대신 07의 범위 수치를 사용했는가?</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 일정 -->
+<section id="schedule" class="g0">
+  <div class="sec-head"><span class="num">—</span><h2>작성 일정 및 R&amp;R<small>RFP 수령 후 제출까지 10영업일 기준</small></h2></div>
+  <ul class="lead">
+    <li>10영업일은 권장 일정이며 내부 기준 가정입니다. 제출 일정에 따라 압축합니다.</li>
+    <li>앞 단계가 확정되기 전에 뒤 단계를 쓰지 않도록, D+3에 01~03 내부 리뷰를 반드시 거칩니다.</li>
+  </ul>
+  <figure>
+    <svg viewBox="0 0 900 330" role="img" aria-label="D+1부터 D+10까지 단계별 작업 기간을 나타낸 간트 차트. D+3 전략 리뷰와 D+9 전체 리뷰가 게이트">
+      <!-- grid: x0=210, day width 66 -->
+      <g class="tm">
+        <text x="243" y="20" text-anchor="middle" class="tm">D+1</text><text x="309" y="20" text-anchor="middle" class="tm">D+2</text><text x="375" y="20" text-anchor="middle" class="tm">D+3</text><text x="441" y="20" text-anchor="middle" class="tm">D+4</text><text x="507" y="20" text-anchor="middle" class="tm">D+5</text><text x="573" y="20" text-anchor="middle" class="tm">D+6</text><text x="639" y="20" text-anchor="middle" class="tm">D+7</text><text x="705" y="20" text-anchor="middle" class="tm">D+8</text><text x="771" y="20" text-anchor="middle" class="tm">D+9</text><text x="837" y="20" text-anchor="middle" class="tm">D+10</text>
+      </g>
+      <line x1="210" y1="30" x2="210" y2="320" class="ln-d"/><line x1="408" y1="30" x2="408" y2="320" class="ln-d"/><line x1="738" y1="30" x2="738" y2="320" class="ln-d"/>
+      <text x="10" y="56" class="t">01 인트로 · 02 타겟</text><text x="10" y="72" class="tm">전략 리드</text>
+      <rect x="214" y="44" width="128" height="24" rx="6" class="bx1"/>
+      <text x="10" y="92" class="t1">01~03 내부 리뷰</text><text x="10" y="108" class="tm">팀장</text>
+      <rect x="346" y="80" width="58" height="24" rx="6" class="bx1" style="fill:var(--p1)"/>
+      <text x="10" y="128" class="t">03 커뮤니케이션</text><text x="10" y="144" class="tm">크리에이티브</text>
+      <rect x="346" y="116" width="190" height="24" rx="6" class="bx1"/>
+      <text x="10" y="164" class="t">04 매체 · 05 운영 · 06 최적화</text><text x="10" y="180" class="tm">매체 운영</text>
+      <rect x="412" y="152" width="256" height="24" rx="6" class="bx2"/>
+      <text x="10" y="200" class="t">07 포캐스팅</text><text x="10" y="216" class="tm">매체 운영</text>
+      <rect x="544" y="188" width="190" height="24" rx="6" class="bx2"/>
+      <text x="10" y="236" class="t">08 기술 트래킹</text><text x="10" y="252" class="tm">데이터·트래킹</text>
+      <rect x="478" y="224" width="256" height="24" rx="6" class="bx2"/>
+      <text x="10" y="272" class="t">09~11 신뢰 파트</text><text x="10" y="288" class="tm">팀장 + 영업</text>
+      <rect x="610" y="260" width="124" height="24" rx="6" class="bx3"/>
+      <text x="10" y="308" class="t1">12 · 전체 리뷰 → 제출</text><text x="10" y="324" class="tm">전원</text>
+      <rect x="742" y="296" width="58" height="24" rx="6" class="bx1" style="fill:var(--p1)"/>
+      <rect x="804" y="296" width="62" height="24" rx="6" class="bx"/>
+    </svg>
+    <figcaption>세로 점선은 게이트입니다. D+3 리뷰에서 01~03을 확정한 뒤 실행 파트를 쓰고, D+9 전체 리뷰 후 D+10에 디자인을 정리해 제출합니다.</figcaption>
+  </figure>
+  <div class="tbl"><table>
+    <thead><tr><th>시점</th><th>단계</th><th>담당(예시)</th><th>산출물</th></tr></thead>
+    <tbody>
+      <tr><td class="n">D+1~2</td><td>01 인트로, 02 타겟</td><td>전략 리드</td><td>미션·타겟 초안</td></tr>
+      <tr><td class="n">D+3</td><td>01~03 내부 리뷰</td><td>팀장</td><td>전략 뼈대 확정</td></tr>
+      <tr><td class="n">D+3~5</td><td>03 커뮤니케이션</td><td>크리에이티브 담당</td><td>VP, 소재 트랙·시안</td></tr>
+      <tr><td class="n">D+4~7</td><td>04 매체, 05 운영, 06 최적화</td><td>매체 운영 담당</td><td>퍼널 맵, 운영·최적화 룰</td></tr>
+      <tr><td class="n">D+6~8</td><td>07 포캐스팅</td><td>매체 운영 담당</td><td>시나리오별 미디어믹스</td></tr>
+      <tr><td class="n">D+5~8</td><td>08 기술 트래킹</td><td>데이터·트래킹 담당</td><td>트래킹 진단표</td></tr>
+      <tr><td class="n">D+7~8</td><td>09~11</td><td>팀장 + 영업</td><td>리포트 체계, 서비스 조건, 레퍼런스</td></tr>
+      <tr><td class="n">D+9</td><td>12 아웃트로, 전체 리뷰</td><td>팀장</td><td>최종본</td></tr>
+      <tr><td class="n">D+10</td><td>디자인 정리·제출</td><td>전원</td><td>제출본</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- 최종 점검 -->
+<section id="final" class="g0">
+  <div class="sec-head"><span class="num">—</span><h2>최종 점검 체크리스트<small>제출 전 D+9 전체 리뷰에서 확인</small></h2></div>
+  <ul class="check">
+    <li>01 미션 → 12 클로징까지 한 줄로 이어지는가(장표 제목만 읽어도 논리가 보이는가)?</li>
+    <li>타겟(02) → VP(03) → 퍼널(04) → 예산(07)의 연결 고리가 끊긴 곳이 없는가?</li>
+    <li>모든 수치에 출처 또는 "추정/가정" 표기가 있는가?</li>
+    <li>RFP 평가 항목별로 대응하는 장표가 모두 있는가?</li>
+    <li>성과를 단정하는 표현 없이 범위·전제·리스크를 함께 제시했는가?</li>
+    <li>광고주명·브랜드명·타 광고주 정보가 잘못 남아 있지 않은가?</li>
+  </ul>
+</section>
+
+<!-- 출처 -->
+<section id="sources" class="g0 src">
+  <div class="sec-head"><span class="num">—</span><h2>출처</h2></div>
+  <ul>
+    <li><a href="https://inside.ampm.co.kr/insight/13358">AMPM 인사이트 — 2026 매체 자동화와 시그널·크리에이티브 중요성</a></li>
+    <li><a href="https://inside.ampm.co.kr/insight/13379">AMPM 인사이트 — AI 자동화 캠페인 시대 마케터의 역할</a></li>
+    <li><a href="https://inside.ampm.co.kr/insight/58725">AMPM 인사이트 — 2026 구글 광고 풀퍼널 믹스 전략</a></li>
+    <li><a href="https://www.digitalmarketer.co.kr/insights/data-driven-google-meta-campaign-strategy-2">디지털마케터 — 구글·메타 데이터 드리븐 캠페인 전략 2</a></li>
+    <li><a href="https://www.wetracked.io/post/2025-how-to-set-up-facebook-conversion-api-or-serverside-tracking-with-gtm">WeTracked — Meta Conversion API with GTM (2026)</a></li>
+  </ul>
+  <p class="note">도식 안의 매체 배치, 판단 기준 수치, 일정, 분량 비중은 작성 기준 예시이며 실제 제안에 맞춰 조정합니다.</p>
+</section>
+</main>
+</div>
+</body>
+</html>
