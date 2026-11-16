@@ -96,12 +96,28 @@ button{cursor:pointer;border:0;background:none}
 .status.s-완료{background-color:var(--s-done-bg);color:var(--s-done)}
 .status.s-수정{background-color:var(--s-fix-bg);color:var(--s-fix)}
 .status.s-홀딩{background-color:var(--s-hold-bg);color:var(--s-hold)}
+.brand{border-bottom:1px solid #f0f1f4}
+.brand:last-of-type{border-bottom:0}
+.br-head{display:flex;align-items:center;gap:8px;padding:10px 18px 8px;background:#f8f9fb;border-bottom:1px solid #f0f1f4}
+.br-head .tag{font-weight:700;font-size:13px;color:var(--text);display:inline-flex;align-items:center;gap:6px}
+.br-head .tag:before{content:"";width:4px;height:14px;border-radius:2px;background:var(--accent)}
+.br-head .cnt{font-size:12px;color:var(--sub)}
+.br-head .bar{flex:0 0 80px;height:5px;background:#e6e8ec;border-radius:99px;overflow:hidden}
+.br-head .bar span{display:block;height:100%;background:var(--s-done)}
+.br-head .sp{flex:1}
+.br-head .icon{width:26px;height:26px}
+.brand .item{padding-left:30px}
+.brand .add-item{padding-left:30px;padding-top:8px;padding-bottom:9px;font-size:12px}
+.brand.closed .br-items{display:none}
+.brand.closed .collapse svg{transform:rotate(-90deg)}
+.add-brand{color:var(--accent)}
 .add-item{display:flex;align-items:center;gap:6px;width:100%;padding:11px 18px;color:var(--muted);font-weight:600;font-size:13px;text-align:left}
 .add-item:hover{color:var(--accent);background:#fafbff}
 .empty{padding:48px 20px;text-align:center;color:var(--muted);background:#fff;border:1px dashed var(--line);border-radius:14px}
 
 /* flat list */
 .flat .item{grid-template-columns:28px 1fr auto}
+.flat .grp b{color:var(--text);font-weight:700}
 .flat .grp{font-size:11px;color:var(--accent);font-weight:700;margin-bottom:2px}
 
 /* modal */
@@ -224,10 +240,21 @@ function seed(){
 let state = load();
 let filter = {status:null, star:false, q:"", view:"group"};
 let closed = new Set();
+let closedBrand = new Set();
+const brandsOf = a => [...new Set(a.items.map(i=>i.brand).filter(Boolean))];
 
+function migrate(d){
+  d.forEach(a=>a.items.forEach(i=>{
+    if(i.brand===undefined){
+      const m = /^\[([^\]]+)\]\s*(.*)$/.exec(i.text||"");
+      if(m){ i.brand=m[1].trim(); i.text=m[2]; } else i.brand="";
+    }
+  }));
+  return d;
+}
 function load(){
-  try{ const r = localStorage.getItem(KEY); if(r) return JSON.parse(r); }catch(e){}
-  return seed();
+  try{ const r = localStorage.getItem(KEY); if(r) return migrate(JSON.parse(r)); }catch(e){}
+  return migrate(seed());
 }
 function save(){ try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){} }
 
@@ -258,7 +285,7 @@ const ICON = {
 function matches(i){
   if(filter.status && i.status!==filter.status) return false;
   if(filter.star && !i.star) return false;
-  if(filter.q){ const q=filter.q.toLowerCase(); if(!(i.text+" "+(i.memo||"")).toLowerCase().includes(q)) return false; }
+  if(filter.q){ const q=filter.q.toLowerCase(); if(!(i.text+" "+(i.memo||"")+" "+(i.brand||"")).toLowerCase().includes(q)) return false; }
   return true;
 }
 
@@ -282,7 +309,7 @@ function itemHTML(i, a, showGroup){
   return `<div class="item s-${i.status}" data-a="${a.id}" data-i="${i.id}">
     <button class="star ${i.star?'on':''}" data-act="star" title="중요 표시">${ICON.star}</button>
     <div class="it-main" data-act="edit">
-      ${showGroup?`<div class="grp">${esc(a.title)}</div>`:""}
+      ${showGroup?`<div class="grp">${esc(a.title)}${i.brand?` · <b>${esc(i.brand)}</b>`:""}</div>`:""}
       <div class="it-text">${esc(i.text)}</div>
       ${(p||i.end)?`<div class="it-sub">${p?`<span class="period">${ICON.cal}${p}</span>`:""}${dday(i.end,i.status)}</div>`:""}
       ${i.memo?`<div class="it-memo">${esc(i.memo)}</div>`:""}
@@ -292,6 +319,35 @@ function itemHTML(i, a, showGroup){
       <button class="icon" data-act="del" title="삭제">${ICON.trash}</button>
     </div>
   </div>`;
+}
+
+function bodyHTML(a, items, filtering){
+  const loose = items.filter(i=>!i.brand);
+  const brands = brandsOf(a);
+  let h = loose.map(i=>itemHTML(i,a,false)).join("");
+  brands.forEach(b=>{
+    const all = a.items.filter(i=>i.brand===b);
+    const vis = items.filter(i=>i.brand===b);
+    if(filtering && !vis.length) return;
+    const done = all.filter(i=>i.status==="완료").length;
+    const key = a.id+"|"+b;
+    h += `<div class="brand ${closedBrand.has(key)&&!filtering?'closed':''}" data-brand="${esc(b)}">
+      <div class="br-head">
+        <span class="tag">${esc(b)}</span><span class="cnt">완료 ${done}/${all.length}</span>
+        <span class="bar"><span style="width:${all.length?done/all.length*100:0}%"></span></span>
+        <span class="sp"></span>
+        <button class="icon" data-act="brEdit" title="브랜드명 수정">${ICON.edit}</button>
+        <button class="icon" data-act="brDel" title="브랜드 삭제">${ICON.trash}</button>
+        <button class="icon collapse" data-act="brFold" title="접기/펼치기">${ICON.chev}</button>
+      </div>
+      <div class="br-items">
+        ${vis.map(i=>itemHTML(i,a,false)).join("")}
+        <button class="add-item" data-act="addItem">+ ${esc(b)} 항목 추가</button>
+      </div>
+    </div>`;
+  });
+  h += `<div style="display:flex"><button class="add-item" data-act="addItem" data-nobrand="1">+ 항목 추가</button><button class="add-item add-brand" data-act="addBrand" style="width:auto;white-space:nowrap">+ 브랜드(구분) 추가</button></div>`;
+  return h;
 }
 
 function render(){
@@ -331,8 +387,7 @@ function render(){
         </div>
       </div>
       <div class="ag-body">
-        ${items.map(i=>itemHTML(i,a,false)).join("")}
-        <button class="add-item" data-act="addItem">+ 항목 추가</button>
+        ${bodyHTML(a, items, filtering)}
       </div>
     </section>`;
   });
@@ -352,7 +407,13 @@ $("#list").addEventListener("click", e=>{
   if(act==="star"){ i.star=!i.star; save(); render(); }
   if(act==="edit"){ openItem(ia, i); }
   if(act==="del"){ if(confirm(`'${i.text}' 항목을 삭제할까요?`)){ ia.items = ia.items.filter(x=>x!==i); save(); render(); toast("삭제했습니다"); } }
-  if(act==="addItem"){ openItem(a, null); }
+  const brEl = btn.closest("[data-brand]"); const brName = brEl ? brEl.dataset.brand : "";
+  if(act==="addItem"){ openItem(a, null, btn.dataset.nobrand ? "" : brName); }
+  if(act==="addBrand"){ const n=(prompt("추가할 브랜드(구분) 이름")||"").trim(); if(n){ openItem(a,null,n); } }
+  if(act==="brEdit"){ const n=(prompt("브랜드명 수정", brName)||"").trim(); if(n && n!==brName){ a.items.forEach(x=>{ if(x.brand===brName) x.brand=n; }); save(); render(); toast("수정했습니다"); } }
+  if(act==="brDel"){ const list=a.items.filter(x=>x.brand===brName);
+    if(confirm(`'${brName}' 브랜드를 삭제할까요?\n[확인] 하위 항목 ${list.length}개까지 삭제\n[취소] 그대로 두기`)){ a.items=a.items.filter(x=>x.brand!==brName); save(); render(); toast("삭제했습니다"); } }
+  if(act==="brFold"){ const k=a.id+"|"+brName; closedBrand.has(k)?closedBrand.delete(k):closedBrand.add(k); render(); }
   if(act==="agEdit"){ openAgenda(a); }
   if(act==="agDel"){ if(confirm(`'${a.title}' 아젠다와 하위 항목 ${a.items.length}개를 모두 삭제할까요?`)){ state = state.filter(x=>x!==a); save(); render(); toast("삭제했습니다"); } }
   if(act==="agUp"){ const k=state.indexOf(a); [state[k-1],state[k]]=[state[k],state[k-1]]; save(); render(); }
@@ -381,7 +442,7 @@ $("#btnFold").addEventListener("click", e=>{
 $("#btnAddAgenda").addEventListener("click", ()=>openAgenda(null));
 
 /* modal */
-function openModal(html){ $("#modal").innerHTML=html; $("#overlay").hidden=false; setTimeout(()=>$("#modal").querySelector("input,textarea")?.focus(),30); }
+function openModal(html){ $("#modal").innerHTML=html; $("#overlay").hidden=false; setTimeout(()=>($("#fText")||$("#modal").querySelector("input,textarea"))?.focus(),30); }
 function closeModal(){ $("#overlay").hidden=true; }
 $("#overlay").addEventListener("mousedown", e=>{ if(e.target.id==="overlay") closeModal(); });
 document.addEventListener("keydown", e=>{ if(e.key==="Escape") closeModal(); });
@@ -396,12 +457,16 @@ function bindPick(){
   });
 }
 
-function openItem(a, i){
-  const isNew = !i; const v = i || {text:"",status:"대기",start:"",end:"",memo:"",star:false};
+function openItem(a, i, brand=""){
+  const isNew = !i; const v = i || {text:"",status:"대기",start:"",end:"",memo:"",star:false,brand};
+  const allBrands = [...new Set(state.flatMap(x=>x.items.map(y=>y.brand)).filter(Boolean))];
   openModal(`<h3>${isNew?'항목 추가':'항목 수정'}</h3>
     <div class="body">
       <div class="field"><label>아젠다</label>
         <select id="fA">${state.map(x=>`<option value="${x.id}" ${x===a?'selected':''}>${esc(x.title)}</option>`).join("")}</select></div>
+      <div class="field"><label>브랜드 / 구분 <span style="font-weight:500;color:var(--muted)">(선택 · 비우면 구분 없음)</span></label>
+        <input id="fBrand" list="brandList" value="${esc(v.brand||"")}" placeholder="예: 팬잇">
+        <datalist id="brandList">${allBrands.map(b=>`<option value="${esc(b)}">`).join("")}</datalist></div>
       <div class="field"><label>항목</label><input id="fText" value="${esc(v.text)}" placeholder="할 일을 입력하세요"></div>
       <div class="field"><label>상태</label>${stPick(v.status)}</div>
       <div class="row2">
@@ -422,7 +487,7 @@ function openItem(a, i){
     const text = $("#fText").value.trim(); if(!text){ $("#fText").focus(); return; }
     const s=$("#fStart").value, en=$("#fEnd").value;
     if(s && en && s>en){ alert("마감일이 시작일보다 빠릅니다"); return; }
-    const data = {text, status:document.querySelector("#stPick .on").dataset.s, start:s, end:en, memo:$("#fMemo").value.trim(), star:$("#fStar").checked};
+    const data = {text, status:document.querySelector("#stPick .on").dataset.s, start:s, end:en, memo:$("#fMemo").value.trim(), star:$("#fStar").checked, brand:$("#fBrand").value.trim()};
     const target = findA($("#fA").value);
     if(isNew){ target.items.push({id:uid(), ...data}); }
     else { Object.assign(i, data); if(target!==a){ a.items=a.items.filter(x=>x!==i); target.items.push(i); } }
@@ -464,7 +529,7 @@ $("#fileImport").onchange = e=>{
   const f=e.target.files[0]; if(!f) return;
   const r=new FileReader(); r.onload=()=>{
     try{ const d=JSON.parse(r.result); if(!Array.isArray(d)) throw 0;
-      if(confirm("현재 데이터를 백업 파일 내용으로 바꿀까요?")){ state=d; save(); render(); toast("불러왔습니다"); } }
+      if(confirm("현재 데이터를 백업 파일 내용으로 바꿀까요?")){ state=migrate(d); save(); render(); toast("불러왔습니다"); } }
     catch(err){ alert("올바른 백업 파일이 아닙니다"); }
     e.target.value="";
   }; r.readAsText(f);
