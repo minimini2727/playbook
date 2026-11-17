@@ -55,7 +55,7 @@ function normalize(s){
   o.input = Object.assign(defaultState().input, s.input || {});
   o.design = Object.assign({theme: 'clean'}, s.design || {});
   o.merge = Object.assign(defaultState().merge, s.merge || {});
-  o.sections = (o.sections || []).map(x => ({role: x.kind === 'strategy' ? 'custom' : x.kind, ...x}));
+  o.sections = (o.sections || []).map(x => ({...x, role: x.role && x.role !== 'custom' ? x.role : (x.kind && x.kind !== 'strategy' ? x.kind : (typeof inferRole === 'function' ? inferRole((x.title || '') + ' ' + (x.goal || '')) : 'custom'))}));
   if (!o.id) o.id = uid();
   return o;
 }

@@ -23,16 +23,17 @@ function parseJSON(t){
 const cut = (s, n) => (s || '').length > n ? s.slice(0, n) + '\n…(이하 생략)' : (s || '');
 
 /* ---------- 프롬프트 공통 규칙 (레퍼런스 플레이북) ---------- */
-const PLAYBOOK_RULES = `[매드업 제안 플레이북 — 반드시 따를 것]
-1. 흐름: 진단(시장·경쟁·고객·매체) → 과제 3개(가져오고·지키고·남기고) → 3트랙 플레이북(FIND 창출형/WIN 수확형/KEEP 전환형) → 퍼널 맵 → 매체별 액션 플랜 → 예산 시나리오 3안(보수/균형/공격, 균형 추천) → 크리에이티브(트랙별 WHY→HOW, 2주 테스트·하위 25% 교체 규칙) → KPI(결과 KPI는 GA4, 운영 KPI는 트랙별) → 리포팅(데일리 코멘트·주간 액션·Learning Log) → 최적화(조건→액션 운영 룰, 1/3/6개월 로드맵, 착수 체크리스트) → 사례 → 이슈 대응(3등급·SLA) → 비용.
-2. 장표 타이틀은 "주장이 담긴 한 문장"(예: "쇼핑검색은 비교가 시작되는 순간마다 상품을 먼저 올려둡니다."), subtitle은 근거·방법 한 문장.
-3. 매체별 액션 페이지는 layout "spec" — items: 누구에게 / 무엇으로 / 랜딩 / 운영 방안(번호 3개) / 평가 KPI / 실행 일정(예산 비중 포함). keyMsg=매체 역할 한 줄, tag="FIND · UPPER FUNNEL" 형식.
-4. 숫자는 출처(기관·매체명, 날짜)를 source에 쓰고, 추정치는 "(가정)"·"(추정)" 표기. 회사 실적·인력명·단가처럼 모르는 사실은 지어내지 말고 "[입력 필요]".
-5. 할인율보다 회원 혜택·제품 가치로 설득, 채널 간(공식몰·스토어) 키워드 잠식 방지, 실행 주체·시점(누가/언제/어떻게)을 항상 명시. "무조건 성과 상승" 같은 단정 금지 — 전제 조건·리스크 병기.
+const PLAYBOOK_RULES = `[작성 규칙 — 반드시 따를 것]
+0. 참고용으로 받은 다른 제안서가 있더라도 흐름·장표 구성만 참고하고, 그 문장·카피·수치·사례·캠페인명은 절대 재사용하지 말 것. 모든 문장은 이번 광고주에 맞게 새로 쓸 것.
+1. 흐름: 현황 진단(시장·경쟁·고객·매체) → 과제 3개 → 3트랙 전략(DISCOVER 처음 알게 하기 / DECIDE 비교에서 선택받기 / RETURN 다시 오게 하기) → 퍼널별 매체 역할 → 매체별 실행안 → 예산 3안(효율 우선/균형/성장 우선) → 단계별 크리에이티브와 테스트 방식 → 최종 지표·관리 지표·측정 환경 → 보고 체계 → 대응 기준·1/3/6개월 로드맵·착수 준비 → 사례 → 이슈 대응 → 비용.
+2. 장표 타이틀은 주장이 담긴 한 문장, subtitle은 근거나 방법 한 문장.
+3. 매체별 실행안 장표는 layout "spec" — items: 대상 / 소재 / 랜딩 / 운영 방법(번호 3개) / 평가 지표 / 일정·예산. keyMsg=매체 역할 한 줄, tag="DISCOVER · 확장 트랙" 형식.
+4. 숫자는 source에 출처(기관·매체명, 날짜)를 쓰고, 추정치는 "(가정)"·"(추정)" 표기. 회사 실적·인력명·단가처럼 모르는 사실은 지어내지 말고 "[입력 필요]".
+5. 실행 주체·시점(누가/언제/어떻게)을 항상 명시. "무조건 성과 상승" 같은 단정 금지 — 전제 조건·리스크 병기.
 [layout 카탈로그 — items 필드 의미]
-cards(병렬 2~4: h 제목, d 설명, v 수치) · process(단계 3~6: h 단계명, d 내용, v 산출물) · kpi(2~4: h 지표, v 수치, d 설명) · hero(첫 항목 v 빅넘버 + 나머지 근거) · split(keyMsg 핵심 주장 + 근거 3~5) · spec(매체 액션: h 라벨, d 내용) · table(5행 이상 비교: h 구분, d 내용, v 수치) · compare(h 항목, v AS-IS, d TO-BE) · funnel(h 단계, d 매체·역할, v KPI) · timeline(h 시점, d 실행, v 산출물) · chart(h 항목, v "35%", d 설명) · matrix(4칸: h, d, v 라벨) · grid(6칸) · list(기타)
+cards(병렬 2~4: h 제목, d 설명, v 수치) · process(단계 3~6: h 단계명, d 내용, v 산출물) · kpi(2~4: h 지표, v 수치, d 설명) · hero(첫 항목 v 큰 숫자 + 나머지 근거) · split(keyMsg 핵심 주장 + 근거 3~5) · spec(매체 실행안: h 라벨, d 내용) · table(5행 이상 비교: h 구분, d 내용, v 수치) · compare(h 항목, v AS-IS, d TO-BE) · funnel(h 단계, d 매체·역할, v 지표) · timeline(h 시점, d 실행, v 산출물) · chart(h 항목, v "35%", d 설명) · matrix(4칸: h, d, v 라벨) · grid(6칸) · list(기타)
 page type: divider(간지) · bridge(논리 전환 한 문장, keyMsg가 크게 노출) · strategy(전략·실행) · explain(근거·설명)`;
-const SYS_BASE = `너는 한국 디지털 퍼포먼스 마케팅 대행사(매드업)의 10년차 제안 전략가다. 경쟁 PT에서 이겨야 하는 제안자 입장에서 판단한다.\n${PLAYBOOK_RULES}\n모든 출력은 한국어, 요청한 JSON만 출력한다.`;
+const SYS_BASE = `너는 한국 디지털 퍼포먼스 마케팅 대행사의 10년차 제안 전략가다. 경쟁 PT에서 이겨야 하는 제안자 입장에서 판단한다.\n${PLAYBOOK_RULES}\n모든 출력은 한국어, 요청한 JSON만 출력한다.`;
 
 function inputDump(maxRfp = 60000){
   const I = S.input;
@@ -61,7 +62,7 @@ const JSON_SCHEMA = `{
 }`;
 function claudePromptAll(){
   const A = S.input.analysis, eng = A?.engine ? `\n[내장 엔진 초안 — 더 날카롭게 개선할 것]\n우선순위: ${(A.priorities || []).map(p => p.title).join(' / ')}\n매체 믹스: ${(A.mix || []).map(m => `${m.name} ${m.pct}%`).join(', ')}\n섹션: ${(A.sections || []).map(s => s.title).join(' / ')}` : '';
-  return `너는 매드업의 퍼포먼스 마케팅 제안 전략가야. 아래 RFP와 인풋으로 실제 제출할 제안서의 로직과 장표 내용을 작성해줘.
+  return `너는 퍼포먼스 마케팅 대행사의 제안 전략가야. 아래 RFP와 인풋으로 실제 제출할 제안서의 로직과 장표 내용을 작성해줘.
 
 [해야 할 일]
 1) 웹 검색으로 최신 시장 데이터를 찾아(카테고리 온라인 거래 추이, 검색량 추이, 경쟁사 가격·광고 동향, 업계 트렌드) 출처·날짜와 함께 research에 정리.
@@ -79,7 +80,7 @@ ${inputDump()}
 ${JSON_SCHEMA}`;
 }
 function claudePromptSection(sec){
-  return `너는 매드업의 퍼포먼스 마케팅 제안 전략가야. 제안서의 "${sec.title}" 섹션 장표를 실제 제출 수준으로 고도화해줘. 필요하면 웹 검색으로 최신 데이터를 찾아 출처와 함께 반영해.
+  return `너는 퍼포먼스 마케팅 대행사의 제안 전략가야. 제안서의 "${sec.title}" 섹션 장표를 실제 제출 수준으로 고도화해줘. 필요하면 웹 검색으로 최신 데이터를 찾아 출처와 함께 반영해.
 
 ${PLAYBOOK_RULES}
 
@@ -130,7 +131,7 @@ function importClaude(j, withSec){
   if (j.sections?.length){
     S.input.analysis.sections = j.sections.map(s => ({role: s.role || 'custom', title: s.title, en: s.en || '', goal: s.goal || '', pages: (s.pages || []).length + (s.divider ? 1 : 0), divider: !!s.divider}));
     if (withSec){
-      S.sections = j.sections.map(s => { const role = ROLES[s.role] ? s.role : 'custom'; const sec = newSection(kindOfRole(role), s.title, s.goal || '', 1, !!s.divider, role); sec.en = s.en || ''; const pages = (s.pages || []).map(p => newPage(p.type, p)); if (sec.divider) pages.unshift(newPage('divider', {title: s.title, subtitle: s.goal || '', items: []})); sec.pageList = pages; sec.pages = pages.length; return sec; });
+      S.sections = j.sections.map(s => { const role = ROLES[s.role] && s.role !== 'custom' ? s.role : inferRole(s.title + ' ' + (s.goal || '')); const sec = newSection(kindOfRole(role), s.title, s.goal || '', 1, !!s.divider, role); sec.en = s.en || ''; const pages = (s.pages || []).map(p => newPage(p.type, p)); if (sec.divider) pages.unshift(newPage('divider', {title: s.title, subtitle: s.goal || '', items: []})); sec.pageList = pages; sec.pages = pages.length; return sec; });
     }
   }
 }
@@ -182,7 +183,8 @@ function applyAnalysis(res){
 function createSkeleton(){
   const A = S.input.analysis || strategistAnalysis();
   if (!S.input.analysis) applyAnalysis(A);
-  S.sections = (A.sections || []).map(s => { const role = ROLES[s.role] ? s.role : 'custom'; const sec = newSection(kindOfRole(role), s.title, s.goal || '', Math.max(1, +s.pages || 3), s.divider ?? (+s.pages >= 3), role); sec.en = s.en || ROLE_DEF[role]?.[1] || ''; return sec; });
+  const plan = (A.sections && A.sections.length) ? A.sections : planSections(signals());
+  S.sections = plan.map(s => { const role = ROLES[s.role] && s.role !== 'custom' ? s.role : inferRole(s.title + ' ' + (s.goal || '')); const sec = newSection(kindOfRole(role), s.title, s.goal || '', Math.max(1, +s.pages || 3), s.divider ?? (+s.pages >= 3), role); sec.en = s.en || ROLE_DEF[role]?.[1] || ''; return sec; });
 }
 async function genSection(si, quiet){
   const sec = S.sections[si]; if (!sec) return;
@@ -193,7 +195,8 @@ async function genSection(si, quiet){
     if (!quiet){ unbusy(); save(); render(); }
     return;
   }
-  sec.pageList = generateEngine(sec);
+  try { sec.pageList = generateEngine(sec); }
+  catch(e){ console.error(e); toast(`"${sec.title}" 작성 중 오류: ${e.message}`, 5000); return; }
   if (!quiet){ save(); render(); toast(`"${sec.title}" ${sec.pageList.length}장 작성 완료`); }
 }
 async function genAll(){
@@ -201,8 +204,10 @@ async function genAll(){
   if (S.sections.some(s => s.pageList.length) && !confirm('이미 작성된 섹션도 다시 작성됩니다. 계속할까요?')) return;
   const idx = S.sections.map((s, i) => i).filter(i => S.sections[i].include !== false);
   busy('전체 섹션 작성 중…', `0 / ${idx.length}`); let d = 0;
-  await pool(idx, apiKey() && S.settings.apiGen ? 3 : 1, async i => { await genSection(i, true); busy('전체 섹션 작성 중…', `${++d} / ${idx.length}`); });
-  unbusy(); save(); render(); toast('전체 섹션 작성 완료 — 장표별 내용을 확인·수정하세요');
+  try { await pool(idx, apiKey() && S.settings.apiGen ? 3 : 1, async i => { await genSection(i, true); busy('전체 섹션 작성 중…', `${++d} / ${idx.length}`); }); }
+  catch(e){ console.error(e); toast('작성 중 오류: ' + e.message, 5000); }
+  unbusy(); save(); render();
+  const n = S.sections.reduce((a, s) => a + s.pageList.length, 0); toast(n ? `전체 섹션 작성 완료 — 총 ${n}장` : '작성된 장표가 없습니다 — 인풋을 확인하세요', 3500);
 }
 
 /* ---------- 3) 디자인 워싱 ---------- */
@@ -326,8 +331,8 @@ function vInput(){
   <p class="pd">API 키 없이 즉시 분석합니다. 웹 검색·판매처 상세페이지 확인이 필요하면 <b>Claude 심화 리서치</b>로 Claude 앱에서 이어서 진행하세요.</p>
   <div class="card"><h3>프로젝트 정보</h3>
     <div class="grid3" style="grid-template-columns:2fr 1.2fr 1.2fr 1fr 1fr 1fr">
-      <div><label class="f">제안서 타이틀</label>${inp('project.name', '예) 2027 퍼포먼스 마케팅 연간 운영 제안')}</div>
-      <div><label class="f">광고주 / 브랜드</label>${inp('project.client', '예) 라코스테')}</div>
+      <div><label class="f">제안서 타이틀</label>${inp('project.name', '예) 2027 디지털 광고 운영 제안')}</div>
+      <div><label class="f">광고주 / 브랜드</label>${inp('project.client', '예) 브랜드명')}</div>
       <div><label class="f">제안사</label>${inp('project.proposer')}</div>
       <div><label class="f">제출 마감</label>${inp('project.due', '', 'date')}</div>
       <div><label class="f">PT일</label>${inp('project.pt', '', 'date')}</div>
@@ -339,8 +344,8 @@ function vInput(){
     <div class="card"><h3><span class="n">B</span>판매 채널 URL</h3><p class="hint">자사몰·네이버 스토어·쿠팡 등 복수 입력 — Claude 심화 리서치에서 상세페이지를 직접 확인합니다</p>
       ${I.urls.map((u, i) => `<div class="row mb8"><select data-bind="input.urls.${i}.type" style="width:170px">${URL_TYPES.map(t => `<option ${u.type === t ? 'selected' : ''}>${t}</option>`).join('')}</select>${inp(`input.urls.${i}.url`, 'https://', 'url')}<button class="btn sm ghost bad" data-act="delUrl" data-i="${i}">✕</button></div>`).join('')}
       <button class="btn sm" data-act="addUrl">+ 채널 추가</button>
-      <div class="grid2 mt12"><div><label class="f">주요 제품 / 서비스</label>${inp('input.product', '예) 피케 폴로, 니트 / 객단가 15만원대')}</div><div><label class="f">경쟁사</label>${inp('input.competitors', '예) 폴로 랄프로렌, 타미힐피거')}</div></div>
-      <div class="mt12"><label class="f">현재 매체 비중·성과 (있으면)</label>${inp('input.currentMix', '예) 브랜드검색 47%, 메타 26%, 크리테오 13%, 구글 6%')}</div></div>
+      <div class="grid2 mt12"><div><label class="f">주요 제품 / 서비스</label>${inp('input.product', '예) 대표 제품명, 가격대')}</div><div><label class="f">경쟁사</label>${inp('input.competitors', '예) 경쟁 브랜드 A, B')}</div></div>
+      <div class="mt12"><label class="f">현재 매체 비중·성과 (있으면)</label>${inp('input.currentMix', '예) 브랜드검색 30%, 메타 40%, 구글 20% ...')}</div></div>
   </div>
   <div class="grid2">
     <div class="card"><h3><span class="n">C</span>브랜드 자료</h3><p class="hint">브랜드북·소개서·성과 리포트(문서), 로고·제품·상세 이미지(컬러칩 자동 추출)</p>
@@ -360,7 +365,7 @@ function vColors(){
       ${I.colors.length < 3 ? `<button class="btn" data-act="addColor" style="height:80px">+ 컬러 추가</button>` : ''}</div>
       <div><div class="thumb" data-act="previewSpecial" data-k="guide">${thumbHTML({kind: 'guide'}, 340)}</div><div class="row mt12" style="justify-content:flex-end"><button class="btn sm" data-act="guidePPT">가이드 PPT</button><button class="btn sm" data-act="guidePDF">가이드 PDF</button></div></div>
     </div>
-    <div class="mt12"><label class="f">컬러 컨셉</label>${inp('input.colorConcept', '예) 헤리티지 그린 + 테니스 코트 화이트')}</div></div>`;
+    <div class="mt12"><label class="f">컬러 컨셉</label>${inp('input.colorConcept', '예) 신뢰감 있는 네이비 + 제품 포인트 컬러')}</div></div>`;
 }
 function vAnalysis(){
   const A = S.input.analysis, R0 = A.rfpSummary || {}, RS = A.research;
