@@ -153,7 +153,8 @@ function designSpec(it, pg, P, tpl){
   const units = tpl.els.filter(e => e.unit != null), used = units.filter(u => u.unit < items.length);
   const hideBox = units.filter(u => u.unit >= items.length);
   const keyEl = tpl.els.find(e => e.slot === 'key');
-  const keyHide = keyEl && !pg.keyMsg ? tpl.els.filter(e => e.k !== 'rt' && e.k !== 'i' && inside2(e, keyEl) && e.h < 90 && e.w * e.h < W * H * .3) : [];
+  const km = tpl.mode === 'frame' && pg.tplBody === 'tkSplit' ? '' : pg.keyMsg;
+  const keyHide = keyEl && !km ? tpl.els.filter(e => e.k !== 'rt' && e.k !== 'i' && inside2(e, keyEl) && e.h < 90 && e.w * e.h < W * H * .3) : [];
   const frame = tpl.mode === 'frame' && tpl.body, inBody = e => frame && cOf(e).y > tpl.body.y - 6 && cOf(e).y < tpl.body.y + tpl.body.h + 6 && !['title', 'sub', 'label', 'key', 'no', 'src'].includes(e.slot);
   const imgs = [pg.image, ...(pg.media || []).map(m => m && m.data)].filter(Boolean); let ii = 0;
   const E = [], emptied = [];
@@ -174,7 +175,7 @@ function designSpec(it, pg, P, tpl){
       if (e0.slot === 'title') text = pg.title || '';
       else if (e0.slot === 'sub') text = pg.subtitle || '';
       else if (e0.slot === 'label') text = String(it.label || it.secTitle || '').split('|')[0].trim();
-      else if (e0.slot === 'key') text = pg.keyMsg || '';
+      else if (e0.slot === 'key') text = km || '';
       else if (e0.slot === 'no') text = it.no ? two(it.no) : '';
       else if (e0.slot === 'item') text = itemVal(e0, items[e0.ui] || {});
       else if (e0.slot === 'blank') text = '';
@@ -210,4 +211,228 @@ function loadBuiltinTpls(force){
   S.refLayouts.unshift(...BUILTIN_TPLS.map(t => JSON.parse(JSON.stringify(t))));
   S.tplBuiltin = true; S.design = S.design || {}; S.design.useRef = true;
   return BUILTIN_TPLS.length;
+}
+
+/* =========================================================
+   템플릿 디자인 시스템(TK) — 희망 레이아웃의 디자인 언어(필 헤더·라운드 패널·
+   번호 원·퍼널·필 시사점 바·ExtraBold 위계)를 뽑아, 내용에 맞춰 레이아웃을 새로 짬
+   ========================================================= */
+const TK_NAMES = {tkPillCols: '템플릿: 필 헤더 컬럼', tkKpi: '템플릿: KPI 카드', tkSteps: '템플릿: 단계(번호 원)', tkFunnel: '템플릿: 퍼널+설명 행', tkTable: '템플릿: 필 헤더 표', tkSplit: '템플릿: 핵심 메시지+리스트', tkCompare: '템플릿: AS-IS → TO-BE', tkList: '템플릿: 라운드 행 리스트', tkGrid: '템플릿: 2×N 카드'};
+function tkTok(P){
+  const p = P.c1 || '#008247';
+  return {p, dark: mix(p, '#000000', .45), mid: mix(p, '#000000', .22), soft: mix(p, '#FFFFFF', .88), panel: '#F5F6F5', line: '#E3E6E3', border: '#C8CCC9', ink: '#222222', sub: '#5B5F5B', mute: '#8A8F8A'};
+}
+const tkStart = (b, tot, k = .38) => b.y + Math.max(0, (b.h - tot) * k);
+const tkFit = (b, need, min = .8) => Math.max(min, Math.min(1.12, b.h / Math.max(1, need)));
+const TKL = {
+  tkPillCols(E, items, b, P){
+    const K = tkTok(P), n = Math.min(4, items.length || 1), g = 22, cw = (b.w - (n - 1) * g) / n, iw = cw - 56;
+    const bl = items.slice(0, n).map(it => { const l = lines(it.d); return l.length ? l : [it.d || '']; });
+    const need0 = Math.max(...bl.map(ls => ls.reduce((a, l) => a + tH(l, 15, iw, 1.5, 500) + 10, 0))) + (items.some(i => i.v) ? 50 : 0) + 44;
+    const sc = tkFit({h: b.h - 48}, need0), ph = Math.min(b.h - 48, Math.max(170, need0 * Math.min(1, sc) + 10)), y0 = tkStart(b, 48 + ph);
+    items.slice(0, n).forEach((it, i) => {
+      const x = b.x + i * (cw + g), hf = i === n - 1 && n > 2 ? K.p : K.dark;
+      E.push(R(x, y0, cw, 34, hf, {r: 17}));
+      E.push(T(x + 16, y0, cw - 32, 34, it.h, {size: 15, bold: true, color: '#FFFFFF', align: 'center', valign: 'middle', minScale: .7}));
+      E.push(R(x, y0 + 48, cw, ph, K.panel, {r: 12, line: K.line}));
+      let y = y0 + 48 + 24;
+      if (it.v){ E.push(T(x + 28, y, iw, 40, it.v, {size: 30 * Math.min(1, sc), bold: true, color: K.p, lh: 1.2, minScale: .5})); y += 50; }
+      bl[i].forEach(l => { const s = 15 * Math.min(1.08, sc), h = tH(l, s, iw - 14, 1.5, 500); if (y + h > y0 + 48 + ph - 12) return; E.push(EL(x + 28, y + s * .55, 6, 6, K.p)); E.push(T(x + 44, y, iw - 16, h, l, {size: s, color: '#333333', lh: 1.5, wt: 500})); y += h + 10; });
+    });
+  },
+  tkKpi(E, items, b, P){
+    const K = tkTok(P), n = Math.min(8, items.length || 1), cols = n <= 4 ? n : Math.ceil(n / 2), rows = n <= 4 ? 1 : 2, g = 16;
+    const cw = (b.w - (cols - 1) * g) / cols, iw = cw - 40;
+    const need = Math.max(...items.slice(0, n).map(it => 22 + tH(it.h, 17, iw, 1.3, 800) + 10 + (it.v ? 50 : 0) + tH(it.d, 13.5, iw, 1.5, 500) + 22));
+    const ch = Math.min((b.h - (rows - 1) * g) / rows, Math.max(rows > 1 ? 150 : 200, need)), y0 = tkStart(b, ch * rows + g * (rows - 1));
+    items.slice(0, n).forEach((it, i) => {
+      const x = b.x + (i % cols) * (cw + g), y = y0 + Math.floor(i / cols) * (ch + g);
+      E.push(R(x, y, cw, ch, K.panel, {r: 12}));
+      let yy = y + 22; const hh = tH(it.h, 17, iw, 1.3, 800);
+      E.push(T(x + 20, yy, iw, hh, it.h, {size: 17, bold: true, color: K.ink, lh: 1.3})); yy += hh + 8;
+      if (it.v){ E.push(T(x + 20, yy, iw, 44, it.v, {size: 34, bold: true, color: K.p, lh: 1.2, minScale: .45})); yy += 50; }
+      E.push(T(x + 20, yy, iw, y + ch - yy - 14, it.d, {size: 13.5, color: K.sub, lh: 1.5, wt: 500}));
+    });
+  },
+  tkSteps(E, items, b, P){
+    const K = tkTok(P), n = Math.min(6, items.length || 1), g = 18, cw = (b.w - (n - 1) * g) / n, iw = cw - 36, hi = n - 1;
+    const need = Math.max(...items.slice(0, n).map(it => 20 + tH(it.h, 18, iw, 1.3, 800) + 10 + tH(it.d, 14, iw, 1.5, 500) + (it.v ? 44 : 0) + 18));
+    const ch = Math.min(b.h - 70, Math.max(150, need + 10)), y0 = tkStart(b, 70 + ch), cy = y0 + 21;
+    E.push(R(b.x + cw / 2, cy - 1, (n - 1) * (cw + g), 2, K.p));
+    items.slice(0, n).forEach((it, i) => {
+      const x = b.x + i * (cw + g), cx = x + cw / 2, on = i === hi;
+      E.push(EL(cx - 21, cy - 21, 42, 42, on ? K.p : '#FFFFFF', {line: K.p, lw: 2}));
+      E.push(T(cx - 21, cy - 21, 42, 42, two(i + 1), {size: 13.5, bold: true, color: on ? '#FFFFFF' : K.p, align: 'center', valign: 'middle', lh: 1}));
+      const y = y0 + 70;
+      E.push(R(x, y, cw, ch, '#FFFFFF', {r: 12, line: on ? K.p : K.border, ...(on ? {lw: 2} : {})}));
+      let yy = y + 20; const hh = tH(it.h, 18, iw, 1.3, 800);
+      E.push(T(x + 18, yy, iw, hh, it.h, {size: 18, bold: true, color: on ? K.p : K.ink, lh: 1.3})); yy += hh + 10;
+      E.push(T(x + 18, yy, iw, y + ch - yy - (it.v ? 52 : 16), it.d, {size: 14, color: K.sub, lh: 1.5, wt: 500}));
+      if (it.v){ E.push(R(x + 14, y + ch - 42, cw - 28, 28, on ? K.p : K.soft, {r: 14})); E.push(T(x + 22, y + ch - 42, cw - 44, 28, it.v, {size: 12.5, bold: true, color: on ? '#FFFFFF' : K.p, align: 'center', valign: 'middle', minScale: .6})); }
+    });
+  },
+  tkFunnel(E, items, b, P){
+    const K = tkTok(P), n = Math.min(5, items.length || 1), g = 14, rh = Math.min(116, (b.h - (n - 1) * g) / n), fw = Math.min(430, b.w * .36);
+    const y0 = tkStart(b, n * rh + (n - 1) * g), rx = b.x + fw + 48, rw = b.x + b.w - rx;
+    items.slice(0, n).forEach((it, i) => {
+      const y = y0 + i * (rh + g), inset = fw * .12, w0 = fw - i * inset * 2 * .9, x = b.x + (fw - w0) / 2, fill = mix(K.p, '#000000', n > 1 ? i / (n - 1) * .45 : 0);
+      E.push(SH('trap-down', x, y, w0, rh, fill, {inset: inset * .9}));
+      E.push(T(x + inset + 8, y, w0 - inset * 2 - 16, rh, it.h, {size: 18, bold: true, color: '#FFFFFF', align: 'center', valign: 'middle', lh: 1.25, minScale: .6}));
+      E.push(R(x + w0 - inset * .5, y + rh / 2, rx - (x + w0 - inset * .5) - 6, 1.5, '#D2D4D2'));
+      E.push(R(rx, y, rw, rh, K.panel, {r: 12}));
+      const vw = it.v ? Math.min(250, rw * .32) : 0;
+      if (it.v) E.push(T(rx + 26, y, vw - 20, rh, it.v, {size: 20, bold: true, color: K.p, valign: 'middle', lh: 1.25, minScale: .55}));
+      E.push(T(rx + 26 + vw, y + 10, rw - 52 - vw, rh - 20, it.d, {size: 14.5, color: '#333333', valign: 'middle', lh: 1.5, wt: 500}));
+    });
+  },
+  tkTable(E, items, b, P, pg){
+    const K = tkTok(P), hasV = items.some(i => i.v), c1w = Math.min(250, b.w * .22), c3w = hasV ? Math.min(220, b.w * .19) : 0, c2w = b.w - c1w - c3w, hd = 36, g = 6;
+    const hs0 = items.map(i => Math.max(tH(i.h, 15, c1w - 40, 1.35, 800), tH(i.d, 14, c2w - 40, 1.5, 500), tH(i.v, 14, c3w - 36, 1.35, 700)) + 22);
+    const tot0 = hs0.reduce((a, c) => a + c, 0) + g * items.length, sc = Math.min(1, (b.h - hd - 8) / tot0), grow = sc < 1 ? 1 : Math.min(1.35, (b.h - hd - 8) * .8 / tot0);
+    const hs = hs0.map(h => Math.max(sc < 1 ? 20 : 36, h * (sc < 1 ? sc : grow))), fs = Math.max(.7, Math.min(1, sc * 1.05));
+    const head = pg.cols || ['구분', '내용', '비고'], y0 = tkStart(b, hd + 8 + hs.reduce((a, c) => a + c + g, 0), .3) - (sc < 1 ? 6 : 0);
+    E.push(R(b.x, y0, b.w, hd, K.dark, {r: 18}));
+    [[b.x + 22, c1w - 30, head[0]], [b.x + c1w + 20, c2w - 30, head[1]], ...(hasV ? [[b.x + c1w + c2w + 16, c3w - 30, head[2] || '']] : [])].forEach(([x, w, t]) => E.push(T(x, y0, w, hd, t, {size: 13.5, bold: true, color: '#FFFFFF', valign: 'middle'})));
+    let y = y0 + hd + 8;
+    items.forEach((it, i) => { const rh = hs[i];
+      E.push(R(b.x, y, b.w, rh, i % 2 ? '#FFFFFF' : K.panel, {r: 10, ...(i % 2 ? {line: K.line} : {})}));
+      E.push(T(b.x + 22, y, c1w - 34, rh, it.h, {size: 15 * fs, bold: true, color: K.ink, valign: 'middle', lh: 1.35}));
+      E.push(T(b.x + c1w + 20, y, c2w - 36, rh, it.d, {size: 14 * fs, color: '#3A3D3A', valign: 'middle', lh: 1.5, wt: 500}));
+      if (hasV) E.push(T(b.x + c1w + c2w + 16, y, c3w - 30, rh, it.v, {size: 14 * fs, bold: true, color: K.p, valign: 'middle', lh: 1.35}));
+      y += rh + g; });
+  },
+  tkSplit(E, items, b, P, pg){
+    const K = tkTok(P), lw = Math.min(370, b.w * .32), rx = b.x + lw + 40, rw = b.w - lw - 40, tw = rw - 58;
+    E.push(R(b.x, b.y, lw, b.h, K.p, {r: 14}));
+    E.push(T(b.x + 30, b.y + 30, lw - 60, 16, pg.tag || 'KEY MESSAGE', {size: 11, bold: true, color: '#FFFFFF', alpha: .7, ls: .8}));
+    E.push(T(b.x + 30, b.y + 58, lw - 60, b.h - 90, pg.keyMsg || pg.subtitle || '', {size: 25, bold: true, color: '#FFFFFF', lh: 1.4, minScale: .6}));
+    const hs0 = items.map(i => tH(i.h + (i.v ? '  ' + i.v : ''), 17.5, tw, 1.3, 800) + 6 + tH(i.d, 14, tw, 1.5, 500)), tot = hs0.reduce((a, c) => a + c, 0) + 34 * Math.max(0, items.length - 1);
+    const sc = Math.min(1.1, Math.max(.82, b.h / Math.max(1, tot))), gap = Math.min(46, Math.max(20, (b.h - tot * Math.min(1, sc)) / Math.max(1, items.length))); let y = tkStart(b, tot * Math.min(1, sc) + gap * (items.length - 1), .3);
+    items.forEach((it, k) => { const hh = tH(it.h + (it.v ? '  ' + it.v : ''), 17.5 * sc, tw, 1.3, 800), dh = tH(it.d, 14 * sc, tw, 1.5, 500);
+      E.push(EL(rx, y - 2, 32, 32, '#FFFFFF', {line: K.p, lw: 2})); E.push(T(rx, y - 2, 32, 32, String(k + 1), {size: 13, bold: true, color: K.p, align: 'center', valign: 'middle', lh: 1}));
+      E.push(T(rx + 50, y, tw, hh, it.h + (it.v ? '  ' + it.v : ''), {size: 17.5 * sc, bold: true, color: K.ink, lh: 1.3}));
+      E.push(T(rx + 50, y + hh + 6, tw, dh + 4, it.d, {size: 14 * sc, color: K.sub, lh: 1.5, wt: 500}));
+      y += hh + 6 + dh; if (k < items.length - 1){ E.push(R(rx + 50, y + gap / 2, tw, 1, K.line)); y += gap; } });
+  },
+  tkCompare(E, items, b, P){
+    const K = tkTok(P), lab = 190, g = 44, cw = (b.w - lab - g) / 2, ax = b.x + lab, bx = ax + cw + g;
+    const hs0 = items.map(i => Math.max(tH(i.h, 15, lab - 20, 1.35, 800), tH(i.v, 14, cw - 44, 1.5, 500), tH(i.d, 14, cw - 44, 1.5, 600)) + 26), tot = hs0.reduce((a, c) => a + c + 10, 0) + 46;
+    const sc = Math.min(1, (b.h) / tot), hs = hs0.map(h => h * (sc < 1 ? sc : Math.min(1.3, b.h * .75 / tot))), y0 = tkStart(b, 46 + hs.reduce((a, c) => a + c + 10, 0), .3);
+    E.push(R(ax, y0, cw, 34, K.mute, {r: 17})); E.push(T(ax, y0, cw, 34, 'AS-IS', {size: 14, bold: true, color: '#FFFFFF', align: 'center', valign: 'middle', ls: 1}));
+    E.push(R(bx, y0, cw, 34, K.p, {r: 17})); E.push(T(bx, y0, cw, 34, 'TO-BE', {size: 14, bold: true, color: '#FFFFFF', align: 'center', valign: 'middle', ls: 1}));
+    let y = y0 + 46;
+    items.forEach((it, i) => { const rh = hs[i];
+      E.push(T(b.x, y, lab - 18, rh, it.h, {size: 15, bold: true, color: K.ink, valign: 'middle', lh: 1.35}));
+      E.push(R(ax, y, cw, rh, K.panel, {r: 10})); E.push(T(ax + 22, y, cw - 44, rh, it.v || '-', {size: 14, color: K.mute, valign: 'middle', lh: 1.5, wt: 500}));
+      E.push(SH('chevron', ax + cw + 14, y + rh / 2 - 9, g - 28, 18, K.p));
+      E.push(R(bx, y, cw, rh, K.soft, {r: 10})); E.push(T(bx + 22, y, cw - 44, rh, it.d, {size: 14, bold: true, color: K.dark, valign: 'middle', lh: 1.5}));
+      y += rh + 10; });
+  },
+  tkList(E, items, b, P){
+    const K = tkTok(P), lw = Math.min(300, b.w * .27), tw = b.w - lw - 70, g = 12;
+    const hs0 = items.map(i => Math.max(tH(i.h, 17, lw - 70, 1.3, 800) + (i.v ? 26 : 0), tH(i.d, 14.5, tw, 1.5, 500)) + 30), tot = hs0.reduce((a, c) => a + c + g, 0);
+    const sc = Math.min(1, b.h / tot), grow = sc < 1 ? 1 : Math.min(1.3, b.h * .8 / tot), hs = hs0.map(h => h * (sc < 1 ? sc : grow)), fs = Math.max(.8, Math.min(1.06, sc < 1 ? sc : grow * .95));
+    let y = tkStart(b, hs.reduce((a, c) => a + c + g, 0) - g);
+    items.forEach((it, i) => { const rh = hs[i];
+      E.push(R(b.x, y, b.w, rh, K.panel, {r: 12}));
+      E.push(EL(b.x + 22, y + rh / 2 - 16, 32, 32, i === 0 ? K.p : '#FFFFFF', {line: K.p, lw: 2})); E.push(T(b.x + 22, y + rh / 2 - 16, 32, 32, two(i + 1), {size: 12, bold: true, color: i === 0 ? '#FFFFFF' : K.p, align: 'center', valign: 'middle', lh: 1}));
+      E.push(T(b.x + 70, y + (it.v ? 4 : 0), lw - 80, rh - (it.v ? 28 : 0), it.h, {size: 17 * fs, bold: true, color: K.p, valign: 'middle', lh: 1.3}));
+      if (it.v) E.push(T(b.x + 70, y + rh - 32, lw - 80, 20, it.v, {size: 12.5, bold: true, color: K.mute}));
+      E.push(R(b.x + lw + 10, y + 16, 1, rh - 32, K.border));
+      E.push(T(b.x + lw + 34, y, tw, rh, it.d, {size: 14.5 * fs, color: '#333333', valign: 'middle', lh: 1.5, wt: 500}));
+      y += rh + g; });
+  },
+  tkGrid(E, items, b, P){
+    const K = tkTok(P), n = Math.min(6, items.length || 1), cols = n === 4 ? 2 : 3, rows = Math.ceil(n / cols), g = 16, cw = (b.w - (cols - 1) * g) / cols, ch = (b.h - (rows - 1) * g) / rows, iw = cw - 48;
+    items.slice(0, n).forEach((it, i) => { const x = b.x + (i % cols) * (cw + g), y = b.y + Math.floor(i / cols) * (ch + g);
+      E.push(R(x, y, cw, ch, i === 0 ? K.p : K.panel, {r: 12}));
+      const fg = i === 0 ? '#FFFFFF' : K.ink;
+      E.push(T(x + 24, y + 22, 60, 20, two(i + 1), {size: 13, bold: true, color: i === 0 ? '#FFFFFF' : K.p}));
+      if (it.v) E.push(T(x + 80, y + 22, iw - 56, 20, it.v, {size: 12.5, bold: true, color: i === 0 ? '#FFFFFF' : K.p, align: 'right', alpha: i === 0 ? .85 : 1}));
+      const hh = tH(it.h, 18, iw, 1.3, 800); E.push(T(x + 24, y + 54, iw, hh, it.h, {size: 18, bold: true, color: fg, lh: 1.3}));
+      E.push(T(x + 24, y + 64 + hh, iw, ch - 80 - hh, it.d, {size: 14, color: i === 0 ? '#FFFFFF' : K.sub, alpha: i === 0 ? .9 : 1, lh: 1.5, wt: 500})); });
+  }
+};
+Object.assign(LAY, TKL);
+if (typeof LAYOUTS !== 'undefined') Object.assign(LAYOUTS, TK_NAMES);
+
+/* 내용에 맞춰 TK 레이아웃 고르기 (같은 섹션에서 연속 반복 피함) */
+function tkPick(p, prev){
+  const it = itemsOf(p), n = it.length, lay = p.tplBody && !/^tk/.test(p.tplBody) ? p.tplBody : (p.draft?.layout || p.layout || ''), withV = it.filter(i => i.v && isNum(i.v)).length;
+  const c = [];
+  if (/funnel|pyramid/.test(lay) && n >= 2 && n <= 5) c.push('tkFunnel');
+  if (/compare/.test(lay) && it.some(i => i.v)) c.push('tkCompare');
+  if (/process|timeline|vsteps|stepCards|cycle/.test(lay) && n >= 3 && n <= 6) c.push('tkSteps');
+  if (/table|summary/.test(lay) || n >= 7) c.push('tkTable');
+  if (withV >= Math.max(2, n * .6) && n >= 2 && n <= 8 && it.every(i => (i.d || '').length < 90)) c.push('tkKpi');
+  if (/split|spec|hero|quote/.test(lay) && p.keyMsg && n <= 5) c.push('tkSplit');
+  if (/twoCol|colCards/.test(lay) || (n >= 2 && n <= 4 && it.some(i => lines(i.d).length > 1))) c.push('tkPillCols');
+  if (n >= 3 && n <= 6 && it.every(i => (i.d || '').length < 120)) c.push('tkGrid');
+  if (n >= 2 && n <= 6) c.push('tkList', 'tkPillCols');
+  if (n >= 3 && n <= 6) c.push('tkSteps');
+  c.push('tkTable');
+  const u = c.filter((v, i) => c.indexOf(v) === i);
+  return u.find(v => v !== prev) || u[0];
+}
+
+/* ---------- 템플릿 디자인으로 표지·간지·브릿지·클로징도 통일 ---------- */
+function tkFrame(){ return S.design?.useRef ? (S.refLayouts || []).find(t => t.use && t.v === 3 && t.mode === 'frame' && !t.weak && t.tag === 'body') : null; }
+function tkChrome(tpl, it, P, opts = {}){ // 템플릿 머리말·꼬리말만
+  const pg = {title: '', subtitle: '', keyMsg: '', items: []};
+  const sp = designSpec({...it, label: opts.label ?? it.label}, pg, P, {...tpl, mode: 'frame', body: {x: 0, y: 150, w: W, h: 470}});
+  sp.els = sp.els.filter(e => !(e.slot === 'title' || e.slot === 'sub'));
+  return sp;
+}
+function tkSectionSpec(it, pg, P, tpl, kind){
+  const K = tkTok(P), sp = tkChrome(tpl, it, P, {label: kind === 'divider' ? `${two(it.secNo || 0)} ${String(it.sec?.en || '').toUpperCase()}` : undefined}), E = sp.els;
+  if (kind === 'divider'){
+    const big = pg.title || it.secTitle || '', sub = pg.subtitle || '';
+    E.push(T(MX + 8, 200, 300, 120, two(it.secNo || 0), {size: 110, bold: true, color: K.p, lh: 1}));
+    E.push(R(MX + 12, 336, 64, 5, K.p, {r: 2.5}));
+    if (it.sec?.en) E.push(T(MX + 12, 360, 700, 26, String(it.sec.en).toUpperCase(), {size: 16, bold: true, color: K.mute, ls: 1.5}));
+    E.push(T(MX + 10, 392, W - MX * 2 - 300, 70, big, {size: 46, bold: true, color: K.ink, lh: 1.2, minScale: .6}));
+    if (sub) E.push(T(MX + 12, 470, W - MX * 2 - 300, 70, sub, {size: 19, color: K.sub, lh: 1.5, wt: 300}));
+    E.push(R(W - MX - 260, 200, 260, 340, K.panel, {r: 16}));
+    const list = (it.sec?.pageList || []).filter(p => p.type !== 'divider').slice(0, 6);
+    list.forEach((p, i) => { E.push(T(W - MX - 236, 226 + i * 50, 30, 22, two(i + 1), {size: 13, bold: true, color: K.p})); E.push(T(W - MX - 200, 222 + i * 50, 180, 44, p.title || '', {size: 13.5, color: '#333333', lh: 1.35, wt: 500, minScale: .7})); });
+    if (!list.length) E.pop();
+  } else { // bridge
+    const main = pg.keyMsg || pg.title, sub = pg.keyMsg ? (pg.subtitle || pg.title) : pg.subtitle, items = itemsOf(pg);
+    const mh = Math.min(170, tH(main, 38, W - 320, 1.35, 800));
+    let y = Math.max(170, (H - (mh + 140 + (items.length ? 80 : 0))) / 2);
+    E.push(R(W / 2 - 70, y, 140, 32, K.p, {r: 16})); E.push(T(W / 2 - 70, y, 140, 32, it.secTitle || 'KEY POINT', {size: 13, bold: true, color: '#FFFFFF', align: 'center', valign: 'middle', minScale: .6})); y += 56;
+    E.push(T(160, y, W - 320, mh, main, {size: 38, bold: true, color: K.ink, align: 'center', lh: 1.35})); y += mh + 18;
+    if (sub){ E.push(T(200, y, W - 400, 60, sub, {size: 18, color: K.sub, align: 'center', lh: 1.5, wt: 300})); y += 70; }
+    if (items.length){ const ws = items.slice(0, 4), cw = 210, x0 = W / 2 - (ws.length * cw + (ws.length - 1) * 14) / 2; ws.forEach((w, i) => { E.push(R(x0 + i * (cw + 14), y, cw, 44, i === ws.length - 1 ? K.p : K.panel, {r: 22})); E.push(T(x0 + i * (cw + 14) + 10, y, cw - 20, 44, w.h || w.d, {size: 14, bold: true, color: i === ws.length - 1 ? '#FFFFFF' : K.dark, align: 'center', valign: 'middle', minScale: .6})); }); }
+  }
+  return sp;
+}
+function tkCoverSpec(it, P, tpl, closing){
+  const K = tkTok(P), pr = S.project, sp = tkChrome(tpl, {no: 0, label: closing ? 'THANK YOU' : 'PROPOSAL'}, P), E = sp.els.filter(e => e.slot !== 'no');
+  if (closing){
+    E.push(T(MX, 250, W - MX * 2, 90, 'Thank you', {size: 72, bold: true, color: K.ink, align: 'center', lh: 1.1}));
+    E.push(R(W / 2 - 32, 360, 64, 5, K.p, {r: 2.5}));
+    E.push(T(MX, 388, W - MX * 2, 30, `${pr.proposer || 'MADUP'}${pr.owner ? '  ·  ' + pr.owner : ''}`, {size: 17, color: K.sub, align: 'center', wt: 500}));
+  } else {
+    E.push(R(MX + 6, 196, 150, 34, K.p, {r: 17})); E.push(T(MX + 6, 196, 150, 34, 'PROPOSAL', {size: 14, bold: true, color: '#FFFFFF', align: 'center', valign: 'middle', ls: 1}));
+    E.push(T(MX + 4, 256, W - MX * 2 - 120, 150, pr.name || '퍼포먼스 마케팅 제안', {size: 54, bold: true, color: K.ink, lh: 1.22, minScale: .55}));
+    E.push(R(MX + 6, 432, 64, 5, K.p, {r: 2.5}));
+    E.push(T(MX + 6, 456, W - MX * 2 - 200, 34, pr.client || '', {size: 22, bold: true, color: K.dark}));
+    E.push(T(MX + 6, 496, W - MX * 2 - 200, 28, `${pr.date || ''}${pr.proposer ? '  |  ' + pr.proposer : ''}`, {size: 16, color: K.sub, wt: 300}));
+  }
+  sp.els = E; return sp;
+}
+
+function tkTocSpec(it, P, tpl){
+  const K = tkTok(P), sp = tkChrome(tpl, {no: it.no, label: 'INDEX'}, P), E = sp.els, secs = it.secs || [];
+  E.push(T(MX, 82, 600, 50, '제안 목차', {size: 33, bold: true, color: '#000000'}));
+  E.push(T(MX + 2, 132, 800, 30, S.project.client ? `${S.project.client} · ${S.project.name || ''}` : (S.project.name || ''), {size: 18, color: K.sub, wt: 300}));
+  const n = secs.length, cols = n > 6 ? 2 : 1, per = Math.ceil(n / cols), g = 24, cw = (W - MX * 2 - (cols - 1) * g) / cols, rh = Math.min(70, 430 / Math.max(1, per));
+  secs.forEach((s, i) => { const c = Math.floor(i / per), r = i % per, x = MX + c * (cw + g), y = 186 + r * rh;
+    E.push(R(x, y, cw, rh - 10, r % 2 ? '#FFFFFF' : K.panel, {r: 12, ...(r % 2 ? {line: K.line} : {})}));
+    E.push(EL(x + 16, y + (rh - 10) / 2 - 17, 34, 34, i === 0 ? K.p : '#FFFFFF', {line: K.p, lw: 2}));
+    E.push(T(x + 16, y + (rh - 10) / 2 - 17, 34, 34, two(s.no), {size: 12.5, bold: true, color: i === 0 ? '#FFFFFF' : K.p, align: 'center', valign: 'middle', lh: 1}));
+    E.push(T(x + 66, y, cw * .42, rh - 10, s.title, {size: 17, bold: true, color: K.ink, valign: 'middle', minScale: .7}));
+    if (s.goal) E.push(T(x + 66 + cw * .42, y, cw * .58 - 86, rh - 10, s.goal, {size: 13, color: K.sub, valign: 'middle', lh: 1.35, wt: 500, minScale: .7})); });
+  return sp;
 }

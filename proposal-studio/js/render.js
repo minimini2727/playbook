@@ -603,6 +603,7 @@ function tplSpec(it, pg, P, tpl){
 const tplFor = tag => (S.refLayouts || []).find(t => t.use && t.tag === tag);
 function buildSpec(it){
   if (it.kind === 'page' && it.page?.fixed){ const F = it.page.fixed; return {bg: F.bg || '#FFFFFF', bgCss: F.bgGrad ? gradCSS(F.bgGrad, F.bgAng) : null, bgImg: F.bgImg || null, els: F.els, fx: true}; }
+  { const tf = typeof tkFrame === 'function' && tkFrame(); if (tf && (it.kind === 'cover' || it.kind === 'closing')) return tkCoverSpec(it, palette(true), tf, it.kind === 'closing'); }
   if (it.kind === 'cover') return coverSpec(it);
   if (it.kind === 'guide') return guideSpec(it);
   if (it.kind === 'toc') return tocSpec(it);
@@ -610,6 +611,7 @@ function buildSpec(it){
   const E = [], pg = it.page, P = palette(pg.washed), items = itemsOf(pg);
   if (String(pg.layout || '').startsWith('tpl:')){ const tpl = tplById(pg.layout.slice(4)); if (tpl) return tplSpec(it, pg, P, tpl); }
   if (pg.type === 'divider'){
+    { const tf = typeof tkFrame === 'function' && tkFrame(); if (tf) return tkSectionSpec(it, pg, P, tf, 'divider'); }
     const dt = tplFor('divider');
     if (dt) return tplSpec(it, {...pg, title: pg.title || it.secTitle, tag: it.secNo ? two(it.secNo) : ''}, P, dt);
     if (P.madup){
@@ -631,6 +633,7 @@ function buildSpec(it){
     chrome(E, it, P, bg);
     return {bg, els: E};
   }
+  if (pg.type === 'bridge'){ const tf = typeof tkFrame === 'function' && tkFrame(); if (tf) return tkSectionSpec(it, pg, P, tf, 'bridge'); }
   if (pg.type === 'bridge'){
     const bg = P.draft ? '#F3F3F3' : P.madup ? '#FFFFFF' : P.tint;
     const main = pg.keyMsg || pg.title, mh = Math.min(200, tH(main, 34, W - 300, 1.4, 700));
@@ -726,6 +729,7 @@ function guideSpec(){
   return {bg: '#FFFFFF', els: E};
 }
 function tocSpec(it){
+  { const tf = typeof tkFrame === 'function' && tkFrame(); if (tf) return tkTocSpec(it, palette(true), tf); }
   const P = palette(true), E = [], secs = it.secs || [], fg = onC(P.c1);
   if (P.madup){
     E.push(T(MX, 60, 400, 20, 'INDEX', {size: 12, bold: true, color: P.c1, ls: 1.2}));

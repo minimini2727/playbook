@@ -237,11 +237,11 @@ function washSections(idxs){
   secs.forEach(sec => { let prev = ''; sec.pageList.forEach(p => {
     if (!p.fixed && tpls.length && p.type !== 'divider' && p.type !== 'bridge'){
       const n = itemsOf(p).length, frames = tpls.filter(t => t.mode === 'frame'), canDesign = (p.type === 'strategy' || p.type === 'explain') && !MEDIA_LAYOUTS.includes(p.layout) && !/^cr/.test(p.layout || '') && !p.image && !p.img;
-      let fit = canDesign ? tpls.filter(t => t.mode !== 'frame' && t.cnt.h === n) : [];
+      let fit = canDesign && !frames.length ? tpls.filter(t => t.mode !== 'frame' && t.cnt.h === n) : [];
       if (!fit.length) fit = frames.length ? frames : (canDesign ? tpls.filter(t => (t.cnt.h >= n && t.cnt.h <= n + 1)) : []);
       if (fit.length){ const t = fit[ti++ % fit.length];
         if (String(p.layout).startsWith('tpl:')) p.layout = p.tplBody || 'list';
-        if (t.mode === 'frame'){ prev = washPage(p, prev); p.tplBody = p.layout; }
+        if (t.mode === 'frame'){ const base = p.draft?.layout || p.layout; washPage(p, prev); const keep = MEDIA_LAYOUTS.includes(p.layout) || /^cr/.test(p.layout || '') || p.layout === 'image' || p.image || p.img; p.tplBody = keep ? p.layout : tkPick({...p, layout: base, tplBody: undefined}, prev); prev = p.tplBody; }
         else { if (!p.washed) p.draft = clone({...p, draft: undefined}); p.tplBody = p.layout; p.washed = true; prev = p.layout; }
         p.layout = 'tpl:' + t.id; return; }
     }
