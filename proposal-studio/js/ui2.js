@@ -115,13 +115,14 @@ function vMediaMix(){
 /* ---------- 기본 장표 라이브러리 ---------- */
 function vLibraryCard(){
   const L = LIB(); if (!L) return '';
-  const st = LIB_ROLES.map(r => { const s = L.sections.find(x => x.role === r); const pl = s ? s.pageList : []; return {r, n: pl.length, ppt: pl.filter(p => p.fixed).length, src: s?.srcFile || '', at: s?.srcAt || 0, thumb: pl[0] && s}; });
+  const st = LIB_ROLES.map(r => { const s = L.sections.find(x => x.role === r); const pl = s ? s.pageList : []; return {r, n: pl.length, ppt: pl.filter(p => p.fixed).length, old: pl.some(p => p.fixed && p.fixed.v !== 2), src: s?.srcFile || '', at: s?.srcAt || 0, thumb: pl[0] && s}; });
   return `<div class="card mt16"><div class="ch"><div><h3>기본 장표 라이브러리 <span class="tag">고정 섹션</span></h3><div class="sub">섹션별로 회사 PPT를 올리면 장표가 원본 그대로(도형·표·이미지·문구) 등록되고, 모든 제안서의 해당 섹션에 기본으로 들어갑니다. 제안서마다 [로직]에서 끄고 켤 수 있습니다.</div></div>
     <div class="row" style="gap:6px"><button class="btn" data-act="openLib">장표 확인·수정</button><label class="btn ghost" style="position:relative;overflow:hidden">JSON 불러오기<input type="file" accept=".json" id="libIn" style="position:absolute;inset:0;opacity:0;cursor:pointer"></label><button class="btn ghost" data-act="libExport">백업 내보내기</button></div></div>
     <div class="libgrid">${st.map(x => `<div class="libc ${x.n ? 'on' : ''}" data-drop="lib:${x.r}">
       <b>${ROLES[x.r]}</b>
-      ${x.thumb ? `<div class="sw-wrap" style="width:100%;aspect-ratio:16/9;margin:4px 0;overflow:hidden;border-radius:4px;border:1px solid #E4E7EC" data-libthumb="${x.r}"></div>` : ''}
+      ${x.thumb ? `<div class="libthumb" data-libthumb="${x.r}"></div>` : ''}
       <span>${x.n ? `${x.n}장 등록${x.ppt ? ` · PPT ${x.ppt}장` : ''}` : '미등록 · 엔진 초안 사용'}</span>
+      ${x.old ? `<span style="font-size:11px;color:#B54708">이전 방식으로 등록됨 · [PPT 교체]로 다시 올리면 원본과 더 가깝게 바뀝니다</span>` : ''}
       ${x.src ? `<span style="font-size:11px;word-break:break-all">${esc(x.src)}${x.at ? ' · ' + new Date(x.at).toLocaleDateString('ko-KR') : ''}</span>` : ''}
       <div class="row" style="gap:4px;margin-top:4px;flex-wrap:wrap"><label class="btn sm ${x.n ? '' : 'pri'}" style="position:relative;overflow:hidden">${x.n ? 'PPT 교체' : 'PPT 업로드'}<input type="file" accept=".pptx" data-libppt="${x.r}" style="position:absolute;inset:0;opacity:0;cursor:pointer"></label>${x.n ? `<button class="btn sm ghost bad" data-act="libClear" data-r="${x.r}">비우기</button>` : ''}</div>
     </div>`).join('')}</div>
@@ -135,9 +136,9 @@ async function libFromPptx(role, file){
   if (old?.pageList.length && !confirm(`${ROLES[role]} 섹션의 기존 장표 ${old.pageList.length}장을 이 파일로 교체할까요?`)) return;
   busy(`${ROLES[role]} 장표 불러오는 중…`, file.name + (file.size > 8e7 ? ' · 용량이 커서 몇 분 걸릴 수 있습니다' : ''));
   try {
-    const slides = await parseRefPptx(file, {raw: true, onProgress: (i, n) => busy(`${ROLES[role]} 장표 불러오는 중… (${i}/${n})`, file.name)});
+    const slides = await readPptx(file, {onProgress: (i, n) => busy(`${ROLES[role]} 장표 불러오는 중… (${i}/${n})`, file.name)});
     if (!slides.length) throw new Error('장표를 찾지 못했습니다');
-    const pages = slides.map(sl => { const tx = sl.els.filter(e => e.k === 't' && e.text).sort((a, b) => b.size - a.size || a.y - b.y); const p = newPage('explain', {title: (tx.find(t => t.y < H * .25) || tx[0] || {}).text?.split('\n')[0]?.slice(0, 60) || `${ROLES[role]} ${sl.no}`, subtitle: '', items: []}); p.layout = 'fixed'; p.fixed = {bg: sl.bg, bgImg: sl.bgImg, els: sl.els}; p.washed = true; p.srcSlide = sl.no; return p; });
+    const pages = slides.map(sl => { const tx = sl.els.filter(e => e.k === 'rt').map(e => ({y: e.y, sz: Math.max(...e.paras.flatMap(p => p.runs.map(r => r.sz)), 0), t: e.paras.map(p => p.runs.map(r => r.t).join('')).join(' ').trim()})).filter(t => t.t).sort((a, b) => (a.y < H * .25 ? 0 : 1) - (b.y < H * .25 ? 0 : 1) || b.sz - a.sz); const p = newPage('explain', {title: (tx[0]?.t || `${ROLES[role]} ${sl.no}`).slice(0, 60), subtitle: '', items: []}); p.layout = 'fixed'; p.fixed = {bg: sl.bg, bgGrad: sl.bgGrad, bgAng: sl.bgAng, bgImg: sl.bgImg, els: sl.els, v: 2}; p.washed = true; p.srcSlide = sl.no; return p; });
     const sec = old || (() => { const s = newSection(kindOfRole(role), ROLES[role], '', 1, true, role); s.en = ROLE_DEF[role]?.[1] || ''; L.sections.push(s); return s; })();
     sec.pageList = pages; sec.pages = pages.length; sec.divider = true; sec.srcFile = file.name; sec.srcAt = Date.now();
     L.updated = Date.now(); await DB.put(clone(L));
@@ -146,9 +147,15 @@ async function libFromPptx(role, file){
   } catch(e){ toast('불러오기 실패: ' + e.message, 5000); }
   unbusy(); render();
 }
+function rtPlain(e){ return e.paras.map(p => p.runs.map(r => r.t === '\n' ? '\u2028' : r.t).join('')).join('\n'); }
+function rtApply(e, v){ // 바뀐 문단만 첫 런 서식으로 교체, 그대로인 문단은 서식 유지
+  const lines = v.split('\n'), old = e.paras;
+  const out = lines.map((ln, i) => { const p = old[i] || old[old.length - 1]; const cur = p.runs.map(r => r.t === '\n' ? '\u2028' : r.t).join(''); if (old[i] && cur === ln) return p; const st = p.runs.find(r => r.t !== '\n') || p.end; const segs = ln.split('\u2028'); const runs = []; segs.forEach((g, j) => { if (j) runs.push({...st, t: '\n'}); if (g) runs.push({...st, t: g}); }); return {...p, runs}; });
+  e.paras = out;
+}
 function vFixedPage(sec, si, p, pi){
   const base = `sections.${si}.pageList.${pi}`, b = `data-s="${si}" data-p="${pi}"`;
-  const tx = p.fixed.els.map((e, k) => [e, k]).filter(([e]) => e.k === 't' && e.text != null);
+  const tx = p.fixed.els.map((e, k) => [e, k]).filter(([e]) => (e.k === 't' && e.text != null) || e.k === 'rt');
   const miss = p.fixed.els.filter(e => e.k === 'frame').length;
   return `<div class="pg"><div class="thumb" data-act="preview" ${b} data-thumb="${si}.${pi}">${thumbHTML(pageItem(sec, p, pi + 1), 340)}</div>
     <div class="pf">
@@ -159,7 +166,7 @@ function vFixedPage(sec, si, p, pi){
         <button class="btn sm ghost" data-act="pageDup" ${b}>복제</button><button class="btn sm ghost bad" data-act="pageDel" ${b}>삭제</button></div>
       <div class="note mt8" style="font-size:12.5px">디자인은 원본 그대로 유지됩니다. 문구만 아래에서 고칠 수 있습니다 (예: 연도·인원·실적 업데이트).</div>
       <details class="mt8" ${tx.length <= 8 ? 'open' : ''}><summary style="cursor:pointer;font-size:13px;color:#475467">텍스트 ${tx.length}개 수정</summary>
-        ${tx.map(([e, k]) => `<textarea data-bind="${base}.fixed.els.${k}.text" rows="${Math.min(4, String(e.text).split('\n').length)}" style="margin-top:6px;${e.bold ? 'font-weight:700;' : ''}">${esc(e.text)}</textarea>`).join('')}
+        ${tx.map(([e, k]) => { if (e.k === 'rt'){ const v = rtPlain(e); return `<textarea data-rt="${si}.${pi}.${k}" rows="${Math.min(5, v.split('\n').length)}" style="margin-top:6px">${esc(v)}</textarea>`; } return `<textarea data-bind="${base}.fixed.els.${k}.text" rows="${Math.min(4, String(e.text).split('\n').length)}" style="margin-top:6px;${e.bold ? 'font-weight:700;' : ''}">${esc(e.text)}</textarea>`; }).join('')}
       </details>
       ${miss ? `<div class="row mt8"><label class="btn sm" style="position:relative;overflow:hidden">차트 자리에 이미지 넣기<input type="file" accept="image/*" data-fixedimg="${si}.${pi}" style="position:absolute;inset:0;opacity:0;cursor:pointer"></label></div>` : ''}
     </div></div>`;
@@ -196,6 +203,7 @@ document.addEventListener('change', async e => {
   if (el.id === 'libIn'){ const f = el.files[0]; el.value = ''; if (!f) return; try { const j = JSON.parse(await f.text()); const L = LIB(); const secs = (j.sections || []).map(s => { const role = LIB_ROLES.includes(s.role) ? s.role : inferRole((s.title || '') + ' ' + (s.goal || '')); const sec = newSection(kindOfRole(role), s.title || ROLES[role], s.goal || '', 1, s.divider !== false, role); sec.en = s.en || ''; sec.pageList = (s.pageList || s.pages || []).map(p => newPage(p.type || 'explain', p)); sec.pages = sec.pageList.length; return sec; }).filter(s => LIB_ROLES.includes(s.role));
       secs.forEach(s => { const i = L.sections.findIndex(x => x.role === s.role); if (i >= 0) L.sections[i] = s; else L.sections.push(s); }); L.updated = Date.now(); await DB.put(clone(L)); render(); toast(`라이브러리 ${secs.length}개 섹션을 불러왔습니다`); } catch(er){ toast('불러오기 실패: ' + er.message); } return; }
   if (el.dataset.libppt){ const f = el.files[0]; el.value = ''; if (f) await libFromPptx(el.dataset.libppt, f); return; }
+  if (el.dataset.rt){ const [si, pi, k] = el.dataset.rt.split('.').map(Number); const e = S.sections[si]?.pageList[pi]?.fixed.els[k]; if (e){ rtApply(e, el.value); rr(); } return; }
   if (el.dataset.fixedimg){ const [si, pi] = el.dataset.fixedimg.split('.').map(Number), f = el.files[0]; el.value = ''; if (!f) return; const p = S.sections[si].pageList[pi]; const fr = p.fixed.els.find(e => e.k === 'frame'); if (!fr) return; const r = await readDataURL(f).then(d => resizeImage(d, 1600)); Object.assign(fr, {k: 'i', data: r.data, cover: false}); rr(); return; }
   if (el.dataset.mm){ const k = el.dataset.mm, M = S.input.mediaMix; M[k] = el.type === 'number' ? Math.max(0, +el.value || 0) : el.value; if (k === 'scenario' && M.rows.length && confirm('시나리오에 맞춰 비중을 다시 계산할까요?')){ const c = signals(); const base = M.rows.map(r => ({...(MEDIA_LIB(c)[r.key] || {w: 8}), ...r, fixedPct: 0})); const al = allocate(base, el.value); M.rows.forEach((r, i) => r.pct = al[i].pct); } rr(); return; }
   if (el.dataset.mmr){ const [i, k] = el.dataset.mmr.split('.'), r = mmRows()[+i]; if (!r) return; r[k] = k === 'pct' ? Math.max(0, Math.min(100, +el.value || 0)) : el.value; rr(); return; }

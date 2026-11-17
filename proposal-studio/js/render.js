@@ -578,7 +578,7 @@ function tplSpec(it, pg, P, tpl){
 }
 const tplFor = tag => (S.refLayouts || []).find(t => t.use && t.tag === tag);
 function buildSpec(it){
-  if (it.kind === 'page' && it.page?.fixed){ const F = it.page.fixed; return {bg: F.bg || '#FFFFFF', bgImg: F.bgImg || null, els: F.els}; }
+  if (it.kind === 'page' && it.page?.fixed){ const F = it.page.fixed; return {bg: F.bg || '#FFFFFF', bgCss: F.bgGrad ? gradCSS(F.bgGrad, F.bgAng) : null, bgImg: F.bgImg || null, els: F.els, fx: true}; }
   if (it.kind === 'cover') return coverSpec(it);
   if (it.kind === 'guide') return guideSpec(it);
   if (it.kind === 'toc') return tocSpec(it);
@@ -754,10 +754,13 @@ function shapePoints(e){
   return `0,0 ${w},0 ${w},${h} 0,${h}`;
 }
 function slideHTML(spec){
-  const bg = spec.bgImg ? `background-color:${spec.bg};background-image:url(${spec.bgImg});` : `background:${spec.bg};`;
+  const bg = spec.bgImg ? `background-color:${spec.bg};background-image:url(${spec.bgImg});${spec.fx ? 'background-size:100% 100%;' : ''}` : `background:${spec.bgCss || spec.bg};`;
   let h = `<div class="slide" style="${bg}">`;
   for (const e of spec.els){
     const pos = `left:${e.x}px;top:${e.y}px;width:${e.w}px;height:${e.h}px;${e.alpha != null ? `opacity:${e.alpha};` : ''}`;
+    if (e.k === 'g'){ h += fxGeomHTML(e); continue; }
+    if (e.k === 'rt'){ h += fxTextHTML(e); continue; }
+    if (e.k === 'i' && (e.stretch || e.rot || e.round || e.shd || e.soft)){ h += `<img class="im" style="${pos}${fxTransform(e)}${fxFilter(e)}object-fit:fill;${e.round ? 'border-radius:50%;' : e.r ? `border-radius:${e.r}px;` : ''}" src="${e.data}">`; continue; }
     if (e.k === 'frame'){ if (!EXPORTING) h += `<div class="r" style="${pos}border:2px dashed #F04438;box-sizing:border-box;display:flex;align-items:center;justify-content:center;color:#F04438;font-size:16px">원본 차트 · 이미지로 교체 필요</div>`; }
     else if (e.k === 'r') h += `<div class="r" style="${pos}background:${e.nofill ? 'transparent' : e.fill};${e.r ? `border-radius:${e.r}px;` : ''}${e.line ? (e.dash ? `border:2px dashed ${e.line};box-sizing:border-box;` : `box-shadow:inset 0 0 0 1px ${e.line};`) : ''}"></div>`;
     else if (e.k === 'e') h += `<div class="r" style="${pos}border-radius:50%;background:${e.nofill ? 'transparent' : e.fill};${e.line ? `border:${e.lw || 1}px solid ${e.line};box-sizing:border-box;` : ''}"></div>`;
@@ -820,6 +823,8 @@ async function exportPPTX(items, name){
         const base = {x: IN(e.x), y: IN(e.y), w: Math.max(.01, IN(e.w)), h: Math.max(.01, IN(e.h))};
         const tr = e.alpha != null ? Math.round((1 - e.alpha) * 100) : 0;
         if (e.k === 'frame') continue;
+        if (e.k === 'g' || e.k === 'rt'){ await fxToPPT(sl, pptx, e, IN, hx); continue; }
+        if (e.k === 'i' && (e.stretch || e.rot)){ sl.addImage({x: IN(e.x), y: IN(e.y), w: Math.max(.01, IN(e.w)), h: Math.max(.01, IN(e.h)), data: stripData(e.data), ...(e.rot ? {rotate: e.rot} : {}), ...(e.fh ? {flipH: true} : {}), ...(e.fv ? {flipV: true} : {}), ...(e.round ? {rounding: true} : {}), ...(e.shd ? {shadow: {type: 'outer', blur: +(e.shd.blur * .75).toFixed(1), offset: +(e.shd.dist * .75).toFixed(1), angle: Math.round(e.shd.dir), color: hx(e.shd.c), opacity: +(e.shd.a ?? .35).toFixed(2)}} : {})}); continue; }
         if (e.k === 'r') sl.addShape(e.r ? pptx.ShapeType.roundRect : pptx.ShapeType.rect, {...base, fill: e.nofill ? {color: 'FFFFFF', transparency: 100} : {color: hx(e.fill), transparency: tr}, line: e.line ? {color: hx(e.line), width: .75, dashType: e.dash ? 'dash' : 'solid'} : {type: 'none'}, ...(e.r ? {rectRadius: Math.min(.5, e.r / Math.min(e.w, e.h))} : {})});
         else if (e.k === 'e') sl.addShape(pptx.ShapeType.ellipse, {...base, fill: e.nofill ? {color: 'FFFFFF', transparency: 100} : {color: hx(e.fill), transparency: tr}, line: e.line ? {color: hx(e.line), width: (e.lw || 1) * .75} : {type: 'none'}});
         else if (e.k === 's'){
