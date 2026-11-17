@@ -215,7 +215,7 @@ function washPage(p, prev){
   if (!p.washed) p.draft = clone({...p, draft: undefined});
   if (p.type === 'strategy' || p.type === 'explain'){
     const c = layoutCandidates(p);
-    const deliberate = ['spec', 'compare', 'funnel', 'chart', 'timeline', 'hero', 'kpi', 'matrix', 'process', 'grid', 'image'].includes(p.layout);
+    const deliberate = p.layout !== 'list';
     const keepCur = deliberate || (c.includes(p.layout) && p.layout !== 'list' && p.layout !== prev);
     if (!keepCur) p.layout = c.find(l => l !== prev && l !== 'list') || c[0];
   }

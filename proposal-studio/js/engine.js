@@ -438,7 +438,7 @@ function generateEngine(sec){
 
 /* ---------- 디자인 워싱 레이아웃 후보 ---------- */
 function layoutCandidates(p){
-  const it = itemsOf(p), n = it.length, hasV = it.filter(i => i.v && !/^\[/.test(i.v)).length >= Math.ceil(n / 2), pctV = it.filter(i => /^\s*\d+(\.\d+)?\s*%\s*$/.test(i.v || '')).length >= Math.max(2, n - 1);
+  const it = itemsOf(p), n = it.length, hasV = it.filter(i => i.v && !/^\[/.test(i.v) && /\d/.test(i.v)).length >= Math.ceil(n / 2), pctV = it.filter(i => /^\s*\d+(\.\d+)?\s*%\s*$/.test(i.v || '')).length >= Math.max(2, n - 1);
   const seq = it.some(i => /STEP|단계|D-|개월|주차|\d+\s*월|→|Daily|Weekly|Monthly/i.test(i.h + ' ' + (i.v || '')));
   const c = [];
   if (p.layout === 'image') return ['image'];
