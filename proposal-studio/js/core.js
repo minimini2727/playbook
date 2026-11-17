@@ -64,6 +64,7 @@ function normalize(s){
   o.design = Object.assign({theme: 'madup', brandColor: false}, s.design || {});
   o.merge = Object.assign(defaultState().merge, s.merge || {});
   o.sections = (o.sections || []).map(x => ({...x, role: x.role && x.role !== 'custom' ? x.role : (x.kind && x.kind !== 'strategy' ? x.kind : (typeof inferRole === 'function' ? inferRole((x.title || '') + ' ' + (x.goal || '')) : 'custom'))}));
+  if (!s.tplBuiltin && !o.isLibrary && typeof BUILTIN_TPLS !== 'undefined'){ o.refLayouts = [...BUILTIN_TPLS.map(t => JSON.parse(JSON.stringify(t))), ...o.refLayouts.filter(t => !t.builtin)]; o.tplBuiltin = true; o.design.useRef = true; }
   if (!o.id) o.id = uid();
   return o;
 }
@@ -98,7 +99,7 @@ async function boot(){
   if (!LIST.some(p => p.id === LIB_ID)){ const L = newLibrary(); LIST.push(L); try { await DB.put(clone(L)); } catch(e){} }
   const cur = localStorage.getItem('ps_current');
   const found = LIST.find(p => p.id === cur) || [...LIST].filter(p => p.id !== LIB_ID).sort((a, b) => b.updated - a.updated)[0];
-  if (found) S = found; else { S = defaultState(); LIST.push(S); }
+  if (found) S = found; else { S = normalize(defaultState()); LIST.push(S); }
   if (!S.step) S.step = 'input';
 }
 /* 기본 장표 라이브러리: 회사소개·조직·보고·기술·사례·이슈 — 모든 제안서에 기본값으로 들어감 */
@@ -114,7 +115,7 @@ function openProject(id, step){
   const p = LIST.find(x => x.id === id); if (!p) return;
   S = p; S.step = step || (S.step === 'manage' ? 'input' : S.step || 'input'); localStorage.setItem('ps_current', S.id); save(); render(); scrollTo(0, 0);
 }
-function newProject(){ const p = defaultState(); const t = S.template; if (t?.logo && !S.isLibrary) p.template = clone(t); LIST.push(p); S = p; S.step = 'input'; save(); render(); scrollTo(0, 0); }
+function newProject(){ const p = normalize(defaultState()); const t = S.template; if (t?.logo && !S.isLibrary) p.template = clone(t); LIST.push(p); S = p; S.step = 'input'; save(); render(); scrollTo(0, 0); }
 const apiKey = () => localStorage.getItem('ps_key') || '';
 
 function getPath(o, p){ return p.split('.').reduce((a, k) => a == null ? a : a[k], o); }

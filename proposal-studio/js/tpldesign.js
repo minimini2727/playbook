@@ -108,7 +108,8 @@ function designTemplate(sl, fname){
   const cnt = {h: units.length, d: per.reduce((a, l) => a + l.filter(t => t.role === 'd').length, 0), v: per.reduce((a, l) => a + l.filter(t => t.role === 'v').length, 0)};
   const blanks = body.filter(t => t.slot === 'blank').length, filled = body.filter(t => t.slot === 'item').length;
   const uSz = body.filter(t => t.slot === 'item').map(rtSz).sort((a, b) => a - b), med = uSz.length ? uSz[Math.floor(uSz.length / 2)] : 14;
-  const weak = !isDiv && (dark || med < 11.5 || !units.length || blanks > Math.max(2, filled * .3));
+  const weak = !isDiv && (dark || units.length && med < 11.5 || units.length && blanks > Math.max(2, filled * .3));
+  const _w0 = (dark || med < 11.5 || !units.length || blanks > Math.max(2, filled * .3));
   const zone = [...units, ...body];
   const bodyBox = zone.length ? (() => { const x1 = Math.max(32, Math.min(...zone.map(z => z.x))), x2 = Math.min(W - 32, Math.max(...zone.map(z => z.x + z.w))); return {x: x1, y: top + 14, w: x2 - x1, h: Math.max(160, botF - top - 30)}; })() : {x: MX, y: top + 14, w: W - MX * 2, h: Math.max(160, botF - top - 30)};
   return {id: uid(), name: `${fname.replace(/\.pptx?$/i, '').slice(0, 14)} p${sl.no}`, slideNo: sl.no, tag: isDiv ? 'divider' : 'body', use: false, recolor: true, mode: !isDiv && !units.length ? 'frame' : 'design', weak, body: bodyBox, bodyLayout: 'table', chrome: false,
@@ -195,6 +196,18 @@ function designSpec(it, pg, P, tpl){
   // 글이 빠진 작은 칩·라벨 도형은 함께 숨김
   const filledT = E.filter(e => e.k === 'rt');
   for (let i = E.length - 1; i >= 0; i--){ const e = E[i]; if ((e.k === 'g' || e.k === 'r') && e.w * e.h < 14000 && emptied.some(t => inside2(e, t)) && !filledT.some(t => inside2(e, t))) E.splice(i, 1); }
-  if (frame && items.length){ const lay = pg.tplBody || tpl.bodyLayout || 'table'; const pal = {...P}; (LAY[lay] || LAY.table)(E, items, tpl.body, pal, pg); }
+  if (frame){ let box = tpl.body, late = null; const lay = pg.tplBody || tpl.bodyLayout || 'table';
+    if ((pg.image || pg.img) && lay !== 'image'){ const bx = imgBoxes(pg, box); if (pg.img?.mode === 'free') late = bx.img; else { imgEl(E, pg, bx.img); box = bx.body; } }
+    if (items.length || lay === 'image' || /^cr/.test(lay)) (LAY[lay] || LAY.table)(E, items, box, P, pg);
+    if (late) imgEl(E, pg, late); }
   return {bg: rc(tpl.bg) || '#FFFFFF', bgCss: tpl.bgGrad ? gradCSS(tpl.bgGrad.map(s => ({...s, c: rc(s.c)})), tpl.bgAng) : null, bgImg: tpl.bgImg || null, els: E, fx: true};
+}
+
+/* ---------- MADUP 기본 템플릿: 대시보드에 내장, 처음 열 때 자동 등록 ---------- */
+function loadBuiltinTpls(force){
+  if (typeof BUILTIN_TPLS === 'undefined') return 0;
+  S.refLayouts = (S.refLayouts || []).filter(t => !t.builtin);
+  S.refLayouts.unshift(...BUILTIN_TPLS.map(t => JSON.parse(JSON.stringify(t))));
+  S.tplBuiltin = true; S.design = S.design || {}; S.design.useRef = true;
+  return BUILTIN_TPLS.length;
 }

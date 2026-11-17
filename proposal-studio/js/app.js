@@ -235,10 +235,15 @@ function washSections(idxs){
   if (!secs.length){ toast('워싱할 페이지가 없습니다 — 로직 단계에서 내용을 먼저 작성하세요'); return; }
   const tpls = S.design.useRef ? (S.refLayouts || []).filter(t => t.use && t.tag === 'body' && !t.weak) : []; let ti = 0;
   secs.forEach(sec => { let prev = ''; sec.pageList.forEach(p => {
-    if (!p.fixed && tpls.length && (p.type === 'strategy' || p.type === 'explain') && !MEDIA_LAYOUTS.includes(p.layout)){
-      const n = itemsOf(p).length, fit = tpls.filter(t => t.mode === 'frame' || (t.cnt.h >= n && t.cnt.h <= n + 2) || (t.cnt.d >= n && t.cnt.d <= n + 2));
-      const exact = fit.filter(t => t.mode !== 'frame' && t.cnt.h === n); if (exact.length) fit.splice(0, fit.length, ...exact);
-      if (fit.length){ if (!p.washed) p.draft = clone({...p, draft: undefined}); if (!p.tplBody && !String(p.layout).startsWith('tpl:')) p.tplBody = p.layout; p.layout = 'tpl:' + fit[ti++ % fit.length].id; p.washed = true; prev = p.layout; return; }
+    if (!p.fixed && tpls.length && p.type !== 'divider' && p.type !== 'bridge'){
+      const n = itemsOf(p).length, frames = tpls.filter(t => t.mode === 'frame'), canDesign = (p.type === 'strategy' || p.type === 'explain') && !MEDIA_LAYOUTS.includes(p.layout) && !/^cr/.test(p.layout || '') && !p.image && !p.img;
+      let fit = canDesign ? tpls.filter(t => t.mode !== 'frame' && t.cnt.h === n) : [];
+      if (!fit.length) fit = frames.length ? frames : (canDesign ? tpls.filter(t => (t.cnt.h >= n && t.cnt.h <= n + 1)) : []);
+      if (fit.length){ const t = fit[ti++ % fit.length];
+        if (String(p.layout).startsWith('tpl:')) p.layout = p.tplBody || 'list';
+        if (t.mode === 'frame'){ prev = washPage(p, prev); p.tplBody = p.layout; }
+        else { if (!p.washed) p.draft = clone({...p, draft: undefined}); p.tplBody = p.layout; p.washed = true; prev = p.layout; }
+        p.layout = 'tpl:' + t.id; return; }
     }
     prev = (p.type === 'strategy' || p.type === 'explain') ? washPage(p, prev) : (washPage(p, prev), prev); }); });
   save(); render(); toast('디자인 워싱 완료 — 컬러칩·레이아웃 변주·Pretendard 위계 적용');
@@ -590,7 +595,7 @@ const ACT = {
   newProject: () => newProject(),
   openP: (b, e) => { e.preventDefault(); openProject(b.dataset.pid, b.dataset.step); },
   dupP: b => { const p = clone(LP(b)); p.id = uid(); p.created = p.updated = Date.now(); p.project.name = (p.project.name || '') + ' (복제)'; p.project.status = '준비'; LIST.push(p); DB.put(clone(p)); render(); toast('복제했습니다'); },
-  delP: async b => { const p = LP(b); if (!confirm(`"${p.project.client || p.project.name || '제안'}"을(를) 삭제할까요? 되돌릴 수 없습니다.`)) return; await DB.del(p.id); LIST = LIST.filter(x => x !== p); if (S === p){ S = LIST[0] || defaultState(); if (!LIST.length) LIST.push(S); S.step = 'manage'; } render(); },
+  delP: async b => { const p = LP(b); if (!confirm(`"${p.project.client || p.project.name || '제안'}"을(를) 삭제할까요? 되돌릴 수 없습니다.`)) return; await DB.del(p.id); LIST = LIST.filter(x => x !== p); if (S === p){ S = LIST[0] || normalize(defaultState()); if (!LIST.length) LIST.push(S); S.step = 'manage'; } render(); },
   expP: b => downloadJSON(LP(b)),
   importProject: () => $('#jsonIn').click(),
   exportCur: () => downloadJSON(S),

@@ -85,8 +85,8 @@ function vRefLayouts(){
         <button class="btn sm ghost bad" data-act="tplDel" data-i="${i}">✕</button></div>
       <div style="font-size:11.5px;color:#667085;margin-top:4px">${esc(t.name)} · ${t.v === 3 ? `반복 카드 ${t.cnt?.h || 0}개` : `항목 칸 ${t.cnt?.h || 0}개`}${t.mode === 'frame' ? ' · 본문은 로직 레이아웃으로 채움' : t.v === 3 ? ' · 원본 디자인 유지, 문구만 교체' : ''}${t.weak ? ' · <b style="color:#B54708">구조가 복잡해 자동 배정 제외(직접 선택 가능)</b>' : ''}${t.v !== 3 ? ' · <b style="color:#D92D20">이전 방식 — 다시 올리면 디자인 그대로 적용</b>' : ''}</div></div>`;
   };
-  return `<div class="card"><div class="ch"><div><h3>희망 레이아웃</h3><div class="sub">원하는 디자인의 PPT를 올리면 도형·폰트·색·위치를 그대로 가져오고, 제목·부제·시사점·반복 카드의 문구만 제안 내용으로 바꿉니다. 원본 문구·수치·샘플 이미지는 쓰지 않습니다.</div></div>
-    <label class="btn" style="position:relative;overflow:hidden">＋ PPTX 업로드<input type="file" accept=".pptx" id="refIn" multiple style="position:absolute;inset:0;opacity:0;cursor:pointer"></label></div>
+  return `<div class="card"><div class="ch"><div><h3>희망 레이아웃</h3><div class="sub">MADUP 기본 템플릿이 내장돼 있어 바로 쓸 수 있습니다. 다른 디자인 PPT를 올려도 도형·폰트·색·위치를 그대로 가져오고, 제목·부제·시사점·반복 카드의 문구만 제안 내용으로 바꿉니다. 원본 문구·수치·샘플 이미지는 쓰지 않습니다.</div></div>
+    <div class="row" style="gap:6px"><button class="btn" data-act="tplBuiltin">MADUP 기본 템플릿 다시 불러오기</button><label class="btn" style="position:relative;overflow:hidden">＋ PPTX 업로드<input type="file" accept=".pptx" id="refIn" multiple style="position:absolute;inset:0;opacity:0;cursor:pointer"></label></div></div>
     ${L.length ? `<div class="row mb8" style="gap:8px"><span class="tag">${L.length}장 · 사용 ${L.filter(t => t.use).length}</span><button class="btn sm ghost" data-act="tplAll" data-v="1">전체 사용</button><button class="btn sm ghost" data-act="tplAll" data-v="0">전체 해제</button><button class="btn sm ghost bad" data-act="tplClear">모두 삭제</button><span class="sp"></span><span style="font-size:12px;color:#667085">사용으로 켠 본문 틀은 [디자인 워싱]에서 자동 배정되고, 로직의 레이아웃 선택에서도 고를 수 있습니다.</span></div>
     <div class="tplgrid">${L.map((t, i) => (REFALL || t.use || i < 16) ? card(t, i) : '').join('')}</div>${L.length > 16 && !REFALL ? `<div class="row mt8" style="justify-content:center"><button class="btn sm" data-act="tplMore">나머지 ${L.filter((t, i) => i >= 16 && !t.use).length}장 더 보기</button></div>` : ''}` : `<div class="drop" data-drop="ref"><b>희망 레이아웃 PPTX를 끌어 놓으세요</b><br>표지·간지·본문 장표를 자동으로 구분합니다</div>`}</div>`;
 }
@@ -204,6 +204,7 @@ Object.assign(ACT, {
   tplMore: () => { REFALL = true; render(); },
   tplDel: b => { S.refLayouts.splice(+b.dataset.i, 1); rr(); },
   tplAll: b => { S.refLayouts.forEach(t => t.use = b.dataset.v === '1'); rr(); },
+  tplBuiltin: () => { const n = loadBuiltinTpls(true); toast(`MADUP 기본 템플릿 ${n}장을 불러왔습니다`); rr(); },
   tplClear: () => { if (!confirm('불러온 레이아웃을 모두 삭제할까요?')) return; S.refLayouts = []; S.sections.forEach(s => s.pageList.forEach(p => { if (String(p.layout).startsWith('tpl:')) p.layout = p.tplBody || 'list'; })); rr(); },
   mmRec: () => { if (mmRows().length && !confirm('현재 매체 구성을 추천 믹스로 바꿀까요?')) return; mmRecommend(); rr(); toast('추천 믹스를 불러왔습니다. 비중은 직접 조정할 수 있습니다'); },
   mmNorm: () => { const R = mmRows(), s = R.reduce((a, r) => a + (+r.pct || 0), 0); if (!s) return; R.forEach(r => r.pct = Math.round((+r.pct || 0) / s * 100)); const d = 100 - R.reduce((a, r) => a + r.pct, 0); const mx = R.reduce((a, r, i) => r.pct > R[a].pct ? i : a, 0); R[mx].pct += d; rr(); },
