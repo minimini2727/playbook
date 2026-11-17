@@ -233,10 +233,11 @@ function washPage(p, prev){
 function washSections(idxs){
   const secs = idxs.map(i => S.sections[i]).filter(s => s && s.pageList.length);
   if (!secs.length){ toast('워싱할 페이지가 없습니다 — 로직 단계에서 내용을 먼저 작성하세요'); return; }
-  const tpls = S.design.useRef ? (S.refLayouts || []).filter(t => t.use && t.tag === 'body') : []; let ti = 0;
+  const tpls = S.design.useRef ? (S.refLayouts || []).filter(t => t.use && t.tag === 'body' && !t.weak) : []; let ti = 0;
   secs.forEach(sec => { let prev = ''; sec.pageList.forEach(p => {
     if (!p.fixed && tpls.length && (p.type === 'strategy' || p.type === 'explain') && !MEDIA_LAYOUTS.includes(p.layout)){
       const n = itemsOf(p).length, fit = tpls.filter(t => t.mode === 'frame' || (t.cnt.h >= n && t.cnt.h <= n + 2) || (t.cnt.d >= n && t.cnt.d <= n + 2));
+      const exact = fit.filter(t => t.mode !== 'frame' && t.cnt.h === n); if (exact.length) fit.splice(0, fit.length, ...exact);
       if (fit.length){ if (!p.washed) p.draft = clone({...p, draft: undefined}); if (!p.tplBody && !String(p.layout).startsWith('tpl:')) p.tplBody = p.layout; p.layout = 'tpl:' + fit[ti++ % fit.length].id; p.washed = true; prev = p.layout; return; }
     }
     prev = (p.type === 'strategy' || p.type === 'explain') ? washPage(p, prev) : (washPage(p, prev), prev); }); });

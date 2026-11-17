@@ -80,12 +80,12 @@ function vRefLayouts(){
       <div class="sw-wrap" style="width:220px;height:${Math.round(H * sc)}px"><div style="transform:scale(${sc});transform-origin:0 0;width:${W}px;height:${H}px">${slideHTML(spec)}</div></div>
       <div class="row mt8" style="gap:6px;flex-wrap:wrap"><label class="ck" style="display:flex;gap:4px;align-items:center;font-size:12.5px"><input type="checkbox" data-bind="refLayouts.${i}.use" ${t.use ? 'checked' : ''}>사용</label>
         <select data-bind="refLayouts.${i}.tag" style="width:78px;font-size:12px">${Object.entries(TPL_TAGS).map(([k, n]) => `<option value="${k}" ${t.tag === k ? 'selected' : ''}>${n}</option>`).join('')}</select>
-        <select data-bind="refLayouts.${i}.mode" style="width:96px;font-size:12px"><option value="fill" ${t.mode === 'fill' ? 'selected' : ''}>칸 채우기</option><option value="frame" ${t.mode === 'frame' ? 'selected' : ''}>틀만 사용</option></select>
+        <select data-bind="refLayouts.${i}.mode" style="width:110px;font-size:12px">${t.v === 3 ? `<option value="design" ${t.mode === 'design' ? 'selected' : ''}>디자인 그대로</option>` : `<option value="fill" ${t.mode === 'fill' ? 'selected' : ''}>칸 채우기</option>`}<option value="frame" ${t.mode === 'frame' ? 'selected' : ''}>틀만 사용</option></select>
         <label class="ck" style="display:flex;gap:4px;align-items:center;font-size:12px"><input type="checkbox" data-bind="refLayouts.${i}.recolor" ${t.recolor !== false ? 'checked' : ''}>컬러 적용</label>
         <button class="btn sm ghost bad" data-act="tplDel" data-i="${i}">✕</button></div>
-      <div style="font-size:11.5px;color:#667085;margin-top:4px">${esc(t.name)} · 항목 칸 ${t.cnt?.h || 0}개${t.mode === 'frame' ? ' · 본문은 로직 레이아웃으로 채움' : ''}</div></div>`;
+      <div style="font-size:11.5px;color:#667085;margin-top:4px">${esc(t.name)} · ${t.v === 3 ? `반복 카드 ${t.cnt?.h || 0}개` : `항목 칸 ${t.cnt?.h || 0}개`}${t.mode === 'frame' ? ' · 본문은 로직 레이아웃으로 채움' : t.v === 3 ? ' · 원본 디자인 유지, 문구만 교체' : ''}${t.weak ? ' · <b style="color:#B54708">구조가 복잡해 자동 배정 제외(직접 선택 가능)</b>' : ''}${t.v !== 3 ? ' · <b style="color:#D92D20">이전 방식 — 다시 올리면 디자인 그대로 적용</b>' : ''}</div></div>`;
   };
-  return `<div class="card"><div class="ch"><div><h3>희망 레이아웃</h3><div class="sub">원하는 디자인의 PPT를 올리면 장표 틀(도형·배치·배경)만 가져와 템플릿으로 씁니다. 원본 문구는 쓰지 않습니다.</div></div>
+  return `<div class="card"><div class="ch"><div><h3>희망 레이아웃</h3><div class="sub">원하는 디자인의 PPT를 올리면 도형·폰트·색·위치를 그대로 가져오고, 제목·부제·시사점·반복 카드의 문구만 제안 내용으로 바꿉니다. 원본 문구·수치·샘플 이미지는 쓰지 않습니다.</div></div>
     <label class="btn" style="position:relative;overflow:hidden">＋ PPTX 업로드<input type="file" accept=".pptx" id="refIn" multiple style="position:absolute;inset:0;opacity:0;cursor:pointer"></label></div>
     ${L.length ? `<div class="row mb8" style="gap:8px"><span class="tag">${L.length}장 · 사용 ${L.filter(t => t.use).length}</span><button class="btn sm ghost" data-act="tplAll" data-v="1">전체 사용</button><button class="btn sm ghost" data-act="tplAll" data-v="0">전체 해제</button><button class="btn sm ghost bad" data-act="tplClear">모두 삭제</button><span class="sp"></span><span style="font-size:12px;color:#667085">사용으로 켠 본문 틀은 [디자인 워싱]에서 자동 배정되고, 로직의 레이아웃 선택에서도 고를 수 있습니다.</span></div>
     <div class="tplgrid">${L.map((t, i) => (REFALL || t.use || i < 16) ? card(t, i) : '').join('')}</div>${L.length > 16 && !REFALL ? `<div class="row mt8" style="justify-content:center"><button class="btn sm" data-act="tplMore">나머지 ${L.filter((t, i) => i >= 16 && !t.use).length}장 더 보기</button></div>` : ''}` : `<div class="drop" data-drop="ref"><b>희망 레이아웃 PPTX를 끌어 놓으세요</b><br>표지·간지·본문 장표를 자동으로 구분합니다</div>`}</div>`;
@@ -93,7 +93,7 @@ function vRefLayouts(){
 async function addRefFiles(files){
   const fs = files.filter(f => /\.pptx$/i.test(f.name)); if (!fs.length) return toast('PPTX 파일만 지원합니다');
   busy('희망 레이아웃 분석 중…', '도형·배치·배경을 템플릿으로 변환합니다');
-  try { for (const f of fs){ const t = await parseRefPptx(f); S.refLayouts.push(...t); } toast(`레이아웃 ${S.refLayouts.length}장을 불러왔습니다. 쓸 장표를 [사용]으로 켜세요`); }
+  try { for (const f of fs){ const t = typeof parseDesignPptx === 'function' ? await parseDesignPptx(f, {onProgress: (i, n) => busy('희망 레이아웃 분석 중…', `${i} / ${n}장 — 도형·폰트·색·위치를 그대로 읽는 중`)}) : await parseRefPptx(f); S.refLayouts.push(...t); } toast(`레이아웃 ${S.refLayouts.length}장을 불러왔습니다. 쓸 장표를 [사용]으로 켜세요`); }
   catch(e){ toast('레이아웃 분석 실패: ' + e.message); }
   unbusy(); rr();
 }

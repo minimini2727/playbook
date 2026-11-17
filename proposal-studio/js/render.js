@@ -575,6 +575,7 @@ function titleBlock(E, it, pg, P){
 /* ---------- 참고 PPT 기반 레이아웃 (tpl:ID) ---------- */
 function tplById(id){ return (S.refLayouts || []).find(t => t.id === id); }
 function tplSpec(it, pg, P, tpl){
+  if (tpl.v === 3 && typeof designSpec === 'function') return designSpec(it, pg, P, tpl);
   const E = [], items = itemsOf(pg), cmap = tpl.recolor !== false && !P.draft ? tpl.cmap || {} : {};
   const col = c => c && cmap[c] ? [P.c1, P.c2, P.c3][cmap[c] - 1] : (c && P.draft && tpl.cmap?.[c] ? '#5A5A5A' : c);
   const fill = {title: pg.title, sub: pg.subtitle, key: pg.keyMsg, tag: pg.tag};
