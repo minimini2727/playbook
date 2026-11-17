@@ -215,6 +215,7 @@ async function genAll(){
 
 /* ---------- 3) 디자인 워싱 ---------- */
 function washPage(p, prev){
+  if (p.fixed) return prev;
   if (!p.washed) p.draft = clone({...p, draft: undefined});
   if (p.type === 'strategy' || p.type === 'explain'){
     const c = layoutCandidates(p);
@@ -230,7 +231,7 @@ function washSections(idxs){
   if (!secs.length){ toast('워싱할 페이지가 없습니다 — 로직 단계에서 내용을 먼저 작성하세요'); return; }
   const tpls = S.design.useRef ? (S.refLayouts || []).filter(t => t.use && t.tag === 'body') : []; let ti = 0;
   secs.forEach(sec => { let prev = ''; sec.pageList.forEach(p => {
-    if (tpls.length && (p.type === 'strategy' || p.type === 'explain') && !MEDIA_LAYOUTS.includes(p.layout)){
+    if (!p.fixed && tpls.length && (p.type === 'strategy' || p.type === 'explain') && !MEDIA_LAYOUTS.includes(p.layout)){
       const n = itemsOf(p).length, fit = tpls.filter(t => t.mode === 'frame' || (t.cnt.h >= n && t.cnt.h <= n + 2) || (t.cnt.d >= n && t.cnt.d <= n + 2));
       if (fit.length){ if (!p.washed) p.draft = clone({...p, draft: undefined}); if (!p.tplBody && !String(p.layout).startsWith('tpl:')) p.tplBody = p.layout; p.layout = 'tpl:' + fit[ti++ % fit.length].id; p.washed = true; prev = p.layout; return; }
     }
@@ -441,6 +442,7 @@ function vSection(sec, si){
   </div>`;
 }
 function vPage(sec, si, p, pi){
+  if (p.fixed) return vFixedPage(sec, si, p, pi);
   const base = `sections.${si}.pageList.${pi}`, b = `data-s="${si}" data-p="${pi}"`, content = p.type === 'strategy' || p.type === 'explain';
   const hint = LAYOUT_HINT[p.layout] || LAYOUT_HINT.default;
   return `<div class="pg"><div class="thumb" data-act="preview" ${b} data-thumb="${si}.${pi}">${thumbHTML(pageItem(sec, p, pi + 1), 340)}</div>

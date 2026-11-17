@@ -578,6 +578,7 @@ function tplSpec(it, pg, P, tpl){
 }
 const tplFor = tag => (S.refLayouts || []).find(t => t.use && t.tag === tag);
 function buildSpec(it){
+  if (it.kind === 'page' && it.page?.fixed){ const F = it.page.fixed; return {bg: F.bg || '#FFFFFF', bgImg: F.bgImg || null, els: F.els}; }
   if (it.kind === 'cover') return coverSpec(it);
   if (it.kind === 'guide') return guideSpec(it);
   if (it.kind === 'toc') return tocSpec(it);
@@ -745,6 +746,7 @@ function shapePoints(e){
     case 'chevron': return `0,0 ${w - d},0 ${w},${h / 2} ${w - d},${h} 0,${h} ${d},${h / 2}`;
     case 'home': return `0,0 ${w - d},0 ${w},${h / 2} ${w - d},${h} 0,${h}`;
     case 'arrow': { const hd = Math.min(w * .5, h * .9); return `0,${h * .3} ${w - hd},${h * .3} ${w - hd},0 ${w},${h / 2} ${w - hd},${h} ${w - hd},${h * .7} 0,${h * .7}`; }
+    case 'poly': return e.pts.map(p => p.join(',')).join(' ');
     case 'tri': return `0,${h} ${w / 2},0 ${w},${h}`;
     case 'trap': { const t = e.inset ?? Math.min(w, h) * .25; return `${t},0 ${w - t},0 ${w},${h} 0,${h}`; }
     case 'trap-down': { const t = e.inset ?? Math.min(w, h) * .25; return `0,0 ${w},0 ${w - t},${h} ${t},${h}`; }
@@ -756,7 +758,8 @@ function slideHTML(spec){
   let h = `<div class="slide" style="${bg}">`;
   for (const e of spec.els){
     const pos = `left:${e.x}px;top:${e.y}px;width:${e.w}px;height:${e.h}px;${e.alpha != null ? `opacity:${e.alpha};` : ''}`;
-    if (e.k === 'r') h += `<div class="r" style="${pos}background:${e.fill};${e.r ? `border-radius:${e.r}px;` : ''}${e.line ? (e.dash ? `border:2px dashed ${e.line};box-sizing:border-box;` : `box-shadow:inset 0 0 0 1px ${e.line};`) : ''}"></div>`;
+    if (e.k === 'frame'){ if (!EXPORTING) h += `<div class="r" style="${pos}border:2px dashed #F04438;box-sizing:border-box;display:flex;align-items:center;justify-content:center;color:#F04438;font-size:16px">원본 차트 · 이미지로 교체 필요</div>`; }
+    else if (e.k === 'r') h += `<div class="r" style="${pos}background:${e.nofill ? 'transparent' : e.fill};${e.r ? `border-radius:${e.r}px;` : ''}${e.line ? (e.dash ? `border:2px dashed ${e.line};box-sizing:border-box;` : `box-shadow:inset 0 0 0 1px ${e.line};`) : ''}"></div>`;
     else if (e.k === 'e') h += `<div class="r" style="${pos}border-radius:50%;background:${e.nofill ? 'transparent' : e.fill};${e.line ? `border:${e.lw || 1}px solid ${e.line};box-sizing:border-box;` : ''}"></div>`;
     else if (e.k === 's') h += `<svg class="r" style="${pos}overflow:visible" width="${e.w}" height="${e.h}" viewBox="0 0 ${e.w} ${e.h}"><polygon points="${shapePoints(e)}" fill="${e.fill}"/></svg>`;
     else if (e.k === 'i') h += `<img class="im" style="${pos}${e.r ? `border-radius:${e.r}px;` : ''}object-fit:${e.cover ? 'cover' : 'contain'}" src="${e.data}">`;
@@ -816,7 +819,8 @@ async function exportPPTX(items, name){
       for (const e of spec.els){
         const base = {x: IN(e.x), y: IN(e.y), w: Math.max(.01, IN(e.w)), h: Math.max(.01, IN(e.h))};
         const tr = e.alpha != null ? Math.round((1 - e.alpha) * 100) : 0;
-        if (e.k === 'r') sl.addShape(e.r ? pptx.ShapeType.roundRect : pptx.ShapeType.rect, {...base, fill: {color: hx(e.fill), transparency: tr}, line: e.line ? {color: hx(e.line), width: .75, dashType: e.dash ? 'dash' : 'solid'} : {type: 'none'}, ...(e.r ? {rectRadius: Math.min(.5, e.r / Math.min(e.w, e.h))} : {})});
+        if (e.k === 'frame') continue;
+        if (e.k === 'r') sl.addShape(e.r ? pptx.ShapeType.roundRect : pptx.ShapeType.rect, {...base, fill: e.nofill ? {color: 'FFFFFF', transparency: 100} : {color: hx(e.fill), transparency: tr}, line: e.line ? {color: hx(e.line), width: .75, dashType: e.dash ? 'dash' : 'solid'} : {type: 'none'}, ...(e.r ? {rectRadius: Math.min(.5, e.r / Math.min(e.w, e.h))} : {})});
         else if (e.k === 'e') sl.addShape(pptx.ShapeType.ellipse, {...base, fill: e.nofill ? {color: 'FFFFFF', transparency: 100} : {color: hx(e.fill), transparency: tr}, line: e.line ? {color: hx(e.line), width: (e.lw || 1) * .75} : {type: 'none'}});
         else if (e.k === 's'){
           const pts = shapePoints(e).split(' ').map(q => { const [px, py] = q.split(',').map(Number); return {x: IN(px), y: IN(py)}; });
