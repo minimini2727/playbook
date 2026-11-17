@@ -1,0 +1,1215 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Proposal Studio · 퍼포먼스 마케팅 제안서 AI 작성 대시보드</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pretendard@1.3.9/dist/web/static/pretendard.css">
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<style>
+:root{--bg:#F4F5F8;--card:#fff;--line:#E4E7EC;--ink:#101828;--sub:#475467;--mute:#98A2B3;--pri:#3D5AFE;--pri2:#EEF1FF;--ok:#12B76A;--warn:#F79009;--bad:#F04438}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:Pretendard,-apple-system,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;font-size:14px}
+button,input,select,textarea{font-family:inherit;font-size:13px}
+header.top{position:sticky;top:0;z-index:50;background:#0B1020;color:#fff;display:flex;align-items:center;gap:18px;padding:0 24px;height:60px}
+header.top .logo{font-weight:800;letter-spacing:-.3px;font-size:17px;white-space:nowrap}
+header.top .logo small{font-weight:300;color:#A5B4FC;margin-left:6px;font-size:12px}
+nav.steps{display:flex;gap:4px;flex:1;justify-content:center}
+nav.steps button{background:transparent;border:0;color:#C7CBD6;padding:9px 16px;border-radius:8px;cursor:pointer;font-weight:600;white-space:nowrap}
+nav.steps button b{display:inline-block;width:20px;height:20px;line-height:20px;border-radius:50%;background:#2A3149;margin-right:6px;font-size:11px;text-align:center}
+nav.steps button.on{background:#1E2640;color:#fff}
+nav.steps button.on b{background:var(--pri)}
+.hbtns{display:flex;gap:6px}
+.hbtns button{background:#1E2640;color:#E5E7EB;border:1px solid #2A3149;border-radius:8px;padding:7px 11px;cursor:pointer}
+.keydot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;background:var(--bad)}
+.keydot.on{background:var(--ok)}
+main{max-width:1320px;margin:0 auto;padding:24px 24px 120px}
+h2.pt{font-size:22px;margin:4px 0 4px;letter-spacing:-.4px}
+p.pd{color:var(--sub);margin:0 0 18px;font-weight:300}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:16px}
+.card h3{margin:0 0 12px;font-size:15px;display:flex;align-items:center;gap:8px}
+.card h3 .n{background:var(--pri);color:#fff;border-radius:6px;font-size:11px;padding:2px 7px}
+.card .hint{color:var(--mute);font-size:12px;font-weight:300;margin:-6px 0 12px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+@media(max-width:980px){.grid2,.grid3{grid-template-columns:1fr}nav.steps button span{display:none}}
+label.f{display:block;font-size:12px;color:var(--sub);margin:0 0 4px;font-weight:600}
+input[type=text],input[type=url],input[type=number],input[type=password],select,textarea{width:100%;border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:#fff;color:var(--ink);outline:none}
+input:focus,select:focus,textarea:focus{border-color:var(--pri);box-shadow:0 0 0 3px var(--pri2)}
+textarea{resize:vertical;min-height:70px;line-height:1.5}
+.row{display:flex;gap:8px;align-items:center}
+.row>*{min-width:0}
+.mb8{margin-bottom:8px}.mb12{margin-bottom:12px}.mt12{margin-top:12px}
+.btn{border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:8px;padding:7px 12px;cursor:pointer;font-weight:600;white-space:nowrap}
+.btn:hover{border-color:#C9CED8}
+.btn.pri{background:var(--pri);border-color:var(--pri);color:#fff}
+.btn.pri:hover{filter:brightness(1.07)}
+.btn.dark{background:#101828;color:#fff;border-color:#101828}
+.btn.sm{padding:4px 8px;font-size:12px}
+.btn.ghost{background:transparent;border-color:transparent;color:var(--sub)}
+.btn.bad{color:var(--bad)}
+.btn.big{padding:14px 26px;font-size:15px;border-radius:12px}
+.cta{display:flex;justify-content:center;gap:10px;margin:8px 0 20px;flex-wrap:wrap}
+.drop{border:1.5px dashed #C9CED8;border-radius:12px;padding:22px;text-align:center;color:var(--sub);cursor:pointer;background:#FAFBFC;position:relative}
+.drop:hover,.drop.over{border-color:var(--pri);background:var(--pri2)}
+.drop input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.drop b{display:block;color:var(--ink);margin-bottom:4px}
+.files{margin-top:10px;display:flex;flex-direction:column;gap:6px}
+.file{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:8px;padding:7px 10px;font-size:12px}
+.file .nm{flex:1;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.file .meta{color:var(--mute)}
+.file img{width:34px;height:34px;object-fit:cover;border-radius:4px}
+.tag{display:inline-block;font-size:11px;padding:2px 7px;border-radius:20px;background:#F2F4F7;color:var(--sub);font-weight:600}
+.tag.ok{background:#ECFDF3;color:#027A48}.tag.warn{background:#FFFAEB;color:#B54708}.tag.bad{background:#FEF3F2;color:#B42318}.tag.pri{background:var(--pri2);color:var(--pri)}
+.chips{display:flex;gap:12px;flex-wrap:wrap}
+.chip{flex:1;min-width:180px;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.chip .sw{height:80px;position:relative}
+.chip .sw input[type=color]{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}
+.chip .bd{padding:10px}
+.chip .bd input{margin-bottom:6px}
+table.kv{width:100%;border-collapse:collapse;font-size:13px}
+table.kv th{width:120px;text-align:left;color:var(--sub);font-weight:600;padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+table.kv td{padding:4px 6px;border-bottom:1px solid var(--line)}
+table.kv td textarea{min-height:36px;border-color:transparent;padding:4px 6px}
+table.kv td textarea:hover{border-color:var(--line)}
+.prio{display:grid;grid-template-columns:36px 1fr 1fr 1fr 70px 92px;gap:8px;align-items:start;border-bottom:1px solid var(--line);padding:8px 0}
+.prio.h{font-size:12px;color:var(--sub);font-weight:700;padding-top:0}
+.prio .rk{width:30px;height:30px;border-radius:8px;background:var(--pri);color:#fff;font-weight:800;display:flex;align-items:center;justify-content:center}
+.prio textarea{min-height:52px;font-size:12px}
+.busy{position:fixed;inset:0;background:rgba(11,16,32,.55);z-index:200;display:flex;align-items:center;justify-content:center}
+.busy .bx{background:#fff;border-radius:14px;padding:26px 30px;min-width:340px;text-align:center}
+.spin{width:34px;height:34px;border:4px solid var(--pri2);border-top-color:var(--pri);border-radius:50%;animation:sp 1s linear infinite;margin:0 auto 12px}
+@keyframes sp{to{transform:rotate(360deg)}}
+.busy .msg{font-weight:700}.busy .sub{color:var(--sub);font-size:12px;margin-top:6px;font-weight:300}
+.toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);background:#101828;color:#fff;padding:11px 18px;border-radius:10px;z-index:300;font-weight:600;box-shadow:0 8px 24px rgba(0,0,0,.2);max-width:80vw}
+.modal{position:fixed;inset:0;background:rgba(11,16,32,.6);z-index:150;display:flex;align-items:flex-start;justify-content:center;overflow:auto;padding:40px 16px}
+.modal .mb{background:#fff;border-radius:16px;padding:22px;width:min(1180px,100%)}
+.modal .mh{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.modal .mh h3{margin:0}
+/* slides */
+.sw-wrap{position:relative;overflow:hidden;border-radius:6px;box-shadow:0 0 0 1px var(--line);background:#fff;flex:none}
+.sw-wrap .slide{transform-origin:0 0;position:absolute;left:0;top:0}
+.slide{position:relative;width:1280px;height:720px;overflow:hidden;font-family:Pretendard,sans-serif;background:#fff;background-size:cover;background-position:center}
+.slide .t{position:absolute;display:flex;flex-direction:column;white-space:pre-wrap;word-break:keep-all;overflow-wrap:break-word;overflow:hidden;letter-spacing:-.02em}
+.slide .r,.slide .im{position:absolute}
+.slide .im{object-fit:contain}
+/* logic */
+.toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+.toolbar .sp{flex:1}
+.sec{background:#fff;border:1px solid var(--line);border-radius:14px;margin-bottom:6px;overflow:hidden}
+.sec.extra{border-style:dashed;border-color:#B8C2D9;background:#FBFCFF}
+.sec-h{display:flex;gap:8px;align-items:center;padding:12px 14px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.sec-h .no{font-weight:800;font-size:18px;color:var(--pri);width:34px}
+.sec-h input.tt{flex:1;min-width:200px;font-weight:700;font-size:15px}
+.sec-h .pc{width:64px}
+.sec-h label.ck{font-size:12px;color:var(--sub);display:flex;gap:4px;align-items:center;white-space:nowrap}
+.sec-g{padding:10px 14px;border-bottom:1px solid var(--line);background:#FCFCFD}
+.pages{padding:14px;display:flex;flex-direction:column;gap:12px}
+.pg{display:flex;gap:14px;border:1px solid var(--line);border-radius:12px;padding:12px;background:#fff}
+.pg .thumb{cursor:zoom-in}
+.pg .pf{flex:1;display:flex;flex-direction:column;gap:6px;min-width:0}
+.pg .pf .row select{width:auto}
+.items{display:flex;flex-direction:column;gap:4px}
+.it{display:grid;grid-template-columns:24px 1.1fr 90px 2fr 26px;gap:4px;align-items:start}
+.it .ix{font-size:11px;color:var(--mute);padding-top:9px;text-align:center}
+.it textarea{min-height:34px;padding:6px 8px;font-size:12px}
+.it input{padding:6px 8px;font-size:12px}
+.ins{display:flex;justify-content:center;margin:4px 0 10px}
+.ins .btn{border-radius:20px;border-style:dashed;color:var(--pri);background:transparent}
+.kind{font-size:11px;font-weight:700;padding:3px 8px;border-radius:6px;background:var(--pri2);color:var(--pri)}
+.kind.company{background:#FDF2FA;color:#C11574}.kind.brand{background:#ECFDF3;color:#027A48}.kind.case{background:#FFF6ED;color:#C4320A}
+.gallery{display:flex;flex-wrap:wrap;gap:12px}
+.gi{position:relative}
+.gi .lb{font-size:11px;color:var(--sub);margin-top:4px;display:flex;justify-content:space-between;gap:6px;align-items:center}
+.empty{text-align:center;padding:50px 20px;color:var(--sub)}
+.empty b{display:block;font-size:17px;color:var(--ink);margin-bottom:6px}
+.bar{height:8px;background:#F2F4F7;border-radius:8px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--pri)}
+table.list{width:100%;border-collapse:collapse;font-size:13px}
+table.list th{background:#F9FAFB;text-align:left;padding:8px;border-bottom:1px solid var(--line);color:var(--sub);font-size:12px}
+table.list td{padding:8px;border-bottom:1px solid var(--line);vertical-align:top}
+del{color:var(--bad)}ins{color:#027A48;text-decoration:none;font-weight:700}
+.note{background:#FFFAEB;border:1px solid #FEDF89;color:#93370D;border-radius:10px;padding:10px 12px;font-size:12px;line-height:1.6}
+.note.info{background:#EFF8FF;border-color:#B2DDFF;color:#175CD3}
+.media{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;max-height:300px;overflow:auto;margin-top:8px}
+.media .m{border:1px solid var(--line);border-radius:8px;padding:6px;text-align:center;font-size:11px}
+.media .m img{width:100%;height:70px;object-fit:contain;background:repeating-conic-gradient(#eee 0 25%,#fff 0 50%) 0 0/12px 12px}
+.story{display:grid;grid-template-columns:28px 1fr 2fr 26px;gap:6px;margin-bottom:6px;align-items:start}
+.story .ix{font-weight:800;color:var(--pri);padding-top:8px}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="logo">Proposal Studio<small>AI 퍼포먼스 제안서</small></div>
+  <nav class="steps" id="steps"></nav>
+  <div class="hbtns">
+    <button data-act="settings" title="AI·템플릿 설정"><span class="keydot" id="keydot"></span>설정</button>
+    <button data-act="saveJSON" title="프로젝트 파일 저장">저장</button>
+    <button data-act="loadJSON" title="프로젝트 파일 불러오기">열기</button>
+    <button data-act="newProject" title="새 프로젝트">새로</button>
+  </div>
+</header>
+<main id="app"></main>
+<div id="layer"></div>
+<input type="file" id="jsonIn" accept=".json" hidden>
+<div id="offscreen" style="position:fixed;left:-30000px;top:0"></div>
+
+<script>
+/* =========================================================
+   Proposal Studio — 단일 파일 웹앱
+   데이터: 브라우저 localStorage에만 저장 (서버 전송 없음, AI 호출 시 Anthropic API로만 전송)
+   ========================================================= */
+if (window.pdfjsLib) pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
+
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const uid = () => Math.random().toString(36).slice(2, 9);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const two = n => String(n).padStart(2, '0');
+const clone = o => JSON.parse(JSON.stringify(o));
+const today = () => { const d = new Date(); return `${d.getFullYear()}.${two(d.getMonth()+1)}.${two(d.getDate())}`; };
+const RAW = {}; // 원본 바이너리(PDF base64 등) — 메모리에만
+
+const STEPS = [['input','인풋'],['logic','로직'],['wash','디자인 워싱'],['check','점검·취합']];
+const PAGE_TYPES = {divider:'간지형', bridge:'브릿지형', strategy:'전략형', explain:'설명형'};
+const LAYOUTS = {list:'리스트', cards:'카드', process:'프로세스', kpi:'KPI 수치', split:'좌우 분할', table:'표', image:'이미지'};
+const KINDS = {strategy:'전략', company:'회사소개', brand:'브랜드 스터디', case:'케이스 스터디'};
+const URL_TYPES = ['자사몰','네이버 스마트스토어','네이버 브랜드스토어','쿠팡','카카오 선물하기','인스타그램','유튜브','기타'];
+const MODELS = [['claude-sonnet-5-5','Claude Sonnet 5.5 (권장·균형)'],['claude-opus-5-5','Claude Opus 5.5 (최고 품질)'],['claude-haiku-5-5','Claude Haiku 5.5 (빠름·저비용)']];
+
+function defaultState(){
+  return {
+    v: 1, step: 'input',
+    project: {name: '', client: '', proposer: 'MADUP (매드업)', date: today()},
+    settings: {model: 'claude-sonnet-5-5', web: true},
+    input: {
+      rfp: [], urls: [{type: '자사몰', url: ''}], product: '', brand: [], notes: '',
+      analysis: null,
+      colors: [{hex:'#1F3A93',role:'Main',name:'Deep Navy',reason:''},{hex:'#4C8BF5',role:'Sub',name:'Sky Blue',reason:''},{hex:'#FFB020',role:'Accent',name:'Amber',reason:''}],
+      colorConcept: ''
+    },
+    template: {logo: null, logoW: 0, logoH: 0, logoPos: 'tr', coverBg: null, footer: 'MADUP'},
+    sections: [],
+    checks: {typos: null, fit: null},
+    merge: {cover: true, guide: true, toc: true, closing: true, done: false}
+  };
+}
+let S = load() || defaultState();
+let MEDIA = []; // 템플릿에서 추출한 이미지 (메모리)
+
+function load(){ try { const s = JSON.parse(localStorage.getItem('ps_state') || 'null'); if (s && s.v) return Object.assign(defaultState(), s); } catch(e){} return null; }
+let saveT;
+function save(){ clearTimeout(saveT); saveT = setTimeout(() => {
+  try { localStorage.setItem('ps_state', JSON.stringify(S)); }
+  catch(e){ toast('브라우저 저장 용량 초과 — 상단 [저장]으로 프로젝트 파일을 내려받아 두세요'); }
+}, 500); }
+const apiKey = () => localStorage.getItem('ps_key') || '';
+
+function getPath(o, p){ return p.split('.').reduce((a, k) => a == null ? a : a[k], o); }
+function setPath(o, p, v){ const ks = p.split('.'); const last = ks.pop(); const t = ks.reduce((a, k) => a[k], o); t[last] = v; }
+
+/* ---------------- UI helpers ---------------- */
+function toast(m, ms = 2600){ $$('.toast').forEach(x => x.remove()); const d = document.createElement('div'); d.className = 'toast'; d.textContent = m; document.body.appendChild(d); setTimeout(() => d.remove(), ms); }
+function busy(msg, sub = ''){ let b = $('#busy'); if (!b){ b = document.createElement('div'); b.id = 'busy'; b.className = 'busy'; b.innerHTML = '<div class="bx"><div class="spin"></div><div class="msg"></div><div class="sub"></div></div>'; document.body.appendChild(b); } $('.msg', b).textContent = msg; $('.sub', b).textContent = sub; }
+function unbusy(){ $('#busy')?.remove(); }
+function modal(title, html, wide = true){ const m = document.createElement('div'); m.className = 'modal'; m.innerHTML = `<div class="mb" style="${wide ? '' : 'width:min(640px,100%)'}"><div class="mh"><h3>${title}</h3><button class="btn" data-close>닫기</button></div><div class="mc">${html}</div></div>`; m.addEventListener('click', e => { if (e.target === m || e.target.closest('[data-close]')) m.remove(); }); $('#layer').appendChild(m); return m; }
+async function pool(arr, n, fn){ const out = []; let i = 0; const run = async () => { while (i < arr.length){ const k = i++; out[k] = await fn(arr[k], k); } }; await Promise.all(Array.from({length: Math.min(n, arr.length)}, run)); return out; }
+
+/* ---------------- color utils ---------------- */
+function hexRgb(h){ h = (h || '#000').replace('#',''); if (h.length === 3) h = h.split('').map(c => c + c).join(''); const n = parseInt(h, 16) || 0; return [n >> 16 & 255, n >> 8 & 255, n & 255]; }
+function rgbHex(r, g, b){ return '#' + [r, g, b].map(v => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0')).join('').toUpperCase(); }
+function mix(a, b, t){ const A = hexRgb(a), B = hexRgb(b); return rgbHex(...A.map((v, i) => v + (B[i] - v) * t)); }
+function lum(h){ const [r, g, b] = hexRgb(h).map(v => { v /= 255; return v <= .03928 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4); }); return .2126 * r + .7152 * g + .0722 * b; }
+const onC = c => lum(c) > .42 ? '#111111' : '#FFFFFF';
+const validHex = h => /^#[0-9A-Fa-f]{6}$/.test(h || '');
+function palette(washed){
+  if (!washed) return {c1:'#3A3A3A', c2:'#6B6B6B', c3:'#8C8C8C', ink:'#3A3A3A', tint:'#F3F3F3', tint2:'#E9E9E9', draft:true};
+  const cs = S.input.colors.map(c => validHex(c.hex) ? c.hex.toUpperCase() : '#333333');
+  const c1 = cs[0], c2 = cs[1] || mix(c1, '#FFFFFF', .35), c3 = cs[2] || c2;
+  const ink = lum(c1) > .35 ? mix(c1, '#000000', .45) : c1;
+  return {c1, c2, c3, ink, tint: mix(c1, '#FFFFFF', .93), tint2: mix(c2, '#FFFFFF', .86)};
+}
+
+/* =========================================================
+   SLIDE SPEC — HTML 미리보기와 PPT 추출이 같은 좌표계(1280×720px)를 공유
+   ========================================================= */
+const W = 1280, H = 720, MX = 60;
+const R = (x, y, w, h, fill, o = {}) => ({k:'r', x, y, w, h, fill, ...o});
+const T = (x, y, w, h, text, o = {}) => ({k:'t', x, y, w, h, text: String(text ?? ''), size: 16, color: '#111111', align: 'left', valign: 'top', lh: 1.35, ...o});
+const IM = (x, y, w, h, data, o = {}) => ({k:'i', x, y, w, h, data, ...o});
+
+function fitBox(nw, nh, x, y, w, h){ if (!nw || !nh) return {x, y, w, h}; const s = Math.min(w / nw, h / nh); const ww = nw * s, hh = nh * s; return {x: x + (w - ww) / 2, y: y + (h - hh) / 2, w: ww, h: hh}; }
+
+function chrome(E, it, P, dark){
+  const tp = S.template, fg = dark ? onC(dark) : '#111111';
+  const subC = dark ? (fg === '#FFFFFF' ? '#FFFFFF' : '#333333') : '#98A2B3';
+  // logo
+  const lh = 28; let lw = 150, pos = tp.logoPos || 'tr';
+  const lx = pos.includes('l') ? MX : W - MX - lw;
+  const ly = pos.includes('t') ? 30 : H - 30 - lh;
+  if (tp.logo){ const b = fitBox(tp.logoW, tp.logoH, lx, ly, lw, lh); const nb = pos.includes('r') ? {...b, x: W - MX - b.w} : {...b, x: MX}; E.push(IM(nb.x, nb.y, nb.w, nb.h, tp.logo)); }
+  else E.push(T(lx, ly, lw, lh, tp.footer || 'MADUP', {size: 16, bold: true, color: dark ? fg : P.ink, align: pos.includes('r') ? 'right' : 'left', valign: 'middle', ls: .5}));
+  // section label
+  if (it.label && !dark){ const labX = pos === 'tl' ? MX + 170 : MX; E.push(T(labX, 34, 700, 22, it.label, {size: 13, bold: true, color: P.ink, valign: 'middle'})); }
+  // footer
+  const fy = H - 34;
+  if (pos !== 'bl') E.push(T(MX, fy, 600, 18, `${S.project.client || ''}${S.project.client ? ' · ' : ''}${S.project.name || 'Performance Marketing Proposal'}`, {size: 11, light: true, color: subC, alpha: dark ? .7 : 1}));
+  if (it.no && pos !== 'br') E.push(T(W - MX - 80, fy, 80, 18, two(it.no), {size: 11, bold: true, color: dark ? fg : P.ink, align: 'right', alpha: dark ? .8 : 1}));
+}
+
+function itemsOf(pg){ return (pg.items || []).filter(i => (i.h || i.d || i.v)); }
+
+/* --- body layouts: box = {x,y,w,h} --- */
+const LAY = {
+  list(E, items, b, P){
+    const n = Math.max(1, items.length), rh = Math.min(86, b.h / n);
+    items.forEach((it, i) => {
+      const y = b.y + i * rh;
+      E.push(R(b.x, y + 11, 8, 8, P.c1, {r: 4}));
+      if (it.h){ E.push(T(b.x + 24, y, Math.min(300, b.w * .3), rh - 8, it.h + (it.v ? `  ${it.v}` : ''), {size: 18, bold: true})); E.push(T(b.x + 24 + Math.min(320, b.w * .32), y + 1, b.w - 24 - Math.min(320, b.w * .32), rh - 8, it.d, {size: 16, light: true, color: '#444444'})); }
+      else E.push(T(b.x + 24, y + 1, b.w - 24, rh - 8, it.d, {size: 17, light: true, color: '#333333'}));
+      if (i < n - 1) E.push(R(b.x, y + rh - 4, b.w, 1, '#ECECEC'));
+    });
+  },
+  cards(E, items, b, P){
+    const n = items.length || 1, cols = n <= 4 ? n : 3, rows = Math.min(2, Math.ceil(n / cols));
+    const g = 20, cw = (b.w - (cols - 1) * g) / cols, ch = (b.h - (rows - 1) * g) / rows;
+    items.slice(0, cols * rows).forEach((it, i) => {
+      const x = b.x + (i % cols) * (cw + g), y = b.y + Math.floor(i / cols) * (ch + g);
+      E.push(R(x, y, cw, ch, P.draft ? '#F6F6F6' : P.tint, {r: 10}));
+      E.push(R(x, y, cw, 6, i % 2 ? P.c2 : P.c1, {r: 3}));
+      E.push(T(x + 24, y + 26, 80, 26, two(i + 1), {size: 20, bold: true, color: P.ink}));
+      let yy = y + 60;
+      if (it.v){ E.push(T(x + 24, yy, cw - 48, 50, it.v, {size: 36, bold: true, color: P.ink})); yy += 54; }
+      E.push(T(x + 24, yy, cw - 48, 58, it.h, {size: rows > 1 ? 18 : 21, bold: true}));
+      E.push(T(x + 24, yy + (rows > 1 ? 32 : 62), cw - 48, y + ch - (yy + (rows > 1 ? 32 : 62)) - 18, it.d, {size: 15, light: true, color: '#555555', lh: 1.45}));
+    });
+  },
+  process(E, items, b, P){
+    const n = Math.min(6, items.length || 1), g = 14, sw = (b.w - (n - 1) * g) / n;
+    items.slice(0, 6).forEach((it, i) => {
+      const x = b.x + i * (sw + g), fill = P.draft ? mix('#3A3A3A', '#FFFFFF', i * .12) : mix(P.c1, P.c2, n > 1 ? i / (n - 1) : 0);
+      E.push(R(x, b.y, sw, 84, fill, {r: 8}));
+      E.push(T(x + 16, b.y + 12, sw - 32, 18, `STEP ${two(i + 1)}`, {size: 12, bold: true, color: onC(fill), alpha: .75}));
+      E.push(T(x + 16, b.y + 32, sw - 32, 44, it.h, {size: 18, bold: true, color: onC(fill), valign: 'middle'}));
+      if (i < n - 1) E.push(R(x + sw, b.y + 40, g, 4, P.c3));
+      let yy = b.y + 106;
+      if (it.v){ E.push(T(x + 4, yy, sw - 8, 40, it.v, {size: 26, bold: true, color: P.ink})); yy += 46; }
+      E.push(T(x + 4, yy, sw - 8, b.y + b.h - yy, it.d, {size: 15, light: true, color: '#555555', lh: 1.45}));
+    });
+  },
+  kpi(E, items, b, P){
+    const n = Math.min(4, items.length || 1), cw = b.w / n;
+    items.slice(0, 4).forEach((it, i) => {
+      const x = b.x + i * cw;
+      if (i) E.push(R(x, b.y + 10, 1, b.h - 20, '#E5E7EB'));
+      E.push(T(x + 28, b.y + 20, cw - 56, 84, it.v || '—', {size: 56, bold: true, color: P.ink, valign: 'middle'}));
+      E.push(R(x + 28, b.y + 118, 32, 4, P.c3));
+      E.push(T(x + 28, b.y + 136, cw - 56, 56, it.h, {size: 20, bold: true}));
+      E.push(T(x + 28, b.y + 196, cw - 56, b.h - 206, it.d, {size: 15, light: true, color: '#555555', lh: 1.45}));
+    });
+  },
+  split(E, items, b, P, pg){
+    const lw = Math.min(420, b.w * .38);
+    const fill = P.draft ? '#3A3A3A' : P.c1;
+    E.push(R(b.x, b.y, lw, b.h, fill, {r: 12}));
+    E.push(T(b.x + 34, b.y + 34, lw - 68, 20, 'KEY MESSAGE', {size: 12, bold: true, color: onC(fill), alpha: .7}));
+    E.push(T(b.x + 34, b.y + 64, lw - 68, b.h - 98, pg.keyMsg || pg.subtitle || pg.title, {size: 27, bold: true, color: onC(fill), lh: 1.4}));
+    const rx = b.x + lw + 40, rw = b.w - lw - 40, n = Math.max(1, items.length), rh = b.h / n;
+    items.forEach((it, i) => {
+      const y = b.y + i * rh;
+      E.push(T(rx, y + 4, 44, 28, two(i + 1), {size: 20, bold: true, color: P.ink}));
+      E.push(T(rx + 52, y + 4, rw - 52, 28, it.h + (it.v ? `  ·  ${it.v}` : ''), {size: 19, bold: true}));
+      E.push(T(rx + 52, y + 36, rw - 52, rh - 44, it.d, {size: 15, light: true, color: '#555555', lh: 1.45}));
+      if (i < n - 1) E.push(R(rx, y + rh - 4, rw, 1, '#ECECEC'));
+    });
+  },
+  table(E, items, b, P){
+    const hasV = items.some(i => i.v), hdr = 44, n = Math.max(1, items.length), rh = Math.min(70, (b.h - hdr) / n);
+    const c1w = b.w * .24, c3w = hasV ? b.w * .18 : 0, c2w = b.w - c1w - c3w;
+    const hf = P.draft ? '#3A3A3A' : P.c1;
+    E.push(R(b.x, b.y, b.w, hdr, hf));
+    E.push(T(b.x + 18, b.y, c1w - 24, hdr, '구분', {size: 15, bold: true, color: onC(hf), valign: 'middle'}));
+    E.push(T(b.x + c1w + 18, b.y, c2w - 24, hdr, '내용', {size: 15, bold: true, color: onC(hf), valign: 'middle'}));
+    if (hasV) E.push(T(b.x + c1w + c2w + 18, b.y, c3w - 24, hdr, '지표/수치', {size: 15, bold: true, color: onC(hf), valign: 'middle'}));
+    items.forEach((it, i) => {
+      const y = b.y + hdr + i * rh;
+      E.push(R(b.x, y, b.w, rh, i % 2 ? (P.draft ? '#F6F6F6' : P.tint) : '#FFFFFF'));
+      E.push(T(b.x + 18, y, c1w - 24, rh, it.h, {size: 16, bold: true, valign: 'middle'}));
+      E.push(T(b.x + c1w + 18, y, c2w - 30, rh, it.d, {size: 15, light: true, color: '#444444', valign: 'middle', lh: 1.4}));
+      if (hasV) E.push(T(b.x + c1w + c2w + 18, y, c3w - 24, rh, it.v, {size: 17, bold: true, color: P.ink, valign: 'middle'}));
+    });
+    E.push(R(b.x, b.y + hdr + n * rh, b.w, 2, hf));
+  },
+  image(E, items, b, P, pg){
+    if (pg.image){ const f = fitBox(pg.imageW, pg.imageH, b.x, b.y, b.w, b.h); E.push(IM(f.x, f.y, f.w, f.h, pg.image)); }
+    else { E.push(R(b.x, b.y, b.w, b.h, '#F4F4F4', {r: 10, line: '#D0D5DD'})); E.push(T(b.x, b.y, b.w, b.h, '이미지를 첨부하세요 (기존 회사소개·케이스 장표 캡처 등)', {size: 18, light: true, color: '#98A2B3', align: 'center', valign: 'middle'})); }
+  }
+};
+
+function buildSpec(it){
+  const E = [];
+  if (it.kind === 'cover') return coverSpec(it);
+  if (it.kind === 'guide') return guideSpec(it);
+  if (it.kind === 'toc') return tocSpec(it);
+  if (it.kind === 'closing') return closingSpec(it);
+  const pg = it.page, P = palette(pg.washed), items = itemsOf(pg);
+  if (pg.type === 'divider'){
+    const bg = P.draft ? '#2B2B2B' : P.c1, fg = onC(bg);
+    const spec = {bg, els: E};
+    if (!P.draft) E.push(R(W - 420, 0, 420, H, P.c2, {alpha: .18}));
+    E.push(T(MX, 170, 700, 170, it.secNo ? two(it.secNo) : '', {size: 150, bold: true, color: fg, alpha: .22, lh: 1}));
+    E.push(R(MX, 360, 80, 6, P.draft ? '#888888' : (lum(P.c3) - lum(bg) > .05 || lum(bg) - lum(P.c3) > .05 ? P.c3 : fg)));
+    E.push(T(MX, 386, 1000, 72, pg.title || it.secTitle, {size: 52, bold: true, color: fg, lh: 1.2}));
+    if (pg.subtitle) E.push(T(MX, 466, 1000, 60, pg.subtitle, {size: 20, light: true, color: fg, alpha: .85}));
+    chrome(E, it, P, bg);
+    return spec;
+  }
+  if (pg.type === 'bridge'){
+    const bg = P.draft ? '#F3F3F3' : P.tint, spec = {bg, els: E};
+    E.push(T(MX, 214, W - MX * 2, 22, it.secTitle || '', {size: 14, bold: true, color: P.ink, align: 'center'}));
+    E.push(R(W / 2 - 30, 248, 60, 5, P.c1));
+    E.push(T(140, 276, W - 280, 160, pg.keyMsg || pg.title, {size: 40, bold: true, align: 'center', valign: 'middle', lh: 1.3}));
+    if (pg.subtitle || (pg.keyMsg && pg.title)) E.push(T(160, 446, W - 320, 60, pg.keyMsg ? (pg.subtitle || pg.title) : pg.subtitle, {size: 19, light: true, color: '#555555', align: 'center'}));
+    if (items.length) E.push(T(120, 530, W - 240, 30, items.map(i => i.h || i.d).slice(0, 4).join('   ·   '), {size: 16, bold: true, color: P.ink, align: 'center'}));
+    chrome(E, it, P);
+    return spec;
+  }
+  // strategy / explain
+  const spec = {bg: '#FFFFFF', els: E};
+  E.push(R(MX, 76, 36, 5, P.c1));
+  E.push(T(MX, 90, W - MX * 2, 54, pg.title, {size: 34, bold: true, lh: 1.25}));
+  if (pg.subtitle) E.push(T(MX, 146, W - MX * 2, 30, pg.subtitle, {size: 18, light: true, color: '#555555'}));
+  let layout = pg.layout || (pg.type === 'strategy' ? 'cards' : 'list');
+  const showKey = pg.keyMsg && layout !== 'split';
+  const top = 204, bottom = showKey ? 584 : 650;
+  let box = {x: MX, y: top, w: W - MX * 2, h: bottom - top};
+  if (pg.image && layout !== 'image'){ const f = fitBox(pg.imageW, pg.imageH, MX + 700, top, W - MX * 2 - 700, bottom - top); E.push(IM(f.x, f.y, f.w, f.h, pg.image)); box.w = 660; }
+  if (!items.length && layout !== 'image') E.push(T(box.x, box.y, box.w, 40, '세부 항목을 추가하세요', {size: 16, light: true, color: '#98A2B3'}));
+  else (LAY[layout] || LAY.list)(E, items, box, P, pg);
+  if (showKey){ const kf = P.draft ? '#3A3A3A' : P.c1; E.push(R(MX, 604, W - MX * 2, 54, kf, {r: 8})); E.push(R(MX, 604, 8, 54, P.draft ? '#888888' : P.c3, {r: 4})); E.push(T(MX + 30, 604, W - MX * 2 - 60, 54, pg.keyMsg, {size: 19, bold: true, color: onC(kf), valign: 'middle'})); }
+  chrome(E, it, P);
+  return spec;
+}
+
+function coverSpec(it){
+  const P = palette(true), E = [], tp = S.template, A = S.input.analysis;
+  const spec = {bg: '#FFFFFF', bgImg: tp.coverBg || null, els: E};
+  if (!tp.coverBg){ E.push(R(880, 0, 400, H, P.c1)); E.push(R(880, 520, 400, 200, P.c2)); E.push(R(840, 300, 80, 80, P.c3, {r: 40})); }
+  E.push(T(MX, 196, 700, 26, 'PERFORMANCE MARKETING PROPOSAL', {size: 15, bold: true, color: P.ink, ls: 1}));
+  E.push(T(MX, 232, 760, 150, S.project.name || `${S.project.client || '브랜드'} 퍼포먼스 마케팅 제안`, {size: 50, bold: true, lh: 1.22, valign: 'bottom'}));
+  E.push(T(MX, 396, 760, 32, `${S.project.client || ''} 디지털 퍼포먼스 마케팅 운영 제안`, {size: 22, light: true, color: '#555555'}));
+  if (A?.logic?.concept) E.push(T(MX, 440, 760, 60, A.logic.concept, {size: 18, light: true, color: P.ink}));
+  E.push(R(MX, 600, 40, 3, P.c1));
+  E.push(T(MX, 614, 700, 50, `${S.project.date || ''}\n${S.project.proposer || ''}`, {size: 15, light: true, color: '#666666'}));
+  chrome(E, {}, P);
+  return spec;
+}
+function guideSpec(){
+  const P = palette(true), E = [], cs = S.input.colors;
+  const spec = {bg: '#FFFFFF', els: E};
+  E.push(R(MX, 76, 36, 5, P.c1));
+  E.push(T(MX, 90, 1100, 54, 'Color & Typography Guide', {size: 34, bold: true}));
+  E.push(T(MX, 146, 1160, 30, S.input.colorConcept || '브랜드 채널·제품에서 도출한 제안서 메인 컬러칩', {size: 18, light: true, color: '#555555'}));
+  const n = cs.length, g = 24, cw = (W - MX * 2 - (n - 1) * g) / n;
+  cs.forEach((c, i) => {
+    const x = MX + i * (cw + g), hex = validHex(c.hex) ? c.hex.toUpperCase() : '#333333';
+    E.push(R(x, 206, cw, 170, hex, {r: 12, line: lum(hex) > .85 ? '#E4E7EC' : null}));
+    E.push(T(x + 22, 222, cw - 44, 22, `${['01','02','03'][i]}  ${c.role || ''}`, {size: 14, bold: true, color: onC(hex)}));
+    E.push(T(x + 22, 330, cw - 44, 30, hex, {size: 22, bold: true, color: onC(hex)}));
+    E.push(T(x, 388, cw, 26, c.name || '', {size: 18, bold: true}));
+    E.push(T(x, 418, cw, 66, c.reason || ['메인 타이틀·간지·핵심 강조','서브 그래픽·차트 보조','포인트·수치 하이라이트'][i] || '', {size: 14, light: true, color: '#555555', lh: 1.45}));
+  });
+  E.push(R(MX, 500, W - MX * 2, 1, '#E4E7EC'));
+  E.push(T(MX, 520, 300, 24, 'TYPOGRAPHY', {size: 13, bold: true, color: P.ink}));
+  E.push(T(MX, 552, 560, 44, 'Pretendard Bold — 메인 타이틀', {size: 30, bold: true}));
+  E.push(T(MX, 602, 560, 30, 'Pretendard Light — 서브 타이틀 · 본문 내용', {size: 20, light: true, color: '#444444'}));
+  E.push(T(680, 552, 540, 90, '타이틀 34pt Bold / 서브 18pt Light / 본문 15–17pt Light\n강조 수치는 Main 컬러, 키 메시지 바는 Main 배경 + Accent 포인트', {size: 14, light: true, color: '#555555', lh: 1.6}));
+  chrome(E, {label: 'GUIDE'}, P);
+  return spec;
+}
+function tocSpec(it){
+  const P = palette(true), E = [], secs = it.secs || [];
+  const spec = {bg: '#FFFFFF', els: E};
+  E.push(R(0, 0, 380, H, P.c1));
+  E.push(T(MX, 90, 300, 60, 'CONTENTS', {size: 40, bold: true, color: onC(P.c1)}));
+  E.push(T(MX, 150, 280, 60, S.project.client ? `${S.project.client} 제안 목차` : '제안 목차', {size: 16, light: true, color: onC(P.c1), alpha: .8}));
+  const n = secs.length, cols = n > 7 ? 2 : 1, per = Math.ceil(n / cols), cw = (W - 440 - MX) / cols, rh = Math.min(70, 560 / per);
+  secs.forEach((s, i) => {
+    const c = Math.floor(i / per), r = i % per, x = 440 + c * cw, y = 90 + r * rh;
+    E.push(T(x, y, 60, rh, two(s.no), {size: 26, bold: true, color: P.ink, valign: 'middle'}));
+    E.push(T(x + 64, y + 8, cw - 80, 28, s.title, {size: 20, bold: true}));
+    if (s.goal) E.push(T(x + 64, y + 38, cw - 80, rh - 40, s.goal, {size: 13, light: true, color: '#667085'}));
+  });
+  chrome(E, {}, P);
+  return spec;
+}
+function closingSpec(){
+  const P = palette(true), E = [], fg = onC(P.c1);
+  const spec = {bg: P.c1, els: E};
+  E.push(R(0, H - 160, W, 160, P.c2, {alpha: .3}));
+  E.push(T(0, 250, W, 110, 'Thank you', {size: 80, bold: true, color: fg, align: 'center', valign: 'middle'}));
+  E.push(T(0, 372, W, 40, S.project.proposer || '', {size: 20, light: true, color: fg, align: 'center', alpha: .85}));
+  chrome(E, {}, P, P.c1);
+  return spec;
+}
+
+/* ---- HTML render ---- */
+function slideHTML(spec){
+  const bg = spec.bgImg ? `background-color:${spec.bg};background-image:url(${spec.bgImg});` : `background:${spec.bg};`;
+  let h = `<div class="slide" style="${bg}">`;
+  for (const e of spec.els){
+    const pos = `left:${e.x}px;top:${e.y}px;width:${e.w}px;height:${e.h}px;${e.alpha != null ? `opacity:${e.alpha};` : ''}`;
+    if (e.k === 'r') h += `<div class="r" style="${pos}background:${e.fill};${e.r ? `border-radius:${e.r}px;` : ''}${e.line ? `box-shadow:inset 0 0 0 1px ${e.line};` : ''}"></div>`;
+    else if (e.k === 'i') h += `<img class="im" style="${pos}" src="${e.data}">`;
+    else h += `<div class="t" style="${pos}font-size:${e.size}px;font-weight:${e.bold ? 700 : e.light ? 300 : 400};color:${e.color};text-align:${e.align};justify-content:${e.valign === 'middle' ? 'center' : e.valign === 'bottom' ? 'flex-end' : 'flex-start'};line-height:${e.lh};${e.ls != null ? `letter-spacing:${e.ls}px;` : ''}"><span>${esc(e.text)}</span></div>`;
+  }
+  return h + '</div>';
+}
+function thumbHTML(it, w = 320){ const s = w / W; return `<div class="sw-wrap" style="width:${w}px;height:${Math.round(H * s)}px"><div class="slide-scale" style="transform:scale(${s});transform-origin:0 0;width:${W}px;height:${H}px">${slideHTML(buildSpec(it))}</div></div>`; }
+
+/* ---- 구성 아이템 (섹션 번호/페이지 번호) ---- */
+function includedSecs(){ return S.sections.filter(s => s.include !== false); }
+function secNoOf(sec){ const i = includedSecs().indexOf(sec); return i < 0 ? 0 : i + 1; }
+function pageItem(sec, pg, no){ const sn = secNoOf(sec); return {kind: 'page', page: pg, sec, secNo: sn, secTitle: sec.title, label: `${sn ? two(sn) + '  ' : ''}${sec.title}`, no}; }
+function sectionItems(sec){ return sec.pageList.map((p, i) => pageItem(sec, p, i + 1)); }
+function assemble(){
+  const out = [], m = S.merge;
+  if (m.cover) out.push({kind: 'cover'});
+  if (m.guide) out.push({kind: 'guide'});
+  if (m.toc) out.push({kind: 'toc', secs: includedSecs().map(s => ({no: secNoOf(s), title: s.title, goal: s.goal}))});
+  includedSecs().forEach(sec => sec.pageList.forEach(p => out.push(pageItem(sec, p, 0))));
+  if (m.closing) out.push({kind: 'closing'});
+  out.forEach((it, i) => { if (it.kind === 'page') it.no = i + 1; });
+  return out;
+}
+
+/* =========================================================
+   EXPORT — PPTX (PptxGenJS) / PDF (html2canvas+jsPDF, print)
+   ========================================================= */
+const IN = px => +(px / 96).toFixed(3);
+const hx = c => (c || '#000000').replace('#', '').toUpperCase();
+const stripData = d => d.replace(/^data:/, '');
+async function exportPPTX(items, name){
+  if (!window.PptxGenJS){ toast('PPT 라이브러리 로딩 실패 — 새로고침 후 다시 시도하세요'); return; }
+  busy('PPT 생성 중…', `${items.length}장`);
+  try {
+    const pptx = new PptxGenJS();
+    pptx.layout = 'LAYOUT_WIDE';
+    pptx.author = S.project.proposer || 'MADUP'; pptx.company = S.project.proposer || 'MADUP'; pptx.title = S.project.name || name;
+    pptx.theme = {headFontFace: 'Pretendard', bodyFontFace: 'Pretendard Light'};
+    for (const it of items){
+      const spec = buildSpec(it), sl = pptx.addSlide();
+      sl.background = spec.bgImg ? {data: stripData(spec.bgImg)} : {color: hx(spec.bg)};
+      for (const e of spec.els){
+        const base = {x: IN(e.x), y: IN(e.y), w: Math.max(.01, IN(e.w)), h: Math.max(.01, IN(e.h))};
+        if (e.k === 'r'){
+          sl.addShape(e.r ? pptx.ShapeType.roundRect : pptx.ShapeType.rect, {...base, fill: {color: hx(e.fill), transparency: e.alpha != null ? Math.round((1 - e.alpha) * 100) : 0}, line: e.line ? {color: hx(e.line), width: .75} : {type: 'none'}, ...(e.r ? {rectRadius: Math.min(.5, e.r / Math.min(e.w, e.h))} : {})});
+        } else if (e.k === 'i'){
+          sl.addImage({...base, data: stripData(e.data)});
+        } else if (e.text){
+          sl.addText(e.text, {...base, fontFace: e.bold ? 'Pretendard' : e.light ? 'Pretendard Light' : 'Pretendard', fontSize: +(e.size * .75).toFixed(1), bold: !!e.bold, color: hx(e.color), align: e.align, valign: e.valign, margin: 0, lineSpacingMultiple: +(e.lh / 1.2).toFixed(2), transparency: e.alpha != null ? Math.round((1 - e.alpha) * 100) : 0, ...(e.ls != null ? {charSpacing: e.ls * .75} : {}), wrap: true, fit: 'none'});
+        }
+      }
+      if (it.page?.notes) sl.addNotes(it.page.notes);
+    }
+    await pptx.writeFile({fileName: `${fname(name)}.pptx`});
+    toast('PPT 다운로드 완료 — 열람 PC에 Pretendard 폰트가 설치되어 있어야 동일하게 보입니다', 4200);
+  } catch(e){ console.error(e); toast('PPT 생성 오류: ' + e.message); }
+  unbusy();
+}
+const fname = n => `${(S.project.client || 'proposal')}_${n}`.replace(/[\\/:*?"<>|\s]+/g, '_');
+async function fontsReady(){ try { await Promise.all([document.fonts.load('700 20px Pretendard'), document.fonts.load('300 20px Pretendard'), document.fonts.load('400 20px Pretendard')]); await document.fonts.ready; } catch(e){} }
+async function exportPDF(items, name){
+  if (!window.html2canvas || !window.jspdf){ toast('PDF 라이브러리 로딩 실패 — 새로고침 후 다시 시도하세요'); return; }
+  busy('PDF 생성 중…', '폰트·컬러를 고해상도로 고정 렌더링합니다');
+  try {
+    await fontsReady();
+    const {jsPDF} = window.jspdf;
+    const pdf = new jsPDF({orientation: 'landscape', unit: 'px', format: [W, H], hotfixes: ['px_scaling'], compress: true});
+    const host = $('#offscreen');
+    for (let i = 0; i < items.length; i++){
+      busy('PDF 생성 중…', `${i + 1} / ${items.length}`);
+      host.innerHTML = slideHTML(buildSpec(items[i]));
+      const cv = await html2canvas(host.firstChild, {scale: 2, backgroundColor: '#FFFFFF', useCORS: true, logging: false});
+      if (i) pdf.addPage([W, H], 'landscape');
+      pdf.addImage(cv.toDataURL('image/jpeg', .93), 'JPEG', 0, 0, W, H);
+    }
+    host.innerHTML = '';
+    pdf.save(`${fname(name)}.pdf`);
+    toast('PDF 다운로드 완료');
+  } catch(e){ console.error(e); toast('PDF 생성 오류: ' + e.message); }
+  unbusy();
+}
+function printPDF(items, name){
+  const w = window.open('', '_blank');
+  if (!w){ toast('팝업이 차단되었습니다 — 팝업 허용 후 다시 시도'); return; }
+  const css = $$('style')[0].textContent;
+  w.document.write(`<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>${esc(fname(name))}</title><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pretendard@1.3.9/dist/web/static/pretendard.css"><style>${css}@page{size:1280px 720px;margin:0}html,body{background:#fff;margin:0}.slide{page-break-after:always;break-after:page;-webkit-print-color-adjust:exact;print-color-adjust:exact}</style></head><body>${items.map(it => slideHTML(buildSpec(it))).join('')}<script>document.fonts.ready.then(()=>setTimeout(()=>print(),400))<\/script></body></html>`);
+  w.document.close();
+}
+
+/* =========================================================
+   FILE PARSING
+   ========================================================= */
+const b64 = buf => { let s = '', b = new Uint8Array(buf); for (let i = 0; i < b.length; i += 0x8000) s += String.fromCharCode.apply(null, b.subarray(i, i + 0x8000)); return btoa(s); };
+function readDataURL(file){ return new Promise((r, j) => { const f = new FileReader(); f.onload = () => r(f.result); f.onerror = j; f.readAsDataURL(file); }); }
+function imgSize(src){ return new Promise(r => { const i = new Image(); i.onload = () => r([i.naturalWidth, i.naturalHeight]); i.onerror = () => r([0, 0]); i.src = src; }); }
+async function resizeImage(src, max = 1000, type = 'image/jpeg'){
+  const [w, h] = await imgSize(src); if (!w) return {data: src, w: 0, h: 0};
+  const s = Math.min(1, max / Math.max(w, h)), cv = document.createElement('canvas'); cv.width = Math.round(w * s); cv.height = Math.round(h * s);
+  const ctx = cv.getContext('2d'); if (type === 'image/jpeg'){ ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, cv.width, cv.height); }
+  const im = new Image(); im.src = src; await new Promise(r => { im.onload = r; if (im.complete) r(); });
+  ctx.drawImage(im, 0, 0, cv.width, cv.height); return {data: cv.toDataURL(type, .88), w: cv.width, h: cv.height};
+}
+async function pptxText(buf){
+  const zip = await JSZip.loadAsync(buf), num = n => +n.match(/(\d+)\.xml$/)[1];
+  const slides = Object.keys(zip.files).filter(n => /^ppt\/slides\/slide\d+\.xml$/.test(n)).sort((a, b) => num(a) - num(b));
+  let out = '';
+  for (const n of slides){
+    const xml = new DOMParser().parseFromString(await zip.file(n).async('string'), 'application/xml');
+    const paras = [...xml.getElementsByTagName('a:p')].map(p => [...p.getElementsByTagName('a:t')].map(t => t.textContent).join('')).filter(Boolean);
+    out += `\n[슬라이드 ${num(n)}]\n` + paras.join('\n');
+  }
+  return {text: out.trim(), pages: slides.length};
+}
+async function extractFile(file){
+  const ext = file.name.split('.').pop().toLowerCase();
+  if (ext === 'pdf'){
+    const buf = await file.arrayBuffer();
+    const keep = buf.byteLength < 9e6 ? b64(buf.slice(0)) : null;
+    const pdf = await pdfjsLib.getDocument({data: buf}).promise; let out = '';
+    for (let i = 1; i <= pdf.numPages; i++){ const p = await pdf.getPage(i); const tc = await p.getTextContent(); out += `\n[p.${i}]\n` + tc.items.map(t => t.str + (t.hasEOL ? '\n' : ' ')).join(''); }
+    return {text: out.trim(), pages: pdf.numPages, pdfB64: keep};
+  }
+  if (ext === 'docx') return {text: (await mammoth.extractRawText({arrayBuffer: await file.arrayBuffer()})).value};
+  if (ext === 'pptx') return await pptxText(await file.arrayBuffer());
+  if (['txt', 'md', 'csv', 'tsv', 'json'].includes(ext)) return {text: await file.text()};
+  if (/^(png|jpe?g|webp|gif)$/.test(ext)){ const r = await resizeImage(await readDataURL(file), 1000); return {image: r.data, w: r.w, h: r.h, text: ''}; }
+  if (ext === 'ppt' || ext === 'doc') throw new Error('구버전(.ppt/.doc)은 브라우저에서 읽을 수 없어요. PPTX/DOCX 또는 PDF로 저장 후 올려주세요');
+  throw new Error('지원하지 않는 형식입니다');
+}
+async function addFiles(kind, files){
+  for (const f of files){
+    busy('파일 읽는 중…', f.name);
+    try {
+      const r = await extractFile(f), id = uid();
+      if (r.pdfB64) RAW[id] = r.pdfB64;
+      S.input[kind].push({id, name: f.name, size: f.size, text: r.text || '', pages: r.pages || 0, image: r.image || null, scanned: r.pages && (r.text || '').replace(/\[p\.\d+\]|\s/g, '').length < r.pages * 40});
+    } catch(e){ toast(`${f.name}: ${e.message}`, 4000); }
+  }
+  unbusy(); save(); render();
+}
+
+/* 브랜드 이미지 → 대표 컬러 (AI 키 없을 때 사용) */
+async function extractColors(srcs){
+  const bins = {};
+  for (const src of srcs){
+    const im = new Image(); im.src = src; await new Promise(r => { im.onload = r; im.onerror = r; });
+    const cv = document.createElement('canvas'); cv.width = cv.height = 64; const c = cv.getContext('2d'); c.drawImage(im, 0, 0, 64, 64);
+    const d = c.getImageData(0, 0, 64, 64).data;
+    for (let i = 0; i < d.length; i += 4){
+      const [r, g, b] = [d[i], d[i + 1], d[i + 2]], mx = Math.max(r, g, b), mn = Math.min(r, g, b);
+      if (mx - mn < 28 || mx < 30 || mn > 235) continue; // 무채색 제외
+      const k = `${r >> 5},${g >> 5},${b >> 5}`; (bins[k] = bins[k] || {n: 0, r: 0, g: 0, b: 0}); bins[k].n++; bins[k].r += r; bins[k].g += g; bins[k].b += b;
+    }
+  }
+  return Object.values(bins).sort((a, b) => b.n - a.n).map(v => rgbHex(v.r / v.n, v.g / v.n, v.b / v.n))
+    .filter((h, i, arr) => arr.slice(0, i).every(o => { const A = hexRgb(o), B = hexRgb(h); return Math.hypot(A[0] - B[0], A[1] - B[1], A[2] - B[2]) > 60; })).slice(0, 3);
+}
+
+/* =========================================================
+   AI (Anthropic Messages API — 브라우저 직접 호출)
+   ========================================================= */
+async function callClaude({system, content, maxTokens = 8000, web = false}){
+  const key = apiKey(); if (!key) throw new Error('NOKEY');
+  const body = {model: S.settings.model, max_tokens: maxTokens, system, messages: [{role: 'user', content}]};
+  if (web) body.tools = [{type: 'web_search_20250305', name: 'web_search', max_uses: 6}];
+  const r = await fetch('https://api.anthropic.com/v1/messages', {method: 'POST', headers: {'content-type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true'}, body: JSON.stringify(body)});
+  if (!r.ok){
+    const t = await r.text();
+    if (web && r.status === 400 && /tool|web_search/i.test(t)) return callClaude({system, content, maxTokens, web: false});
+    let m = t; try { m = JSON.parse(t).error.message; } catch(e){}
+    throw new Error(`API ${r.status}: ${m}`);
+  }
+  const j = await r.json();
+  return j.content.filter(b => b.type === 'text').map(b => b.text).join('\n');
+}
+function parseJSON(t){
+  t = String(t).replace(/```json|```/g, '');
+  const a = Math.min(...['{', '['].map(c => { const i = t.indexOf(c); return i < 0 ? 1e9 : i; }));
+  const b = Math.max(t.lastIndexOf('}'), t.lastIndexOf(']'));
+  if (a >= 1e9 || b < 0) throw new Error('AI 응답에서 JSON을 찾지 못했습니다');
+  return JSON.parse(t.slice(a, b + 1));
+}
+const cut = (s, n) => (s || '').length > n ? s.slice(0, n) + '\n…(이하 생략)' : (s || '');
+const SYS_BASE = `너는 한국 디지털 퍼포먼스 마케팅 대행사(매드업)의 10년차 제안 PM이자 전략가다. 실제 경쟁 PT에서 이겨야 하는 제안자 입장에서 판단한다.
+원칙: (1) 실행 가능성 우선 — 예산·인력·일정 제약을 고려, 누가/언제/어떻게 실행하는지 드러나게. (2) 근거 없는 수치는 만들지 말고, 추정치는 반드시 "(가정)" 또는 "(추정)"을 붙인다. (3) "무조건 성과 상승" 같은 단정 금지, 전제조건·리스크를 함께. (4) 회사 실적·레퍼런스처럼 모르는 사실은 지어내지 말고 "[입력 필요]"로 남긴다. (5) 모든 출력은 한국어, 요청한 JSON만 출력한다.`;
+function ctxText(){
+  const A = S.input.analysis || {}, I = S.input;
+  return `[프로젝트] ${S.project.name} / 광고주: ${S.project.client} / 제안사: ${S.project.proposer}
+[RFP 요약] ${JSON.stringify(A.rfpSummary || {})}
+[제안 우선순위] ${(A.priorities || []).map(p => `${p.rank}. ${p.title} — ${p.angle || p.why || ''}`).join(' | ')}
+[제안 로직] 컨셉: ${A.logic?.concept || ''} / 핵심 메시지: ${A.logic?.message || ''} / 스토리라인: ${(A.logic?.storyline || []).map(s => s.title + ':' + s.point).join(' → ')}
+[브랜드 인사이트] ${(A.brandInsights || []).join(' | ')}
+[채널] ${I.urls.filter(u => u.url).map(u => u.type + ' ' + u.url).join(', ')} / [제품] ${I.product}
+[제안자 주요사항] ${cut(I.notes, 3000)}`;
+}
+
+/* ---------- 1) 인풋 분석 ---------- */
+async function analyze(){
+  const I = S.input;
+  if (!I.rfp.length && !I.notes && !I.brand.length){ toast('RFP 또는 브랜드 자료/주요사항을 먼저 입력하세요'); return; }
+  if (!apiKey()){ if (!confirm('AI API 키가 없어 규칙 기반 초안으로 분석합니다.\n(정확한 분석은 [설정]에서 Anthropic API 키 입력 필요)\n계속할까요?')) return; await heuristicAnalysis(); return; }
+  busy('RFP·브랜드 자료 분석 중…', I.urls.some(u => u.url) && S.settings.web ? '브랜드 채널 웹 검색 포함 — 1~3분 소요' : '30초~2분 소요');
+  try {
+    const content = [];
+    const scanned = I.rfp.filter(f => f.scanned && RAW[f.id]).slice(0, 2);
+    scanned.forEach(f => content.push({type: 'document', source: {type: 'base64', media_type: 'application/pdf', data: RAW[f.id]}, title: f.name}));
+    I.brand.filter(f => f.image).slice(0, 6).forEach(f => content.push({type: 'image', source: {type: 'base64', media_type: f.image.split(';')[0].slice(5), data: f.image.split(',')[1]}}));
+    content.push({type: 'text', text: `다음 자료로 제안 준비 분석을 해줘.
+[프로젝트] ${S.project.name} / 광고주: ${S.project.client} / 제안사: ${S.project.proposer}
+[RFP 원문]
+${cut(I.rfp.map(f => `■ ${f.name}\n${f.text}`).join('\n\n'), 90000)}
+[브랜드 채널 URL] ${I.urls.filter(u => u.url).map(u => `${u.type}: ${u.url}`).join('\n') || '없음'}
+[주요 제품/서비스] ${I.product || '미기재'}
+[브랜드 자료]
+${cut(I.brand.filter(f => f.text).map(f => `■ ${f.name}\n${f.text}`).join('\n\n'), 30000) || '(이미지 자료만 첨부)'}
+[제안자 주요사항]
+${I.notes || '없음'}
+
+${S.settings.web && I.urls.some(u => u.url) ? '브랜드 채널 URL과 브랜드명을 웹 검색해 제품·가격대·톤앤매너·브랜드 컬러·최근 이슈를 파악해 반영해.' : ''}
+아래 JSON 스키마로만 답해.
+{
+ "rfpSummary":{"client":"","background":"","objective":"","kpi":"","budget":"","period":"","target":"","scope":"과업 범위","evaluation":"평가 기준/배점","deadline":"제출·PT 일정","constraints":["제약/필수 요구사항"]},
+ "priorities":[{"rank":1,"title":"제안 우선순위 항목(20자 내)","why":"제안자 입장에서 왜 이게 승부처인지","evidence":"RFP 근거(문장 요약·페이지)","angle":"제안서에서 풀어낼 방식","weight":"상|중|하"}],
+ "colors":[{"hex":"#RRGGBB","role":"Main","name":"컬러명","reason":"채널·제품 근거 + 제안서 사용처"},{"hex":"#RRGGBB","role":"Sub","name":"","reason":""},{"hex":"#RRGGBB","role":"Accent","name":"","reason":""}],
+ "colorConcept":"컬러 컨셉 한 줄",
+ "brandInsights":["브랜드·제품·채널·경쟁 관점 인사이트 4~6개"],
+ "logic":{"concept":"제안 컨셉(캐치프레이즈)","message":"핵심 메시지 1~2문장","storyline":[{"title":"논리 단계","point":"주장"}]},
+ "sections":[{"title":"전략 섹션 타이틀","goal":"이 섹션이 증명할 논지","pages":3,"divider":true}],
+ "questions":["광고주 확인 필요 사항"]
+}
+규칙: priorities 5~7개(평가 배점·광고주 페인포인트·경쟁 차별화 순으로 가중), storyline 4~6단계, sections는 회사소개·브랜드 스터디·케이스 스터디를 제외한 전략 본문 5~8개(우선순위가 모두 커버되도록), pages는 섹션당 1~6. 컬러는 흰 배경 위 가독성 확보(Main은 너무 밝지 않게).`});
+    const res = parseJSON(await callClaude({system: SYS_BASE, content, maxTokens: 12000, web: S.settings.web && I.urls.some(u => u.url)}));
+    applyAnalysis(res);
+    toast('분석 완료 — 우선순위·컬러칩·로직을 확인/수정하세요');
+  } catch(e){ console.error(e); toast('분석 실패: ' + e.message, 5000); }
+  unbusy(); save(); render();
+}
+function applyAnalysis(res){
+  S.input.analysis = res;
+  (res.priorities || []).forEach((p, i) => p.rank = i + 1);
+  if (Array.isArray(res.colors) && res.colors.length){ S.input.colors = res.colors.slice(0, 3).map((c, i) => ({hex: validHex(c.hex) ? c.hex.toUpperCase() : S.input.colors[i]?.hex || '#333333', role: c.role || ['Main','Sub','Accent'][i], name: c.name || '', reason: c.reason || ''})); }
+  if (res.colorConcept) S.input.colorConcept = res.colorConcept;
+  res.logic = res.logic || {concept: '', message: '', storyline: []};
+  res.logic.storyline = res.logic.storyline || [];
+}
+const DEFAULT_SECTIONS = [
+  {title: '제안 개요 & 핵심 전략', goal: 'RFP 목표와 제안 컨셉, 한 장 요약', pages: 2, divider: false},
+  {title: '시장·경쟁 환경 분석', goal: '카테고리 검색·소비 트렌드와 경쟁사 광고 현황', pages: 3, divider: true},
+  {title: '타겟 & 소비자 인사이트', goal: '핵심 타겟 정의와 구매 여정상의 기회', pages: 3, divider: true},
+  {title: '매체 운영 전략', goal: '퍼널별 매체 믹스와 예산 배분 근거', pages: 4, divider: true},
+  {title: '크리에이티브 전략', goal: '메시지 트랙과 소재 테스트 설계', pages: 3, divider: true},
+  {title: 'KPI & 예산 운영 계획', goal: '시나리오별(보수/기본/공격) 목표와 예산', pages: 3, divider: true},
+  {title: '운영·리포팅 체계', goal: '운영 조직, 일정, 리포트·최적화 프로세스', pages: 2, divider: false}
+];
+async function heuristicAnalysis(){
+  const txt = S.input.rfp.map(f => f.text).join('\n') + '\n' + S.input.notes;
+  const lines = txt.split(/\n+/).map(s => s.trim()).filter(s => s.length > 3 && s.length < 220);
+  const find = (re, n = 3) => lines.filter(l => re.test(l)).slice(0, n).join(' / ');
+  const evalLines = lines.filter(l => /(배점|점\)|\d+\s*점|평가)/.test(l)).slice(0, 7);
+  const base = [['KPI 달성 근거', 'RFP 목표 수치를 어떤 구조로 달성할지 보여주는 것이 평가 핵심'], ['매체 믹스·예산 효율', '예산 대비 성과 효율을 시나리오로 제시'], ['타겟·인사이트 차별화', '경쟁사와 다른 타겟 해석'], ['크리에이티브 테스트 체계', '소재 메시지 트랙과 테스트 설계'], ['운영·리포팅 안정성', '운영 인력·일정·리포트 체계']];
+  const priorities = (evalLines.length >= 3 ? evalLines.map(l => [l.slice(0, 24), 'RFP 평가 항목에서 추출']) : base).map((p, i) => ({rank: i + 1, title: p[0], why: p[1], evidence: '규칙 기반 추출 — 확인 필요', angle: '', weight: i < 2 ? '상' : '중'}));
+  const imgs = S.input.brand.filter(f => f.image).map(f => f.image);
+  const cols = imgs.length ? await extractColors(imgs) : [];
+  const res = {
+    rfpSummary: {client: S.project.client, background: find(/배경|현황|개요/), objective: find(/목표|목적/), kpi: find(/KPI|ROAS|CPA|CPC|CTR|전환|매출|가입/i), budget: find(/예산|억|만\s*원|VAT/), period: find(/기간|개월|20\d\d\s*[.년]/), target: find(/타겟|고객|연령|여성|남성|MZ/), scope: find(/범위|과업|운영|제작|대행/), evaluation: evalLines.join(' / '), deadline: find(/제출|마감|PT|발표/), constraints: lines.filter(l => /필수|반드시|불가|제한/.test(l)).slice(0, 4)},
+    priorities,
+    colors: cols.length ? cols.map((h, i) => ({hex: h, role: ['Main','Sub','Accent'][i], name: '', reason: '브랜드 이미지에서 추출'})) : null,
+    colorConcept: cols.length ? '브랜드 이미지 대표색 기반' : '',
+    brandInsights: ['[AI 분석 시 자동 작성] 브랜드 자료·채널 기반 인사이트'],
+    logic: {concept: '[제안 컨셉 입력]', message: '[핵심 메시지 입력]', storyline: [{title: '현황 진단', point: ''}, {title: '기회 정의', point: ''}, {title: '전략 방향', point: ''}, {title: '실행 계획', point: ''}, {title: '기대 성과', point: ''}]},
+    sections: DEFAULT_SECTIONS, questions: []
+  };
+  if (!res.colors) delete res.colors;
+  applyAnalysis(res); save(); render(); toast('규칙 기반 초안 완료 — 내용을 직접 다듬어 주세요');
+}
+
+/* ---------- 2) 로직 / 섹션 생성 ---------- */
+function newSection(kind, title, goal = '', pages = 3, divider = true){ return {id: uid(), kind, title, goal, pages, divider, include: true, collapsed: false, pageList: []}; }
+function newPage(type = 'explain', o = {}){ return {id: uid(), type, layout: type === 'strategy' ? 'cards' : 'list', title: '', subtitle: '', keyMsg: '', items: [{h: '', d: '', v: ''}], image: null, washed: false, notes: '', ...o}; }
+function createSkeleton(){
+  const A = S.input.analysis;
+  const strat = (A?.sections?.length ? A.sections : DEFAULT_SECTIONS).map(s => newSection('strategy', s.title, s.goal, Math.max(1, Math.min(12, +s.pages || 3)), s.divider ?? (+s.pages >= 3)));
+  S.sections = [newSection('company', '회사소개', '제안사 역량·조직·레퍼런스 (기존 장표 이미지 첨부 가능)', 3, true), newSection('brand', '브랜드 스터디', '브랜드·제품·판매 채널·경쟁 현황 진단', 3, true), ...strat, newSection('case', '케이스 스터디', '유사 업종 성과 사례 (실제 데이터 입력 필요)', 2, true)];
+}
+const KIND_GUIDE = {
+  company: '회사소개 섹션: 제안사(매드업) 역량 구조만 잡고, 실적·수치·고객사 등 사실 정보는 "[입력 필요]"로 남겨라. 이미지 첨부형(layout:"image") 페이지를 1장 포함해도 좋다.',
+  brand: '브랜드 스터디 섹션: 브랜드/제품/판매채널/경쟁/검색·소비 트렌드 진단. 자료에 없는 수치는 만들지 말 것.',
+  case: '케이스 스터디 섹션: 유사 업종 사례 구조(배경-전략-실행-성과)를 만들되 실제 수치는 "[사례 데이터 입력 필요]"로.',
+  strategy: '전략 섹션: 우선순위와 직결되는 주장 → 근거 → 실행(누가/언제/어떻게) 흐름. 시나리오·일정·KPI가 들어갈 자리는 구체적으로.'
+};
+async function genSection(si, quiet){
+  const sec = S.sections[si]; if (!sec) return;
+  const N = Math.max(1, +sec.pages || 1), useDiv = sec.divider && N >= 2;
+  if (!apiKey()){ sec.pageList = fallbackPages(sec, N, useDiv); if (!quiet){ save(); render(); toast('AI 키 없음 — 구조 초안을 만들었어요'); } return; }
+  if (!quiet) busy(`"${sec.title}" 섹션 작성 중…`);
+  try {
+    const res = parseJSON(await callClaude({system: SYS_BASE, maxTokens: 6000, content: `${ctxText()}
+
+[작성할 섹션] 유형: ${KINDS[sec.kind]} / 타이틀: ${sec.title} / 목표: ${sec.goal}
+페이지 수: 정확히 ${N}장 ${useDiv ? '(1장째는 반드시 type:"divider" 간지 — title은 섹션 타이틀, subtitle은 섹션 한 줄 요약)' : '(간지 없음)'}
+${KIND_GUIDE[sec.kind]}
+페이지 type 선택 기준: "bridge"=논리 전환·핵심 주장 한 문장(섹션 내 최대 1장), "strategy"=전략·실행안(카드/프로세스/KPI), "explain"=근거·현황·설명(리스트/표/좌우분할).
+layout: strategy→cards|process|kpi|split, explain→list|table|split. KPI 수치 v는 근거 있을 때만(추정이면 "(가정)").
+JSON만: {"pages":[{"type":"divider|bridge|strategy|explain","layout":"","title":"28자 내","subtitle":"헤드 메시지 45자 내","keyMsg":"하단 키 메시지 40자 내(없으면 빈값)","items":[{"h":"항목명 18자 내","d":"설명 70자 내","v":"수치(선택)"}],"notes":"발표자 노트 1~2문장"}]}
+items는 divider 0개, bridge 0~3개, 그 외 3~5개.`}));
+    sec.pageList = (res.pages || []).slice(0, N + 1).map(p => newPage(PAGE_TYPES[p.type] ? p.type : 'explain', {layout: LAYOUTS[p.layout] ? p.layout : (p.type === 'strategy' ? 'cards' : 'list'), title: p.title || '', subtitle: p.subtitle || '', keyMsg: p.keyMsg || '', items: (p.items || []).map(i => ({h: i.h || '', d: i.d || '', v: i.v || ''})), notes: p.notes || ''}));
+  } catch(e){ console.error(e); toast(`"${sec.title}" 작성 실패: ${e.message}`, 4500); }
+  if (!quiet){ unbusy(); save(); render(); }
+}
+function fallbackPages(sec, N, useDiv){
+  const out = [], A = S.input.analysis || {};
+  if (useDiv) out.push(newPage('divider', {title: sec.title, subtitle: sec.goal, items: []}));
+  const pr = (A.priorities || []).map(p => p.title);
+  for (let i = out.length; i < N; i++){
+    const t = i % 2 ? 'strategy' : 'explain';
+    out.push(newPage(t, {title: `${sec.title} ${N - (useDiv ? 1 : 0) > 1 ? '(' + (i + (useDiv ? 0 : 1)) + ')' : ''}`.trim(), subtitle: sec.goal || '[헤드 메시지 입력]', items: (pr.length ? pr.slice(0, 3) : ['현황', '문제/기회', '제안 방향']).map(h => ({h, d: '[RFP·브랜드 자료 근거로 내용 입력]', v: ''}))}));
+  }
+  return out;
+}
+async function genAll(){
+  if (!S.sections.length){ toast('먼저 [로직 작성]으로 섹션을 만드세요'); return; }
+  const targets = S.sections.map((s, i) => i).filter(i => S.sections[i].include !== false);
+  if (S.sections.some(s => s.pageList.length) && !confirm('이미 작성된 페이지가 있는 섹션도 다시 작성됩니다. 계속할까요?')) return;
+  let done = 0; busy('전체 섹션 자동 작성 중…', `0 / ${targets.length}`);
+  await pool(targets, 3, async i => { await genSection(i, true); busy('전체 섹션 자동 작성 중…', `${++done} / ${targets.length}`); });
+  unbusy(); save(); render(); toast('전체 섹션 작성 완료');
+}
+
+/* ---------- 3) 디자인 워싱 ---------- */
+function heuristicLayout(p){
+  const it = itemsOf(p);
+  if (p.type === 'divider' || p.type === 'bridge') return p.layout;
+  if (p.layout === 'image') return 'image';
+  if (it.length && it.filter(i => i.v).length >= Math.ceil(it.length / 2) && it.length <= 4) return 'kpi';
+  if (it.some(i => /단계|STEP|Phase|주차|\d+\s*월|런칭|사전|준비/i.test(i.h))) return 'process';
+  if (it.length >= 5) return 'table';
+  if (p.type === 'strategy' && it.length >= 2 && it.length <= 4) return 'cards';
+  if (p.keyMsg) return 'split';
+  return it.length <= 4 && p.type === 'strategy' ? 'cards' : 'list';
+}
+async function washSections(idxs){
+  const secs = idxs.map(i => S.sections[i]).filter(s => s && s.pageList.length);
+  if (!secs.length){ toast('워싱할 페이지가 없습니다 — 로직 단계에서 내용을 먼저 작성하세요'); return; }
+  busy('디자인 워싱 중…', '레이아웃 재구성 · 카피 다듬기 · 컬러칩 적용');
+  let done = 0;
+  await pool(secs, 3, async sec => {
+    sec.pageList.forEach(p => { if (!p.washed) p.draft = clone({...p, draft: undefined}); });
+    if (apiKey()){
+      try {
+        const res = parseJSON(await callClaude({system: SYS_BASE + '\n너는 동시에 제안서 아트디렉터다. 정보 위계를 정리하고 한 장 한 메시지 원칙으로 카피를 다듬는다.', maxTokens: 6000, content: `섹션 "${sec.title}"의 초안 페이지를 디자인 워싱해줘. 컬러칩: ${S.input.colors.map(c => c.role + ' ' + c.hex).join(', ')} (렌더러가 자동 적용).
+초안: ${JSON.stringify(sec.pageList.map(p => ({id: p.id, type: p.type, layout: p.layout, title: p.title, subtitle: p.subtitle, keyMsg: p.keyMsg, items: itemsOf(p)})))}
+각 페이지에 대해: 내용 의미·사실은 유지, 근거 없는 수치 추가 금지. 레이아웃은 정보 구조에 맞게 선택(strategy/explain만): cards(병렬 2~4개), process(순서·일정), kpi(수치 2~4개, v 필수), split(핵심 주장 + 근거), table(5개 이상 비교), list(기타), image는 유지.
+타이틀은 명사형·간결(24자 내), subtitle은 결론형 헤드 메시지(40자 내), items h 14자 내 / d 60자 내로 압축, 필요 시 keyMsg 보강.
+JSON만: {"pages":[{"id":"","layout":"","title":"","subtitle":"","keyMsg":"","items":[{"h":"","d":"","v":""}]}]}`}));
+        (res.pages || []).forEach(r => { const p = sec.pageList.find(x => x.id === r.id); if (!p) return;
+          if (p.type !== 'divider' && p.type !== 'bridge' && LAYOUTS[r.layout] && (p.layout !== 'image' || r.layout === 'image')) p.layout = r.layout;
+          ['title', 'subtitle', 'keyMsg'].forEach(k => { if (typeof r[k] === 'string' && (r[k] || k === 'keyMsg')) p[k] = r[k]; });
+          if (Array.isArray(r.items) && (r.items.length || p.type === 'divider')) p.items = r.items.map(i => ({h: i.h || '', d: i.d || '', v: i.v || ''}));
+        });
+      } catch(e){ console.error(e); toast(`"${sec.title}" AI 워싱 실패 → 규칙 기반 적용: ${e.message}`, 4000); sec.pageList.forEach(p => p.layout = heuristicLayout(p)); }
+    } else sec.pageList.forEach(p => p.layout = heuristicLayout(p));
+    sec.pageList.forEach(p => p.washed = true);
+    busy('디자인 워싱 중…', `${++done} / ${secs.length} 섹션`);
+  });
+  unbusy(); save(); render(); toast('디자인 워싱 완료 — 컬러칩·Pretendard 위계 적용');
+}
+function unwash(p){ if (p.draft){ const d = p.draft; Object.assign(p, d); p.draft = null; } p.washed = false; }
+
+/* ---------- 4) 점검 ---------- */
+function allFields(){
+  const out = [];
+  S.sections.forEach((s, si) => s.pageList.forEach((p, pi) => {
+    const ref = `${si}.${pi}`, lb = `${s.title} · p${pi + 1}`;
+    ['title', 'subtitle', 'keyMsg'].forEach(f => p[f] && out.push({ref, label: lb, field: f, text: p[f]}));
+    p.items.forEach((it, ii) => ['h', 'd', 'v'].forEach(f => it[f] && out.push({ref, label: lb, field: `items.${ii}.${f}`, text: it[f]})));
+  }));
+  return out;
+}
+const TYPO_RULES = [[/되요/g, '돼요'], [/됬/g, '됐'], [/몇일/g, '며칠'], [/금새/g, '금세'], [/왠만/g, '웬만'], [/역활/g, '역할'], [/할께/g, '할게'], [/않되/g, '안 되'], [/희안/g, '희한'], [/어떻해/g, '어떻게 해'], [/내노라/g, '내로라'], [/오랫만/g, '오랜만'], [/설겆이/g, '설거지'], [/일일히/g, '일일이'], [/곰곰히/g, '곰곰이'], [/깨끗히/g, '깨끗이'], [/  +/g, ' '], [/\.\.(?!\.)/g, '.'], [/ ,/g, ','], [/(\S{2,}) \1(?=\s|$)/g, '$1']];
+async function typoCheck(){
+  const F = allFields(); if (!F.length){ toast('점검할 내용이 없습니다'); return; }
+  busy('오탈자 점검 중…');
+  let issues = [];
+  if (apiKey()){
+    try {
+      const list = F.map((f, i) => ({i, t: f.text}));
+      const res = parseJSON(await callClaude({system: '너는 한국어 교정 전문가다. 맞춤법·띄어쓰기·오탈자·영문 철자·용어 불일치(같은 개념을 다른 표기로 쓴 경우)만 찾는다. 문체 취향 수정은 하지 않는다. JSON만 출력.', maxTokens: 6000, content: `다음 제안서 문구들을 점검해. JSON만: {"issues":[{"i":번호,"before":"원문 중 틀린 부분(정확히 일치하는 부분 문자열)","after":"수정안","reason":"사유"}]}\n${JSON.stringify(list)}`}));
+      issues = (res.issues || []).filter(x => F[x.i] && F[x.i].text.includes(x.before) && x.before !== x.after).map(x => ({...F[x.i], before: x.before, after: x.after, reason: x.reason}));
+    } catch(e){ toast('AI 점검 실패 → 규칙 기반 점검: ' + e.message, 4000); }
+  }
+  if (!apiKey() || !issues.length){
+    F.forEach(f => TYPO_RULES.forEach(([re, to]) => { const m = f.text.match(re); if (m) m.forEach(b => { const a = b.replace(new RegExp(re.source), to); if (a !== b && !issues.some(x => x.ref === f.ref && x.field === f.field && x.before === b)) issues.push({...f, before: b, after: a, reason: '규칙 기반 맞춤법/공백'}); }); }));
+  }
+  S.checks.typos = issues.map(x => ({...x, id: uid()}));
+  unbusy(); save(); render(); toast(`오탈자 ${issues.length}건 발견`);
+}
+function applyTypo(x){ const [si, pi] = x.ref.split('.').map(Number), p = S.sections[si]?.pageList[pi]; if (!p) return; const cur = getPath(p, x.field); if (typeof cur === 'string') setPath(p, x.field, cur.replace(x.before, x.after)); S.checks.typos = S.checks.typos.filter(t => t.id !== x.id); }
+async function fitCheck(){
+  const A = S.input.analysis; if (!A?.priorities?.length){ toast('인풋 단계에서 우선순위를 먼저 도출하세요'); return; }
+  const pages = []; S.sections.forEach((s, si) => s.include !== false && s.pageList.forEach((p, pi) => pages.push({id: `${si}.${pi}`, label: `${s.title} p${pi + 1}`, text: [p.title, p.subtitle, p.keyMsg, ...itemsOf(p).map(i => `${i.h} ${i.d} ${i.v}`)].join(' / ')})));
+  if (!pages.length){ toast('점검할 페이지가 없습니다'); return; }
+  busy('우선순위 부합 점검 중…');
+  try {
+    if (apiKey()){
+      const res = parseJSON(await callClaude({system: SYS_BASE + '\n지금은 제출 직전 내부 리뷰어(평가위원 관점)다. 냉정하게 본다.', maxTokens: 6000, content: `RFP 요약: ${JSON.stringify(A.rfpSummary || {})}
+제안 우선순위: ${JSON.stringify(A.priorities.map(p => ({rank: p.rank, title: p.title, why: p.why, angle: p.angle})))}
+제안서 페이지: ${JSON.stringify(pages.map(p => ({id: p.id, label: p.label, text: cut(p.text, 600)})))}
+각 우선순위가 제안서에서 얼마나 설득력 있게 다뤄졌는지 평가해. JSON만:
+{"overall":"총평 2~3문장","score":0~100,"items":[{"rank":1,"title":"","coverage":0~100,"pages":["페이지 id"],"gap":"부족한 점","suggestion":"보강안(어느 섹션에 무엇을)"}],"missing":["RFP 요구 중 제안서에 빠진 항목"]}`}));
+      S.checks.fit = res;
+    } else {
+      const tok = s => (s || '').replace(/[^\w가-힣\s]/g, ' ').split(/\s+/).filter(w => w.length >= 2);
+      const items = A.priorities.map(p => { const ks = [...new Set(tok(p.title + ' ' + (p.angle || '')))]; const hit = pages.filter(pg => ks.some(k => pg.text.includes(k))); return {rank: p.rank, title: p.title, coverage: Math.min(100, Math.round(hit.length / Math.max(1, pages.length) * 400)), pages: hit.map(h => h.id), gap: hit.length ? '' : '관련 키워드가 페이지에 없음', suggestion: hit.length ? '' : '해당 우선순위를 다루는 페이지 추가 권장'}; });
+      S.checks.fit = {overall: '규칙 기반(키워드 매칭) 점검 결과입니다. 정밀 평가는 AI 키 설정 후 다시 실행하세요.', score: Math.round(items.reduce((a, b) => a + b.coverage, 0) / items.length), items, missing: []};
+    }
+  } catch(e){ toast('점검 실패: ' + e.message, 4500); }
+  unbusy(); save(); render();
+}
+
+/* =========================================================
+   RENDER
+   ========================================================= */
+function renderSteps(){
+  $('#steps').innerHTML = STEPS.map(([k, n], i) => `<button class="${S.step === k ? 'on' : ''}" data-act="tab" data-v="${k}"><b>${i + 1}</b><span>${n}</span></button>`).join('');
+  $('#keydot').className = 'keydot' + (apiKey() ? ' on' : '');
+}
+function render(){
+  const y = scrollY; renderSteps();
+  $('#app').innerHTML = ({input: vInput, logic: vLogic, wash: vWash, check: vCheck})[S.step]();
+  scrollTo(0, y);
+}
+const inp = (path, ph = '', type = 'text', extra = '') => `<input type="${type}" data-bind="${path}" value="${esc(getPath(S, path))}" placeholder="${esc(ph)}" ${extra}>`;
+const ta = (path, ph = '', rows = 3) => `<textarea data-bind="${path}" rows="${rows}" placeholder="${esc(ph)}">${esc(getPath(S, path))}</textarea>`;
+function fileList(kind){
+  return `<div class="files">${S.input[kind].map((f, i) => `<div class="file">${f.image ? `<img src="${f.image}">` : '<span class="tag">' + esc(f.name.split('.').pop().toUpperCase()) + '</span>'}<span class="nm">${esc(f.name)}</span><span class="meta">${f.image ? '이미지' : `${(f.text || '').length.toLocaleString()}자${f.pages ? ` · ${f.pages}p` : ''}`}</span>${f.scanned ? '<span class="tag warn" title="텍스트가 거의 없는 PDF — AI 분석 시 원본 PDF를 직접 전달">스캔본</span>' : ''}${f.image ? '' : `<button class="btn sm" data-act="viewFile" data-k="${kind}" data-i="${i}">텍스트 확인/수정</button>`}<button class="btn sm ghost bad" data-act="delFile" data-k="${kind}" data-i="${i}">삭제</button></div>`).join('')}</div>`;
+}
+
+function vInput(){
+  const I = S.input, A = I.analysis;
+  return `
+  <h2 class="pt">1. 인풋 — RFP·브랜드 자료를 넣고 제안 로직을 추출합니다</h2>
+  <p class="pd">자료는 브라우저에만 저장되며, AI 분석 시 Anthropic API로만 전송됩니다. ${apiKey() ? '' : '<b style="color:var(--bad)">AI 키 미설정 — 상단 [설정]에서 입력하면 자동 분석이 켜집니다.</b>'}</p>
+  <div class="card"><h3>프로젝트 정보</h3>
+    <div class="grid3" style="grid-template-columns:2fr 1fr 1fr 1fr">
+      <div><label class="f">제안서 타이틀</label>${inp('project.name', '예) 2027 상반기 퍼포먼스 마케팅 운영 제안')}</div>
+      <div><label class="f">광고주 / 브랜드</label>${inp('project.client', '예) 메디니스 넥필')}</div>
+      <div><label class="f">제안사</label>${inp('project.proposer')}</div>
+      <div><label class="f">제안일</label>${inp('project.date')}</div>
+    </div></div>
+  <div class="grid2">
+    <div class="card"><h3><span class="n">A</span>RFP 업로드</h3><p class="hint">PDF · PPTX · DOCX · TXT (여러 개 가능). 구버전 .ppt/.doc은 변환 후 업로드</p>
+      <div class="drop" data-drop="rfp"><b>RFP 파일을 끌어놓거나 클릭</b>PDF / PPT(X) / WORD(DOCX)<input type="file" multiple accept=".pdf,.ppt,.pptx,.doc,.docx,.txt,.md" data-file="rfp"></div>${fileList('rfp')}</div>
+    <div class="card"><h3><span class="n">B</span>브랜드 채널 URL</h3><p class="hint">자사몰·네이버 스토어 등 복수 채널 입력 — AI가 웹 검색으로 제품·톤·컬러를 파악합니다</p>
+      ${I.urls.map((u, i) => `<div class="row mb8"><select data-bind="input.urls.${i}.type" style="width:170px">${URL_TYPES.map(t => `<option ${u.type === t ? 'selected' : ''}>${t}</option>`).join('')}</select>${inp(`input.urls.${i}.url`, 'https://', 'url')}<button class="btn sm ghost bad" data-act="delUrl" data-i="${i}">✕</button></div>`).join('')}
+      <button class="btn sm" data-act="addUrl">+ 채널 추가</button>
+      <div class="mt12"><label class="f">주요 제품 / 서비스</label>${inp('input.product', '예) 넥크림 3종, 객단가 3~5만원대, 2030 여성')}</div></div>
+  </div>
+  <div class="grid2">
+    <div class="card"><h3><span class="n">C</span>브랜드 자료 업로드</h3><p class="hint">브랜드북·소개서·상세페이지·기존 성과 리포트(문서), 로고·제품·상세 이미지(컬러칩 추출에 활용)</p>
+      <div class="drop" data-drop="brand"><b>브랜드 자료를 끌어놓거나 클릭</b>PDF / PPTX / DOCX / TXT / PNG·JPG<input type="file" multiple accept=".pdf,.pptx,.docx,.txt,.md,.csv,.png,.jpg,.jpeg,.webp" data-file="brand"></div>${fileList('brand')}</div>
+    <div class="card"><h3><span class="n">D</span>주요사항 (제안자 메모)</h3><p class="hint">RFP에 없는 맥락 — OT 내용, 광고주 페인포인트, 경쟁 PT 정보, 우리 강점, 예산 감, 꼭 넣을 메시지</p>
+      ${ta('input.notes', '예) OT에서 마케팅팀장이 "작년 대행사는 리포트만 많고 액션이 없었다"고 언급 / 경쟁 3사 PT / 예산 월 5천 내외 / 신제품 3월 런칭 예정', 9)}</div>
+  </div>
+  <div class="cta"><button class="btn pri big" data-act="analyze">${A ? '↻ 다시 분석' : '▶ 인풋 분석'} — 우선순위 · 컬러칩 · 제안 로직 추출</button></div>
+  ${vColors()}
+  ${A ? vAnalysis() : ''}`;
+}
+function vColors(){
+  const I = S.input;
+  return `<div class="card"><h3><span class="n">E</span>메인 컬러칩 (최대 3개) · PPT 맨 앞 컬러 가이드 자동 생성</h3><p class="hint">분석 시 채널·제품 기반으로 자동 제안됩니다. 칩을 클릭해 직접 변경할 수 있어요.</p>
+    <div class="row" style="align-items:flex-start;gap:18px;flex-wrap:wrap">
+      <div class="chips" style="flex:1;min-width:420px">${I.colors.map((c, i) => `<div class="chip"><div class="sw" style="background:${validHex(c.hex) ? c.hex : '#333'}"><input type="color" value="${validHex(c.hex) ? c.hex : '#333333'}" data-bind="input.colors.${i}.hex"></div><div class="bd"><div class="row mb8"><input type="text" data-bind="input.colors.${i}.hex" value="${esc(c.hex)}" style="font-weight:700;width:96px"><input type="text" data-bind="input.colors.${i}.role" value="${esc(c.role)}" style="width:80px"><button class="btn sm ghost bad" data-act="delColor" data-i="${i}" ${I.colors.length < 2 ? 'disabled' : ''}>✕</button></div>${inp(`input.colors.${i}.name`, '컬러명')}<textarea data-bind="input.colors.${i}.reason" rows="2" placeholder="선정 근거 / 사용처" style="margin-top:6px;min-height:44px;font-size:12px">${esc(c.reason)}</textarea></div></div>`).join('')}
+      ${I.colors.length < 3 ? `<button class="btn" data-act="addColor" style="height:80px">+ 컬러 추가</button>` : ''}</div>
+      <div><div class="thumb" data-act="previewSpecial" data-k="guide">${thumbHTML({kind: 'guide'}, 340)}</div><div class="row mt12" style="justify-content:flex-end"><button class="btn sm" data-act="guidePPT">가이드 PPT</button><button class="btn sm" data-act="guidePDF">가이드 PDF</button></div></div>
+    </div>
+    <div class="mt12"><label class="f">컬러 컨셉</label>${inp('input.colorConcept', '예) 메디컬 신뢰감의 딥네이비 + 제품 패키지 민트 포인트')}</div></div>`;
+}
+function vAnalysis(){
+  const A = S.input.analysis, R0 = A.rfpSummary || {};
+  const KV = [['client', '광고주'], ['background', '배경'], ['objective', '목표'], ['kpi', 'KPI'], ['budget', '예산'], ['period', '기간'], ['target', '타겟'], ['scope', '과업 범위'], ['evaluation', '평가 기준'], ['deadline', '일정']];
+  return `
+  <div class="grid2">
+    <div class="card"><h3><span class="n">F</span>RFP 핵심 요약</h3>
+      <table class="kv">${KV.map(([k, n]) => `<tr><th>${n}</th><td><textarea data-bind="input.analysis.rfpSummary.${k}" rows="1">${esc(R0[k] || '')}</textarea></td></tr>`).join('')}
+      <tr><th>필수·제약</th><td style="font-size:12px;padding:8px">${(R0.constraints || []).map(c => '• ' + esc(c)).join('<br>') || '-'}</td></tr></table>
+      ${(A.questions || []).length ? `<div class="note info mt12"><b>광고주 확인 필요</b><br>${A.questions.map(q => '• ' + esc(q)).join('<br>')}</div>` : ''}</div>
+    <div class="card"><h3><span class="n">G</span>브랜드 인사이트</h3>
+      ${(A.brandInsights || []).map((b, i) => `<div class="row mb8"><textarea data-bind="input.analysis.brandInsights.${i}" rows="2">${esc(b)}</textarea><button class="btn sm ghost bad" data-act="delIns" data-i="${i}">✕</button></div>`).join('')}
+      <button class="btn sm" data-act="addIns">+ 인사이트 추가</button></div>
+  </div>
+  <div class="card"><h3><span class="n">H</span>제안 우선순위 (제안자 관점)</h3><p class="hint">순위가 로직·섹션 구성과 최종 점검의 기준이 됩니다. ▲▼로 순서 조정</p>
+    <div class="prio h"><div>#</div><div>우선순위 항목</div><div>왜 승부처인가</div><div>제안서에서 풀 방식</div><div>가중치</div><div></div></div>
+    ${(A.priorities || []).map((p, i) => `<div class="prio"><div class="rk">${i + 1}</div><div><input type="text" data-bind="input.analysis.priorities.${i}.title" value="${esc(p.title)}" style="font-weight:700;margin-bottom:4px"><div style="font-size:11px;color:var(--mute)">${esc(p.evidence || '')}</div></div><textarea data-bind="input.analysis.priorities.${i}.why">${esc(p.why)}</textarea><textarea data-bind="input.analysis.priorities.${i}.angle">${esc(p.angle)}</textarea><select data-bind="input.analysis.priorities.${i}.weight">${['상', '중', '하'].map(w => `<option ${p.weight === w ? 'selected' : ''}>${w}</option>`).join('')}</select><div class="row" style="gap:2px"><button class="btn sm ghost" data-act="prioMv" data-i="${i}" data-d="-1">▲</button><button class="btn sm ghost" data-act="prioMv" data-i="${i}" data-d="1">▼</button><button class="btn sm ghost bad" data-act="prioDel" data-i="${i}">✕</button></div></div>`).join('')}
+    <button class="btn sm mt12" data-act="prioAdd">+ 우선순위 추가</button></div>
+  <div class="card"><h3><span class="n">I</span>추출된 제안 로직</h3>
+    <div class="grid2 mb12"><div><label class="f">제안 컨셉</label>${inp('input.analysis.logic.concept')}</div><div><label class="f">핵심 메시지</label>${inp('input.analysis.logic.message')}</div></div>
+    <label class="f">스토리라인</label>
+    ${A.logic.storyline.map((s, i) => `<div class="story"><div class="ix">${i + 1}</div>${inp(`input.analysis.logic.storyline.${i}.title`, '단계')}<textarea data-bind="input.analysis.logic.storyline.${i}.point" rows="1">${esc(s.point)}</textarea><button class="btn sm ghost bad" data-act="storyDel" data-i="${i}">✕</button></div>`).join('')}
+    <button class="btn sm" data-act="storyAdd">+ 단계 추가</button>
+    <div class="cta mt12"><button class="btn dark big" data-act="goLogic">로직 단계로 → 섹션 구성</button></div></div>`;
+}
+
+function vLogic(){
+  const A = S.input.analysis, total = S.sections.filter(s => s.include !== false).reduce((a, s) => a + (s.pageList.length || +s.pages || 0), 0);
+  const head = `<h2 class="pt">2. 로직 — 섹션별로 쪼개서 작성합니다</h2><p class="pd">[로직 작성] → 섹션별 희망 페이지 수 조정 → [전체 자동 작성] → 타이틀·내용 수정/삭제/추가 · 페이지 유형(간지/브릿지/전략/설명) 지정</p>`;
+  if (!S.sections.length) return head + `<div class="card empty"><b>아직 섹션이 없습니다</b>${A ? '인풋 분석에서 추출한 로직으로 섹션을 구성합니다.' : '인풋 분석 없이도 기본 퍼포먼스 제안 구조로 시작할 수 있어요.'}<div class="cta mt12"><button class="btn pri big" data-act="buildLogic">▶ 로직 작성</button></div></div>`;
+  let h = head + `<div class="toolbar card" style="padding:12px 16px"><button class="btn" data-act="buildLogic">↻ 로직 재작성(섹션 재구성)</button><button class="btn pri" data-act="genAll">✦ 전체 섹션 내용 자동 작성</button><span class="sp"></span><span class="tag pri">포함 섹션 ${includedSecs().length}개 · 약 ${total}p</span><button class="btn sm" data-act="addExtra" data-k="company">+ 회사소개</button><button class="btn sm" data-act="addExtra" data-k="brand">+ 브랜드 스터디</button><button class="btn sm" data-act="addExtra" data-k="case">+ 케이스 스터디</button></div>`;
+  if (A?.logic?.concept) h += `<div class="note info mb12"><b>컨셉</b> ${esc(A.logic.concept)} &nbsp;·&nbsp; <b>메시지</b> ${esc(A.logic.message || '')}</div>`;
+  h += `<div class="ins"><button class="btn sm" data-act="insSec" data-at="0">+ 섹션 추가</button></div>`;
+  S.sections.forEach((sec, si) => { h += vSection(sec, si) + `<div class="ins"><button class="btn sm" data-act="insSec" data-at="${si + 1}">+ 섹션 추가</button></div>`; });
+  return h;
+}
+function vSection(sec, si){
+  const sn = secNoOf(sec), extra = sec.kind !== 'strategy';
+  const b = `data-s="${si}"`;
+  return `<div class="sec ${extra ? 'extra' : ''}" data-sid="${sec.id}">
+    <div class="sec-h"><span class="no">${sn ? two(sn) : '—'}</span><span class="kind ${sec.kind}">${KINDS[sec.kind]}${extra ? ' · 별도 공간' : ''}</span>
+      <input class="tt" type="text" data-bind="sections.${si}.title" value="${esc(sec.title)}">
+      <label class="ck">희망 페이지 <input class="pc" type="number" min="1" max="30" data-bind="sections.${si}.pages" value="${sec.pages}"></label>
+      <label class="ck"><input type="checkbox" data-bind="sections.${si}.divider" ${sec.divider ? 'checked' : ''}>간지</label>
+      <label class="ck"><input type="checkbox" data-bind="sections.${si}.include" ${sec.include !== false ? 'checked' : ''}>포함</label>
+      <button class="btn sm pri" data-act="genSec" ${b}>${sec.pageList.length ? '↻ 재작성' : '✦ 자동 작성'}</button>
+      <button class="btn sm" data-act="secPPT" ${b} ${sec.pageList.length ? '' : 'disabled'}>PPT</button><button class="btn sm" data-act="secPDF" ${b} ${sec.pageList.length ? '' : 'disabled'}>PDF</button>
+      <button class="btn sm ghost" data-act="secMv" ${b} data-d="-1">▲</button><button class="btn sm ghost" data-act="secMv" ${b} data-d="1">▼</button>
+      <button class="btn sm ghost" data-act="secFold" ${b}>${sec.collapsed ? '펼치기' : '접기'}</button><button class="btn sm ghost bad" data-act="secDel" ${b}>삭제</button></div>
+    <div class="sec-g"><input type="text" data-bind="sections.${si}.goal" value="${esc(sec.goal)}" placeholder="섹션 목표 / 증명할 논지"></div>
+    ${sec.collapsed ? `<div class="pages"><div class="gallery">${sec.pageList.map((p, pi) => `<div data-act="preview" data-s="${si}" data-p="${pi}" style="cursor:zoom-in">${thumbHTML(pageItem(sec, p, pi + 1), 160)}</div>`).join('')}</div></div>` :
+    `<div class="pages">${sec.pageList.length ? sec.pageList.map((p, pi) => vPage(sec, si, p, pi)).join('') : `<div class="empty" style="padding:20px">희망 페이지 수를 정하고 <b style="display:inline;font-size:14px">✦ 자동 작성</b>을 누르거나 직접 페이지를 추가하세요</div>`}
+      <div class="row" style="justify-content:center"><button class="btn sm" data-act="addPage" ${b} data-t="explain">+ 페이지 추가</button><button class="btn sm" data-act="addPage" ${b} data-t="divider">+ 간지</button><button class="btn sm" data-act="addPage" ${b} data-t="bridge">+ 브릿지</button></div></div>`}
+  </div>`;
+}
+function vPage(sec, si, p, pi){
+  const base = `sections.${si}.pageList.${pi}`, b = `data-s="${si}" data-p="${pi}"`, content = p.type === 'strategy' || p.type === 'explain';
+  return `<div class="pg"><div class="thumb" data-act="preview" ${b} data-thumb="${si}.${pi}">${thumbHTML(pageItem(sec, p, pi + 1), 320)}</div>
+    <div class="pf">
+      <div class="row" style="flex-wrap:wrap"><span class="tag">p${pi + 1}</span>
+        <select data-bind="${base}.type">${Object.entries(PAGE_TYPES).map(([k, n]) => `<option value="${k}" ${p.type === k ? 'selected' : ''}>${n}</option>`).join('')}</select>
+        ${content ? `<select data-bind="${base}.layout">${Object.entries(LAYOUTS).map(([k, n]) => `<option value="${k}" ${p.layout === k ? 'selected' : ''}>${n}</option>`).join('')}</select>` : ''}
+        ${p.washed ? '<span class="tag ok">워싱 완료</span>' : '<span class="tag">초안</span>'}
+        <span style="flex:1"></span>
+        <button class="btn sm" data-act="pagePPT" ${b}>PPT</button><button class="btn sm" data-act="pagePDF" ${b}>PDF</button>
+        <button class="btn sm ghost" data-act="pageMv" ${b} data-d="-1">▲</button><button class="btn sm ghost" data-act="pageMv" ${b} data-d="1">▼</button>
+        <button class="btn sm ghost" data-act="pageDup" ${b}>복제</button><button class="btn sm ghost bad" data-act="pageDel" ${b}>삭제</button></div>
+      <input type="text" data-bind="${base}.title" value="${esc(p.title)}" placeholder="메인 타이틀" style="font-weight:700">
+      <input type="text" data-bind="${base}.subtitle" value="${esc(p.subtitle)}" placeholder="서브 타이틀 (헤드 메시지)">
+      ${p.type !== 'divider' ? `<input type="text" data-bind="${base}.keyMsg" value="${esc(p.keyMsg)}" placeholder="${p.type === 'bridge' ? '브릿지 핵심 문장 (크게 노출)' : '키 메시지 (하단 강조 바)'}">` : ''}
+      ${p.type !== 'divider' ? `<div class="items">${p.items.map((it, ii) => `<div class="it"><div class="ix">${ii + 1}</div><input type="text" data-bind="${base}.items.${ii}.h" value="${esc(it.h)}" placeholder="항목명"><input type="text" data-bind="${base}.items.${ii}.v" value="${esc(it.v)}" placeholder="수치"><textarea data-bind="${base}.items.${ii}.d" rows="1" placeholder="설명">${esc(it.d)}</textarea><button class="btn sm ghost bad" data-act="itemDel" ${b} data-i="${ii}">✕</button></div>`).join('')}</div>
+      <div class="row"><button class="btn sm" data-act="itemAdd" ${b}>+ 항목</button>${content ? `<label class="btn sm" style="position:relative;overflow:hidden">${p.image ? '이미지 교체' : '+ 이미지 첨부'}<input type="file" accept="image/*" data-pimg="${si}.${pi}" style="position:absolute;inset:0;opacity:0;cursor:pointer"></label>${p.image ? `<button class="btn sm ghost bad" data-act="imgDel" ${b}>이미지 삭제</button>` : ''}` : ''}<span style="flex:1"></span></div>` : ''}
+      <details><summary style="font-size:12px;color:var(--sub);cursor:pointer">발표자 노트</summary><textarea data-bind="${base}.notes" rows="2">${esc(p.notes)}</textarea></details>
+    </div></div>`;
+}
+
+function vWash(){
+  const pages = S.sections.reduce((a, s) => a + s.pageList.length, 0), washed = S.sections.reduce((a, s) => a + s.pageList.filter(p => p.washed).length, 0);
+  let h = `<h2 class="pt">3. 디자인 워싱 — 초안을 제안서 디자인으로 디벨롭합니다</h2><p class="pd">정보 구조에 맞는 레이아웃 재배치 · 카피 압축 · 인풋 컬러칩 적용 · Pretendard 위계(메인 타이틀 Bold / 서브·본문 Light)</p>`;
+  if (!pages) return h + `<div class="card empty"><b>워싱할 페이지가 없습니다</b>로직 단계에서 섹션 내용을 먼저 작성하세요.<div class="cta mt12"><button class="btn" data-act="tab" data-v="logic">로직 단계로</button></div></div>`;
+  h += `<div class="toolbar card" style="padding:12px 16px"><button class="btn pri" data-act="washAll">✦ 전체 디자인 워싱</button><button class="btn" data-act="unwashAll">초안으로 되돌리기(전체)</button><span class="sp"></span>
+    <span style="display:flex;gap:4px;align-items:center">${S.input.colors.map(c => `<span title="${esc(c.role)} ${esc(c.hex)}" style="width:22px;height:22px;border-radius:6px;background:${c.hex};box-shadow:0 0 0 1px var(--line)"></span>`).join('')}</span>
+    <span class="tag ${washed === pages ? 'ok' : 'warn'}">워싱 ${washed} / ${pages}p</span><button class="btn sm" data-act="tab" data-v="input">컬러칩 수정</button></div>`;
+  S.sections.forEach((sec, si) => {
+    if (!sec.pageList.length) return;
+    h += `<div class="card"><h3><span class="kind ${sec.kind}">${KINDS[sec.kind]}</span>${esc(sec.title)} <span style="flex:1"></span><button class="btn sm pri" data-act="washSec" data-s="${si}">이 섹션 워싱</button><button class="btn sm" data-act="secPPT" data-s="${si}">PPT</button><button class="btn sm" data-act="secPDF" data-s="${si}">PDF</button></h3>
+      <div class="gallery">${sec.pageList.map((p, pi) => `<div class="gi"><div data-act="preview" data-s="${si}" data-p="${pi}" style="cursor:zoom-in">${thumbHTML(pageItem(sec, p, pi + 1), 280)}</div><div class="lb"><span>p${pi + 1} · ${PAGE_TYPES[p.type]}${p.type === 'strategy' || p.type === 'explain' ? ' · ' + LAYOUTS[p.layout] : ''}</span>${p.washed ? `<span class="row" style="gap:4px"><span class="tag ok">워싱</span><button class="btn sm ghost" data-act="unwashPage" data-s="${si}" data-p="${pi}">되돌리기</button></span>` : '<span class="tag">초안</span>'}</div></div>`).join('')}</div></div>`;
+  });
+  return h;
+}
+
+function vCheck(){
+  const T0 = S.checks.typos, F0 = S.checks.fit, m = S.merge;
+  let h = `<h2 class="pt">4. 점검 및 취합 — 최종본을 만듭니다</h2><p class="pd">오탈자 · 우선순위 부합도를 점검한 뒤 섹션을 한 번에 취합해 PPT/PDF 최종본을 추출합니다.</p>
+  <div class="grid2">
+    <div class="card"><h3><span class="n">1</span>오탈자 점검 <span style="flex:1"></span><button class="btn sm pri" data-act="typo">점검 실행</button>${T0?.length ? '<button class="btn sm" data-act="typoAll">모두 적용</button>' : ''}</h3>
+      ${T0 == null ? '<p class="hint" style="margin:0">맞춤법·띄어쓰기·오탈자·용어 불일치를 찾습니다.</p>' : !T0.length ? '<div class="note info">발견된 오탈자가 없습니다 ✓</div>' :
+      `<div style="max-height:420px;overflow:auto"><table class="list"><tr><th>위치</th><th>수정</th><th></th></tr>${T0.map(x => `<tr><td style="font-size:12px;color:var(--sub);width:30%">${esc(x.label)}<br><span class="tag">${esc(x.field)}</span></td><td><del>${esc(x.before)}</del> → <ins>${esc(x.after)}</ins><div style="font-size:11px;color:var(--mute)">${esc(x.reason || '')}</div></td><td style="white-space:nowrap"><button class="btn sm" data-act="typoOne" data-id="${x.id}">적용</button><button class="btn sm ghost" data-act="typoSkip" data-id="${x.id}">무시</button></td></tr>`).join('')}</table></div>`}</div>
+    <div class="card"><h3><span class="n">2</span>우선순위 부합 점검 <span style="flex:1"></span><button class="btn sm pri" data-act="fit">점검 실행</button></h3>
+      ${F0 == null ? '<p class="hint" style="margin:0">인풋에서 확정한 우선순위가 제안 내용에 제대로 반영됐는지 평가위원 관점으로 점검합니다.</p>' :
+      `<div class="row mb12"><div style="font-size:30px;font-weight:800;color:var(--pri)">${F0.score ?? '-'}</div><div style="font-size:12px;color:var(--sub);flex:1">${esc(F0.overall || '')}</div></div>
+      ${(F0.items || []).map(x => `<div class="mb12"><div class="row" style="justify-content:space-between"><b>${x.rank}. ${esc(x.title)}</b><span class="tag ${x.coverage >= 70 ? 'ok' : x.coverage >= 40 ? 'warn' : 'bad'}">${x.coverage}%</span></div><div class="bar" style="margin:5px 0"><i style="width:${x.coverage}%;background:${x.coverage >= 70 ? 'var(--ok)' : x.coverage >= 40 ? 'var(--warn)' : 'var(--bad)'}"></i></div><div style="font-size:12px;color:var(--sub)">${(x.pages || []).map(id => { const [si, pi] = String(id).split('.').map(Number); const s = S.sections[si]; return s ? `<a href="#" data-act="preview" data-s="${si}" data-p="${pi}">${esc(s.title)} p${pi + 1}</a>` : ''; }).join(', ') || '연결 페이지 없음'}${x.gap ? `<br>부족: ${esc(x.gap)}` : ''}${x.suggestion ? `<br><b>보강:</b> ${esc(x.suggestion)}` : ''}</div></div>`).join('')}
+      ${(F0.missing || []).length ? `<div class="note">RFP 요구 중 누락: ${F0.missing.map(esc).join(', ')}</div>` : ''}`}</div>
+  </div>
+  <div class="card"><h3><span class="n">3</span>제안서 취합 & 최종본 추출</h3>
+    <div class="row mb12" style="flex-wrap:wrap;gap:16px">
+      ${[['cover', '표지'], ['guide', '컬러 가이드 (맨 앞)'], ['toc', '목차'], ['closing', '클로징']].map(([k, n]) => `<label class="ck" style="display:flex;gap:6px;align-items:center"><input type="checkbox" data-bind="merge.${k}" ${m[k] ? 'checked' : ''}>${n}</label>`).join('')}
+      <span style="flex:1"></span><button class="btn pri" data-act="merge">✦ 섹션 취합 → 하나의 제안서</button></div>
+    <div class="note mb12"><b>폰트·컬러 깨짐 방지</b><br>• <b>PDF(고화질)</b>: 화면과 동일하게 폰트·컬러가 고정 렌더링됩니다(텍스트 선택 불가). <b>인쇄용 PDF</b>는 브라우저 인쇄 → "PDF로 저장"으로 텍스트가 살아있는 벡터 PDF를 만듭니다(배경 그래픽 옵션 체크).<br>• <b>PPT</b>: 파일에 폰트를 내장할 수 없어, 열람 PC에 <a href="https://github.com/orioncactus/pretendard/releases" target="_blank">Pretendard</a>(Bold·Light 포함)가 설치되어 있어야 동일하게 보입니다. 컬러는 HEX 값으로 고정 저장됩니다.</div>
+    ${m.done ? vMerged() : ''}</div>`;
+  return h;
+}
+function vMerged(){
+  const list = assemble();
+  return `<div class="toolbar"><span class="tag pri">총 ${list.length}장</span><span class="sp"></span><button class="btn dark" data-act="finalPPT">⬇ 최종 PPT</button><button class="btn dark" data-act="finalPDF">⬇ 최종 PDF (고화질)</button><button class="btn" data-act="finalPrint">인쇄용 PDF (벡터)</button></div>
+    <div class="gallery">${list.map((it, i) => `<div class="gi"><div data-act="previewFinal" data-i="${i}" style="cursor:zoom-in">${thumbHTML(it, 230)}</div><div class="lb"><span>${two(i + 1)} · ${it.kind === 'page' ? esc(it.secTitle) : ({cover: '표지', guide: '컬러 가이드', toc: '목차', closing: '클로징'})[it.kind]}</span>${it.kind === 'page' && !it.page.washed ? '<span class="tag warn">초안</span>' : ''}</div></div>`).join('')}</div>`;
+}
+
+/* ---------- preview modal ---------- */
+function openPreview(list, idx){
+  let i = idx;
+  const m = modal('미리보기', '<div class="pv"></div>');
+  const draw = () => {
+    const it = list[i], w = Math.min(1120, innerWidth - 110);
+    $('.pv', m).innerHTML = `<div class="row mb12" style="justify-content:space-between"><div class="row"><button class="btn sm" data-nav="-1" ${i ? '' : 'disabled'}>◀ 이전</button><span class="tag">${i + 1} / ${list.length}</span><button class="btn sm" data-nav="1" ${i < list.length - 1 ? '' : 'disabled'}>다음 ▶</button></div><div class="row"><button class="btn sm" data-x="ppt">이 페이지 PPT</button><button class="btn sm" data-x="pdf">이 페이지 PDF</button></div></div>${thumbHTML(it, w)}`;
+  };
+  m.addEventListener('click', e => { const n = e.target.closest('[data-nav]'); if (n){ i = Math.max(0, Math.min(list.length - 1, i + +n.dataset.nav)); draw(); } const x = e.target.closest('[data-x]'); if (x) (x.dataset.x === 'ppt' ? exportPPTX : exportPDF)([list[i]], `page${two(i + 1)}`); });
+  m.tabIndex = 0; m.focus(); m.addEventListener('keydown', e => { if (e.key === 'ArrowRight' && i < list.length - 1){ i++; draw(); } if (e.key === 'ArrowLeft' && i){ i--; draw(); } if (e.key === 'Escape') m.remove(); });
+  draw();
+}
+
+/* ---------- settings modal ---------- */
+function openSettings(){
+  const tp = S.template;
+  const m = modal('설정 — AI · PPT 템플릿', `
+    <div class="grid2">
+      <div class="card"><h3>AI 연결 (Anthropic API)</h3>
+        <label class="f">API 키</label><input type="password" id="sKey" value="${esc(apiKey())}" placeholder="sk-ant-...">
+        <p class="hint" style="margin:6px 0 12px">키는 이 브라우저(localStorage)에만 저장되고, 분석 요청 시 api.anthropic.com으로만 전송됩니다. 공용 PC에서는 사용 후 삭제하세요.</p>
+        <label class="f">모델</label><select data-bind="settings.model">${MODELS.map(([v, n]) => `<option value="${v}" ${S.settings.model === v ? 'selected' : ''}>${n}</option>`).join('')}</select>
+        <label class="ck mt12" style="display:flex;gap:6px;align-items:center;font-size:13px"><input type="checkbox" data-bind="settings.web" ${S.settings.web ? 'checked' : ''}>브랜드 URL 웹 검색 사용 (조직에서 웹 검색 도구가 꺼져 있으면 자동으로 생략)</label>
+        <div class="row mt12"><button class="btn pri" id="sSave">키 저장</button><button class="btn" id="sTest">연결 테스트</button><button class="btn ghost bad" id="sDel">키 삭제</button></div></div>
+      <div class="card"><h3>PPT 양식 (회사 템플릿)</h3>
+        <p class="hint" style="margin:0 0 10px">전달받은 회사 양식(.pptx)을 올리면 로고 등 이미지를 추출합니다. 로고는 모든 장표에 고정되고, 표지 배경도 지정할 수 있어요.</p>
+        <div class="drop" style="padding:14px"><b>템플릿 PPTX 업로드</b><input type="file" accept=".pptx,.potx" id="tplIn"></div>
+        <div class="row mt12"><label class="btn sm" style="position:relative;overflow:hidden">로고 이미지 직접 업로드<input type="file" accept="image/*" id="logoIn" style="position:absolute;inset:0;opacity:0"></label>
+          ${tp.logo ? `<img src="${tp.logo}" style="height:28px;max-width:140px;object-fit:contain;background:#f4f4f4;border-radius:4px;padding:2px"><button class="btn sm ghost bad" id="logoDel">로고 제거</button>` : '<span class="tag">로고 없음 → 텍스트 워드마크 사용</span>'}</div>
+        <div class="grid2 mt12"><div><label class="f">로고 위치</label><select data-bind="template.logoPos">${[['tr', '우측 상단'], ['tl', '좌측 상단'], ['br', '우측 하단'], ['bl', '좌측 하단']].map(([v, n]) => `<option value="${v}" ${tp.logoPos === v ? 'selected' : ''}>${n}</option>`).join('')}</select></div><div><label class="f">워드마크 텍스트(로고 없을 때)</label>${inp('template.footer')}</div></div>
+        <div class="row mt12">${tp.coverBg ? `<span class="tag ok">표지 배경 지정됨</span><button class="btn sm ghost bad" id="coverDel">표지 배경 제거</button>` : '<span class="tag">표지 배경: 기본 디자인</span>'}</div>
+        <div class="media" id="mediaGrid">${MEDIA.map((md, i) => `<div class="m"><img src="${md.data}"><div style="margin:4px 0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(md.name)}</div><button class="btn sm" data-ml="${i}">로고</button> <button class="btn sm" data-mc="${i}">표지</button></div>`).join('')}</div></div>
+    </div>`);
+  $('#sSave', m).onclick = () => { localStorage.setItem('ps_key', $('#sKey', m).value.trim()); renderSteps(); toast('API 키 저장됨'); };
+  $('#sDel', m).onclick = () => { localStorage.removeItem('ps_key'); $('#sKey', m).value = ''; renderSteps(); toast('API 키 삭제됨'); };
+  $('#sTest', m).onclick = async () => { localStorage.setItem('ps_key', $('#sKey', m).value.trim()); renderSteps(); busy('연결 테스트 중…'); try { const t = await callClaude({system: 'JSON만', content: '{"ok":true} 를 그대로 출력', maxTokens: 50}); toast(/ok/.test(t) ? `연결 성공 ✓ (${S.settings.model})` : '응답 확인: ' + t.slice(0, 60)); } catch(e){ toast(e.message === 'NOKEY' ? '키를 입력하세요' : e.message, 5000); } unbusy(); };
+  const reopen = () => { m.remove(); openSettings(); save(); if (S.step !== 'input' || true) render(); };
+  $('#tplIn', m).onchange = async e => { const f = e.target.files[0]; if (!f) return; busy('템플릿 분석 중…'); try { MEDIA = await templateMedia(f); toast(`이미지 ${MEDIA.length}개 추출 — 로고로 쓸 이미지를 고르세요`); } catch(er){ toast('템플릿 읽기 실패: ' + er.message); } unbusy(); reopen(); };
+  $('#logoIn', m).onchange = async e => { const f = e.target.files[0]; if (!f) return; const d = await readDataURL(f); await setLogo(d); reopen(); };
+  $('#logoDel', m) && ($('#logoDel', m).onclick = () => { tp.logo = null; reopen(); });
+  $('#coverDel', m) && ($('#coverDel', m).onclick = () => { tp.coverBg = null; reopen(); });
+  $('#mediaGrid', m).onclick = async e => { const l = e.target.closest('[data-ml]'), c = e.target.closest('[data-mc]'); if (l){ await setLogo(MEDIA[+l.dataset.ml].data); reopen(); } if (c){ tp.coverBg = (await resizeImage(MEDIA[+c.dataset.mc].data, 1600)).data; reopen(); } };
+}
+async function setLogo(d){ const r = await resizeImage(d, 600, 'image/png'); S.template.logo = r.data; S.template.logoW = r.w; S.template.logoH = r.h; save(); }
+async function templateMedia(file){
+  const zip = await JSZip.loadAsync(await file.arrayBuffer()); const out = [];
+  const used = new Set();
+  for (const n of Object.keys(zip.files).filter(n => /^ppt\/(slideMasters|slideLayouts|slides)\/_rels\/.*\.rels$/.test(n))){ const x = await zip.file(n).async('string'); (x.match(/Target="\.\.\/media\/[^"]+"/g) || []).forEach(t => used.add(t.slice(18, -1))); }
+  const files = Object.keys(zip.files).filter(n => /^ppt\/media\/.+\.(png|jpe?g|gif|svg)$/i.test(n));
+  files.sort((a, b) => (used.has(b.split('/').pop()) - used.has(a.split('/').pop())));
+  for (const n of files.slice(0, 40)){ const ext = n.split('.').pop().toLowerCase(); const mime = ext === 'svg' ? 'image/svg+xml' : ext === 'jpg' ? 'image/jpeg' : 'image/' + ext; out.push({name: n.split('/').pop(), data: `data:${mime};base64,` + await zip.file(n).async('base64')}); }
+  return out;
+}
+
+/* =========================================================
+   EVENTS
+   ========================================================= */
+const sec = b => S.sections[+b.dataset.s];
+const pgOf = b => sec(b)?.pageList[+b.dataset.p];
+const mv = (arr, i, d) => { const j = i + d; if (j < 0 || j >= arr.length) return; [arr[i], arr[j]] = [arr[j], arr[i]]; };
+const rr = () => { save(); render(); };
+const ACT = {
+  tab: b => { S.step = b.dataset.v; save(); render(); scrollTo(0, 0); },
+  goLogic: () => { S.step = 'logic'; save(); render(); scrollTo(0, 0); },
+  settings: () => openSettings(),
+  addUrl: () => { S.input.urls.push({type: '네이버 스마트스토어', url: ''}); rr(); },
+  delUrl: b => { S.input.urls.splice(+b.dataset.i, 1); if (!S.input.urls.length) S.input.urls.push({type: '자사몰', url: ''}); rr(); },
+  delFile: b => { const f = S.input[b.dataset.k].splice(+b.dataset.i, 1)[0]; if (f) delete RAW[f.id]; rr(); },
+  viewFile: b => { const k = b.dataset.k, i = +b.dataset.i, f = S.input[k][i]; const m = modal(esc(f.name) + ' — 추출 텍스트', `<p class="hint">표·이미지 속 글자가 누락됐다면 여기서 직접 보완하세요.</p><textarea data-bind="input.${k}.${i}.text" style="min-height:60vh;font-size:12px">${esc(f.text)}</textarea>`); },
+  analyze: () => analyze(),
+  addColor: () => { S.input.colors.push({hex: '#888888', role: ['Main', 'Sub', 'Accent'][S.input.colors.length], name: '', reason: ''}); rr(); },
+  delColor: b => { S.input.colors.splice(+b.dataset.i, 1); rr(); },
+  guidePPT: () => exportPPTX([{kind: 'guide'}], 'color_guide'),
+  guidePDF: () => exportPDF([{kind: 'guide'}], 'color_guide'),
+  previewSpecial: b => openPreview([{kind: b.dataset.k}], 0),
+  prioMv: b => { const P = S.input.analysis.priorities; mv(P, +b.dataset.i, +b.dataset.d); P.forEach((p, i) => p.rank = i + 1); rr(); },
+  prioDel: b => { const P = S.input.analysis.priorities; P.splice(+b.dataset.i, 1); P.forEach((p, i) => p.rank = i + 1); rr(); },
+  prioAdd: () => { const P = S.input.analysis.priorities = S.input.analysis.priorities || []; P.push({rank: P.length + 1, title: '', why: '', evidence: '직접 추가', angle: '', weight: '중'}); rr(); },
+  addIns: () => { (S.input.analysis.brandInsights = S.input.analysis.brandInsights || []).push(''); rr(); },
+  delIns: b => { S.input.analysis.brandInsights.splice(+b.dataset.i, 1); rr(); },
+  storyAdd: () => { S.input.analysis.logic.storyline.push({title: '', point: ''}); rr(); },
+  storyDel: b => { S.input.analysis.logic.storyline.splice(+b.dataset.i, 1); rr(); },
+  buildLogic: () => { if (S.sections.some(s => s.pageList.length) && !confirm('기존 섹션과 작성 내용이 초기화됩니다. 로직을 다시 구성할까요?')) return; createSkeleton(); rr(); toast('섹션 구성 완료 — 희망 페이지 수를 조정한 뒤 [전체 자동 작성]'); },
+  genAll: () => genAll(),
+  genSec: b => { if (sec(b).pageList.length && !confirm('이 섹션 내용을 다시 작성할까요?')) return; genSection(+b.dataset.s); },
+  secMv: b => { mv(S.sections, +b.dataset.s, +b.dataset.d); rr(); },
+  secDel: b => { if (confirm(`"${sec(b).title}" 섹션을 삭제할까요?`)){ S.sections.splice(+b.dataset.s, 1); rr(); } },
+  secFold: b => { sec(b).collapsed = !sec(b).collapsed; rr(); },
+  insSec: b => { S.sections.splice(+b.dataset.at, 0, newSection('strategy', '새 섹션', '', 2, false)); rr(); },
+  addExtra: b => { const k = b.dataset.k, s = newSection(k, KINDS[k], '', 2, true); if (k === 'case') S.sections.push(s); else S.sections.unshift(s); rr(); },
+  secPPT: b => exportPPTX(sectionItems(sec(b)), `S${two(secNoOf(sec(b)))}_${sec(b).title}`),
+  secPDF: b => exportPDF(sectionItems(sec(b)), `S${two(secNoOf(sec(b)))}_${sec(b).title}`),
+  pagePPT: b => exportPPTX([pageItem(sec(b), pgOf(b), +b.dataset.p + 1)], `${sec(b).title}_p${+b.dataset.p + 1}`),
+  pagePDF: b => exportPDF([pageItem(sec(b), pgOf(b), +b.dataset.p + 1)], `${sec(b).title}_p${+b.dataset.p + 1}`),
+  addPage: b => { const t = b.dataset.t, s = sec(b); s.pageList.push(newPage(t, t === 'divider' ? {title: s.title, items: []} : {})); rr(); },
+  pageMv: b => { mv(sec(b).pageList, +b.dataset.p, +b.dataset.d); rr(); },
+  pageDup: b => { const p = clone(pgOf(b)); p.id = uid(); sec(b).pageList.splice(+b.dataset.p + 1, 0, p); rr(); },
+  pageDel: b => { sec(b).pageList.splice(+b.dataset.p, 1); rr(); },
+  itemAdd: b => { pgOf(b).items.push({h: '', d: '', v: ''}); rr(); },
+  itemDel: b => { pgOf(b).items.splice(+b.dataset.i, 1); rr(); },
+  imgDel: b => { const p = pgOf(b); p.image = null; if (p.layout === 'image') p.layout = 'list'; rr(); },
+  preview: (b, e) => { e.preventDefault(); const s = sec(b); if (s) openPreview(sectionItems(s), +b.dataset.p); },
+  previewFinal: b => openPreview(assemble(), +b.dataset.i),
+  washAll: () => washSections(S.sections.map((s, i) => i)),
+  washSec: b => washSections([+b.dataset.s]),
+  unwashAll: () => { if (!confirm('모든 페이지를 워싱 전 초안으로 되돌릴까요?')) return; S.sections.forEach(s => s.pageList.forEach(unwash)); rr(); },
+  unwashPage: b => { unwash(pgOf(b)); rr(); },
+  typo: () => typoCheck(),
+  typoOne: b => { const x = S.checks.typos.find(t => t.id === b.dataset.id); if (x) applyTypo(x); rr(); },
+  typoSkip: b => { S.checks.typos = S.checks.typos.filter(t => t.id !== b.dataset.id); rr(); },
+  typoAll: () => { [...S.checks.typos].forEach(applyTypo); rr(); toast('모두 적용했습니다'); },
+  fit: () => fitCheck(),
+  merge: () => { if (!includedSecs().some(s => s.pageList.length)){ toast('취합할 페이지가 없습니다'); return; } S.merge.done = true; rr(); toast(`제안서 취합 완료 — 총 ${assemble().length}장`); },
+  finalPPT: () => exportPPTX(assemble(), 'final_proposal'),
+  finalPDF: () => exportPDF(assemble(), 'final_proposal'),
+  finalPrint: () => printPDF(assemble(), 'final_proposal'),
+  saveJSON: () => { const blob = new Blob([JSON.stringify(S, null, 1)], {type: 'application/json'}); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `${fname('project')}_${today().replace(/\./g, '')}.json`; a.click(); },
+  loadJSON: () => $('#jsonIn').click(),
+  newProject: () => { if (confirm('현재 작업을 지우고 새 프로젝트를 시작할까요? (먼저 [저장] 권장)')){ const t = S.template; S = defaultState(); S.template = t; rr(); } }
+};
+document.addEventListener('click', e => { const b = e.target.closest('[data-act]'); if (!b || b.disabled) return; const f = ACT[b.dataset.act]; if (f) f(b, e); });
+
+const thumbT = {};
+document.addEventListener('input', e => {
+  const el = e.target, p = el.dataset.bind; if (!p) return;
+  if (el.type === 'checkbox' || el.tagName === 'SELECT' || el.type === 'number' || el.type === 'color') return; // change에서 처리
+  setPath(S, p, el.value); save();
+  if (/^input\.colors\.\d+\.hex$/.test(p) && validHex(el.value)){ const sw = el.closest('.chip')?.querySelector('.sw'); if (sw) sw.style.background = el.value; }
+  const m = p.match(/^sections\.(\d+)\.pageList\.(\d+)\./);
+  if (m){ const key = m[1] + '.' + m[2]; clearTimeout(thumbT[key]); thumbT[key] = setTimeout(() => { const t = $(`[data-thumb="${key}"]`), s = S.sections[+m[1]]; if (t && s) t.innerHTML = thumbHTML(pageItem(s, s.pageList[+m[2]], +m[2] + 1), 320); }, 250); }
+});
+document.addEventListener('change', e => {
+  const el = e.target;
+  if (el.dataset.file){ addFiles(el.dataset.file, [...el.files]); el.value = ''; return; }
+  if (el.dataset.pimg){ const [si, pi] = el.dataset.pimg.split('.').map(Number), f = el.files[0]; if (!f) return; readDataURL(f).then(d => resizeImage(d, 1600)).then(r => { const p = S.sections[si].pageList[pi]; p.image = r.data; p.imageW = r.w; p.imageH = r.h; rr(); }); return; }
+  const p = el.dataset.bind; if (!p) return;
+  let v = el.type === 'checkbox' ? el.checked : el.type === 'number' ? Math.max(1, +el.value || 1) : el.value;
+  if (el.type === 'color') v = v.toUpperCase();
+  setPath(S, p, v);
+  if (/\.type$/.test(p) && /pageList/.test(p)){ const pg = getPath(S, p.replace(/\.type$/, '')); if (v === 'strategy' && !['cards', 'process', 'kpi', 'split', 'image'].includes(pg.layout)) pg.layout = 'cards'; if (v === 'explain' && !['list', 'table', 'split', 'image'].includes(pg.layout)) pg.layout = 'list'; }
+  save();
+  if (el.type === 'checkbox' || el.tagName === 'SELECT' || el.type === 'number' || el.type === 'color' || /colors/.test(p)){ if (!el.closest('.modal') || /template|settings/.test(p)) render(); }
+});
+document.addEventListener('dragover', e => { const d = e.target.closest('.drop'); if (d){ e.preventDefault(); d.classList.add('over'); } });
+document.addEventListener('dragleave', e => { e.target.closest('.drop')?.classList.remove('over'); });
+document.addEventListener('drop', e => { const d = e.target.closest('[data-drop]'); if (!d) return; e.preventDefault(); d.classList.remove('over'); addFiles(d.dataset.drop, [...e.dataTransfer.files]); });
+$('#jsonIn').addEventListener('change', async e => { const f = e.target.files[0]; if (!f) return; try { const s = JSON.parse(await f.text()); if (!s.v) throw new Error('형식 오류'); S = Object.assign(defaultState(), s); rr(); toast('프로젝트를 불러왔습니다'); } catch(er){ toast('불러오기 실패: ' + er.message); } e.target.value = ''; });
+
+render();
+fontsReady().then(() => render());
+</script>
+</body>
+</html>
