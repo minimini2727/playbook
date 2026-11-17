@@ -153,7 +153,7 @@ function designSpec(it, pg, P, tpl){
   const units = tpl.els.filter(e => e.unit != null), used = units.filter(u => u.unit < items.length);
   const hideBox = units.filter(u => u.unit >= items.length);
   const keyEl = tpl.els.find(e => e.slot === 'key');
-  const km = tpl.mode === 'frame' && pg.tplBody === 'tkSplit' ? '' : pg.keyMsg;
+  const km = tpl.mode === 'frame' && ['tkSplit', 'split', 'spec', 'hero', 'cycle', 'hub', 'quote', 'mediaQuad'].includes(pg.tplBody) ? '' : pg.keyMsg;
   const keyHide = keyEl && !km ? tpl.els.filter(e => e.k !== 'rt' && e.k !== 'i' && inside2(e, keyEl) && e.h < 90 && e.w * e.h < W * H * .3) : [];
   const frame = tpl.mode === 'frame' && tpl.body, inBody = e => frame && cOf(e).y > tpl.body.y - 6 && cOf(e).y < tpl.body.y + tpl.body.h + 6 && !['title', 'sub', 'label', 'key', 'no', 'src'].includes(e.slot);
   const imgs = [pg.image, ...(pg.media || []).map(m => m && m.data)].filter(Boolean); let ii = 0;
@@ -244,13 +244,20 @@ const TKL = {
     const K = tkTok(P), n = Math.min(8, items.length || 1), cols = n <= 4 ? n : Math.ceil(n / 2), rows = n <= 4 ? 1 : 2, g = 16;
     const cw = (b.w - (cols - 1) * g) / cols, iw = cw - 40;
     const need = Math.max(...items.slice(0, n).map(it => 22 + tH(it.h, 17, iw, 1.3, 800) + 10 + (it.v ? 50 : 0) + tH(it.d, 13.5, iw, 1.5, 500) + 22));
-    const ch = Math.min((b.h - (rows - 1) * g) / rows, Math.max(rows > 1 ? 150 : 200, need)), y0 = tkStart(b, ch * rows + g * (rows - 1));
+    const big = rows === 1 && n <= 4, vs = big ? 46 : 34, hs = big ? 19 : 17;
+    const ch = Math.min((b.h - (rows - 1) * g) / rows, Math.max(rows > 1 ? 150 : big ? Math.min(300, b.h * .78) : 200, need + (big ? 30 : 0))), y0 = tkStart(b, ch * rows + g * (rows - 1));
     items.slice(0, n).forEach((it, i) => {
       const x = b.x + (i % cols) * (cw + g), y = y0 + Math.floor(i / cols) * (ch + g);
       E.push(R(x, y, cw, ch, K.panel, {r: 12}));
-      let yy = y + 22; const hh = tH(it.h, 17, iw, 1.3, 800);
-      E.push(T(x + 20, yy, iw, hh, it.h, {size: 17, bold: true, color: K.ink, lh: 1.3})); yy += hh + 8;
-      if (it.v){ E.push(T(x + 20, yy, iw, 44, it.v, {size: 34, bold: true, color: K.p, lh: 1.2, minScale: .45})); yy += 50; }
+      if (big){ E.push(R(x + 20, y + 22, 34, 4, K.p, {r: 2}));
+        const dh = tH(it.d, 14, iw, 1.5, 500), hh = tH(it.h, hs, iw, 1.3, 800);
+        E.push(T(x + 20, y + 40, iw, hh, it.h, {size: hs, bold: true, color: K.ink, lh: 1.3}));
+        if (it.v) E.push(T(x + 20, y + ch - dh - 22 - vs * 1.25 - 6, iw, vs * 1.25, it.v, {size: vs, bold: true, color: K.p, lh: 1.2, minScale: .45}));
+        E.push(R(x + 20, y + ch - dh - 30, iw, 1, K.line));
+        E.push(T(x + 20, y + ch - dh - 20, iw, dh + 4, it.d, {size: 14, color: K.sub, lh: 1.5, wt: 500})); return; }
+      let yy = y + 22; const hh = tH(it.h, hs, iw, 1.3, 800);
+      E.push(T(x + 20, yy, iw, hh, it.h, {size: hs, bold: true, color: K.ink, lh: 1.3})); yy += hh + 8;
+      if (it.v){ E.push(T(x + 20, yy, iw, 44, it.v, {size: vs, bold: true, color: K.p, lh: 1.2, minScale: .45})); yy += 50; }
       E.push(T(x + 20, yy, iw, y + ch - yy - 14, it.d, {size: 13.5, color: K.sub, lh: 1.5, wt: 500}));
     });
   },
@@ -286,10 +293,10 @@ const TKL = {
     });
   },
   tkTable(E, items, b, P, pg){
-    const K = tkTok(P), hasV = items.some(i => i.v), c1w = Math.min(250, b.w * .22), c3w = hasV ? Math.min(220, b.w * .19) : 0, c2w = b.w - c1w - c3w, hd = 36, g = 6;
-    const hs0 = items.map(i => Math.max(tH(i.h, 15, c1w - 40, 1.35, 800), tH(i.d, 14, c2w - 40, 1.5, 500), tH(i.v, 14, c3w - 36, 1.35, 700)) + 22);
+    const K = tkTok(P), hasV = items.some(i => i.v), c1w = Math.min(250, b.w * .22), c3w = hasV ? Math.min(220, b.w * .19) : 0, c2w = b.w - c1w - c3w, hd = 36, g = items.length > 8 ? 2 : 6;
+    const hs0 = items.map(i => Math.max(tH(i.h, 15, c1w - 40, 1.35, 800), tH(i.d, 14, c2w - 40, 1.5, 500), tH(i.v, 14, c3w - 36, 1.35, 700)) + (items.length > 8 ? 10 : 22));
     const tot0 = hs0.reduce((a, c) => a + c, 0) + g * items.length, sc = Math.min(1, (b.h - hd - 8) / tot0), grow = sc < 1 ? 1 : Math.min(1.35, (b.h - hd - 8) * .8 / tot0);
-    const hs = hs0.map(h => Math.max(sc < 1 ? 20 : 36, h * (sc < 1 ? sc : grow))), fs = Math.max(.7, Math.min(1, sc * 1.05));
+    const hs = hs0.map(h => Math.max(sc < 1 ? 16 : 36, h * (sc < 1 ? sc : grow))), fs = Math.max(.68, Math.min(1, sc * 1.05));
     const head = pg.cols || ['구분', '내용', '비고'], y0 = tkStart(b, hd + 8 + hs.reduce((a, c) => a + c + g, 0), .3) - (sc < 1 ? 6 : 0);
     E.push(R(b.x, y0, b.w, hd, K.dark, {r: 18}));
     [[b.x + 22, c1w - 30, head[0]], [b.x + c1w + 20, c2w - 30, head[1]], ...(hasV ? [[b.x + c1w + c2w + 16, c3w - 30, head[2] || '']] : [])].forEach(([x, w, t]) => E.push(T(x, y0, w, hd, t, {size: 13.5, bold: true, color: '#FFFFFF', valign: 'middle'})));
@@ -392,14 +399,15 @@ function tkSectionSpec(it, pg, P, tpl, kind){
     if (it.sec?.en) E.push(T(MX + 12, 360, 700, 26, String(it.sec.en).toUpperCase(), {size: 16, bold: true, color: K.mute, ls: 1.5}));
     E.push(T(MX + 10, 392, W - MX * 2 - 300, 70, big, {size: 46, bold: true, color: K.ink, lh: 1.2, minScale: .6}));
     if (sub) E.push(T(MX + 12, 470, W - MX * 2 - 300, 70, sub, {size: 19, color: K.sub, lh: 1.5, wt: 300}));
-    E.push(R(W - MX - 260, 200, 260, 340, K.panel, {r: 16}));
-    const list = (it.sec?.pageList || []).filter(p => p.type !== 'divider').slice(0, 6);
-    list.forEach((p, i) => { E.push(T(W - MX - 236, 226 + i * 50, 30, 22, two(i + 1), {size: 13, bold: true, color: K.p})); E.push(T(W - MX - 200, 222 + i * 50, 180, 44, p.title || '', {size: 13.5, color: '#333333', lh: 1.35, wt: 500, minScale: .7})); });
-    if (!list.length) E.pop();
+    const list = (it.sec?.pageList || []).filter(p => p.type !== 'divider' && p.title).slice(0, 7);
+    if (list.length){ const ph = 60 + list.length * 50, py = 200 + Math.max(0, (340 - ph) / 2);
+      E.push(R(W - MX - 330, py, 330, ph, K.panel, {r: 16}));
+      E.push(T(W - MX - 306, py + 22, 200, 16, 'CONTENTS', {size: 11, bold: true, color: K.mute, ls: 1.2}));
+      list.forEach((p, i) => { const y = py + 50 + i * 50; E.push(T(W - MX - 306, y + 2, 30, 20, two(i + 1), {size: 13, bold: true, color: K.p})); E.push(T(W - MX - 270, y, 246, 44, p.title, {size: 14, color: '#333333', lh: 1.35, wt: 500, minScale: .7})); if (i < list.length - 1) E.push(R(W - MX - 306, y + 44, 282, 1, K.line)); }); }
   } else { // bridge
     const main = pg.keyMsg || pg.title, sub = pg.keyMsg ? (pg.subtitle || pg.title) : pg.subtitle, items = itemsOf(pg);
     const mh = Math.min(170, tH(main, 38, W - 320, 1.35, 800));
-    let y = Math.max(170, (H - (mh + 140 + (items.length ? 80 : 0))) / 2);
+    let y = Math.max(170, 120 + (520 - (56 + mh + 18 + (sub ? 70 : 0) + (items.length ? 44 : 0))) / 2);
     E.push(R(W / 2 - 70, y, 140, 32, K.p, {r: 16})); E.push(T(W / 2 - 70, y, 140, 32, it.secTitle || 'KEY POINT', {size: 13, bold: true, color: '#FFFFFF', align: 'center', valign: 'middle', minScale: .6})); y += 56;
     E.push(T(160, y, W - 320, mh, main, {size: 38, bold: true, color: K.ink, align: 'center', lh: 1.35})); y += mh + 18;
     if (sub){ E.push(T(200, y, W - 400, 60, sub, {size: 18, color: K.sub, align: 'center', lh: 1.5, wt: 300})); y += 70; }
@@ -415,10 +423,13 @@ function tkCoverSpec(it, P, tpl, closing){
     E.push(T(MX, 388, W - MX * 2, 30, `${pr.proposer || 'MADUP'}${pr.owner ? '  ·  ' + pr.owner : ''}`, {size: 17, color: K.sub, align: 'center', wt: 500}));
   } else {
     E.push(R(MX + 6, 196, 150, 34, K.p, {r: 17})); E.push(T(MX + 6, 196, 150, 34, 'PROPOSAL', {size: 14, bold: true, color: '#FFFFFF', align: 'center', valign: 'middle', ls: 1}));
-    E.push(T(MX + 4, 256, W - MX * 2 - 120, 150, pr.name || '퍼포먼스 마케팅 제안', {size: 54, bold: true, color: K.ink, lh: 1.22, minScale: .55}));
+    E.push(T(MX + 4, 256, W - MX * 2 - 420, 150, pr.name || '퍼포먼스 마케팅 제안', {size: 54, bold: true, color: K.ink, lh: 1.22, minScale: .55}));
     E.push(R(MX + 6, 432, 64, 5, K.p, {r: 2.5}));
     E.push(T(MX + 6, 456, W - MX * 2 - 200, 34, pr.client || '', {size: 22, bold: true, color: K.dark}));
     E.push(T(MX + 6, 496, W - MX * 2 - 200, 28, `${pr.date || ''}${pr.proposer ? '  |  ' + pr.proposer : ''}`, {size: 16, color: K.sub, wt: 300}));
+    const gx = W - MX - 330, gy = 190, cs = 62, gp = 14; // 템플릿 아이콘 격자 모티프
+    for (let r = 0; r < 5; r++) for (let c = 0; c < 5; c++){ const k = (r + c) / 8, on = (r * 5 + c) % 7 === 3;
+      E.push(R(gx + c * (cs + gp), gy + r * (cs + gp), cs, cs, on ? K.p : mix(K.p, '#FFFFFF', .55 + k * .4), {r: 12})); }
   }
   sp.els = E; return sp;
 }
