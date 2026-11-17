@@ -510,7 +510,7 @@ function vCheck(){
 }
 function vMerged(){
   const list = assemble();
-  return `<div class="toolbar"><span class="tag pri">총 ${list.length}장</span><span class="sp"></span><button class="btn dark" data-act="finalPPT">⬇ 최종 PPT</button><button class="btn dark" data-act="finalPDF">⬇ 최종 PDF (고화질)</button><button class="btn" data-act="finalPrint">인쇄용 PDF (벡터)</button></div>
+  return `<div class="toolbar"><span class="tag pri">총 ${list.length}장</span><span class="sp"></span><label class="ck" style="display:flex;gap:6px;align-items:center" title="Pretendard: 화면과 동일, 열람 PC에 폰트 설치 필요 / 맑은 고딕: 설치 없이 어느 PC에서나 안 깨짐">PPT 폰트 <select data-bind="template.pptFont" style="width:190px"><option value="pretendard" ${(S.template.pptFont || 'pretendard') === 'pretendard' ? 'selected' : ''}>Pretendard (설치 필요)</option><option value="malgun" ${S.template.pptFont === 'malgun' ? 'selected' : ''}>맑은 고딕 (어디서나 안전)</option></select></label><button class="btn dark" data-act="finalPPT">⬇ 최종 PPT</button><button class="btn dark" data-act="finalPDF">⬇ 최종 PDF (고화질)</button><button class="btn" data-act="finalPrint">인쇄용 PDF (벡터)</button></div>
     <div class="gallery">${list.map((it, i) => `<div class="gi"><div data-act="previewFinal" data-i="${i}" style="cursor:zoom-in">${thumbHTML(it, 230)}</div><div class="lb"><span>${two(i + 1)} · ${it.kind === 'page' ? esc(it.secTitle) : ({cover: '표지', guide: '컬러 가이드', toc: '목차', closing: '클로징'})[it.kind]}</span>${it.kind === 'page' && !it.page.washed ? '<span class="tag warn">초안</span>' : ''}</div></div>`).join('')}</div>`;
 }
 

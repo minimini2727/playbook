@@ -464,7 +464,7 @@ async function fxToPPT(sl, pptx, e, IN, hx){
       sl.addShape(pptx.ShapeType.custGeom, {...base, fill, line, points: P});
     } else {
       const shp = e.prst && e.prst !== 'custom' ? e.prst : 'rect';
-      sl.addShape(shp, {...base, fill, line, ...(shp === 'roundRect' ? {rectRadius: Math.min(.5, (e.adj?.[0] ?? 16667) / 1e5)} : {})});
+      sl.addShape(shp, {...base, fill, line, ...(shp === 'roundRect' ? {rectRadius: IN(Math.min(e.w, e.h) * Math.min(.5, (e.adj?.[0] ?? 16667) / 1e5))} : {})});
     }
     return;
   }
@@ -478,7 +478,7 @@ async function fxToPPT(sl, pptx, e, IN, hx){
       const list = p.runs.length ? p.runs : [{...p.end, t: ' '}];
       list.forEach((r, ri) => {
         if (r.t === '\n'){ if (runs.length) runs[runs.length - 1].options.breakLine = true; return; }
-        runs.push({text: r.t || ' ', options: {...(ri === 0 ? popt : {}), fontSize: +(r.sz * .75).toFixed(1), bold: !!r.b, italic: !!r.i, underline: r.u ? {style: 'sng'} : undefined, strike: r.st ? 'sngStrike' : undefined, color: hx(r.c), transparency: r.a < 1 ? Math.round((1 - r.a) * 100) : 0, fontFace: r.ea || r.lt || 'Pretendard', charSpacing: r.spc ? +(r.spc * .75).toFixed(2) : undefined, superscript: r.base > 0 || undefined, subscript: r.base < 0 || undefined, highlight: r.hl ? hx(r.hl) : undefined}});
+        runs.push({text: r.t || ' ', options: {...(ri === 0 ? popt : {}), fontSize: +(r.sz * .75).toFixed(1), bold: !!r.b, italic: !!r.i, underline: r.u ? {style: 'sng'} : undefined, strike: r.st ? 'sngStrike' : undefined, color: hx(r.c), transparency: r.a < 1 ? Math.round((1 - r.a) * 100) : 0, fontFace: r.ea || r.lt || 'Pretendard', charSpacing: r.spc ? +(r.spc * .75).toFixed(2) : undefined, lang: 'ko-KR', superscript: r.base > 0 || undefined, subscript: r.base < 0 || undefined, highlight: r.hl ? hx(r.hl) : undefined}});
       });
       if (pi < e.paras.length - 1 && runs.length) runs[runs.length - 1].options.breakLine = true;
     });

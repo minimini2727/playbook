@@ -74,6 +74,21 @@ function chrome(E, it, P, dark, opts = {}){
   if (it.no && pos !== 'br') E.push(T(W - MX - 80, fy, 80, 14, two(it.no), {size: 10, bold: true, color: dark ? fg : P.ink, align: 'right', alpha: dark ? .8 : 1}));
 }
 
+/* ---------- 본문 세로 균형: 내용이 짧아 아래가 비면 본문 묶음을 시각적 중앙으로 ---------- */
+function bodyBottom(e){
+  if (e.k !== 't') return e.y + e.h;
+  const {size, paras} = prepText(e), th = Math.min(e.h, textHeight(paras, size, e.lh));
+  return e.valign === 'middle' ? e.y + (e.h + th) / 2 : e.valign === 'bottom' ? e.y + e.h : e.y + th;
+}
+function balanceBody(E, i0, box, layout){
+  if (['image', 'quote', 'hero', 'cycle', 'hub', 'venn'].includes(layout)) return;
+  const els = E.slice(i0); if (!els.length) return;
+  const bot = Math.max(...els.map(bodyBottom)), gap = box.y + box.h - bot;
+  if (gap < 70) return;
+  const dy = Math.round(gap * .42);
+  els.forEach(e => { e.y += dy; });
+}
+
 /* ---------- 본문 레이아웃 (box = {x,y,w,h}) ---------- */
 function rowsFit(items, b, measure, gap, maxExtra = 18){
   for (const scale of [1.22, 1.15, 1.1, 1.05, 1, .93, .86, .8]){
@@ -101,7 +116,7 @@ const LAY = {
     const n = items.length || 1, cols = n <= 4 ? n : 3, rows = Math.min(2, Math.ceil(n / cols));
     const g = 18, cw = (b.w - (cols - 1) * g) / cols, pad = 26, iw = cw - pad * 2;
     const need = items.slice(0, cols * rows).map(it => 22 + 16 + (it.v ? tH(it.v, 28, iw, 1.2, 700) + 8 : 0) + tH(it.h, 19, iw, 1.3, 700) + 10 + tH(it.d, 14.5, iw, 1.55, 300));
-    const ch = rows > 1 ? (b.h - g) / 2 : Math.min(b.h, Math.max(b.h * .92, Math.max(...need) + pad * 2 + 10));
+    const ch = rows > 1 ? (b.h - g) / 2 : Math.min(b.h, Math.max(b.h * .58, Math.max(...need) * 1.22 + pad * 2 + 10));
     const sc = rows > 1 ? 1 : Math.min(1.22, Math.max(1, (ch - pad * 2 - 10) / Math.max(1, ...need)));
     items.slice(0, cols * rows).forEach((it, i) => {
       const x = b.x + (i % cols) * (cw + g), y = b.y + Math.floor(i / cols) * (ch + g);
@@ -396,9 +411,10 @@ const LAY = {
       E.push(R(x, b.y, cw, 64, hf, {r: 12}));
       E.push(T(x + 26, b.y, cw - 52 - 120, 64, it.h, {size: 19, bold: true, color: onC(hf), valign: 'middle'}));
       if (it.v) E.push(T(x + cw - 26 - 140, b.y, 140, 64, it.v, {size: 14, bold: true, color: onC(hf), align: 'right', valign: 'middle'}));
-      E.push(R(x, b.y + 76, cw, b.h - 76, P.draft ? '#F7F7F7' : P.tint, {r: 12}));
       const ls = lines(it.d), tw = cw - 80;
       const {hs, scale, gapX} = rowsFit(ls.map(l => ({d: l})), {h: b.h - 120}, (o, s) => tH(o.d, 15.5 * s, tw, 1.5, 400), 14, 14);
+      const need2 = Math.max(...items.slice(0, 2).map(o => { const l2 = lines(o.d); return l2.reduce((a, l) => a + tH(l, 15.5 * scale, tw, 1.5, 400), 0) + (l2.length - 1) * (14 + gapX); }));
+      E.push(R(x, b.y + 76, cw, Math.min(b.h - 76, Math.max(150, need2 + 50)), P.draft ? '#F7F7F7' : P.tint, {r: 12}));
       let y = b.y + 100;
       ls.forEach((l, k) => { E.push(EL(x + 28, y + 8, 7, 7, hf)); E.push(T(x + 48, y, tw, hs[k], l, {size: 15.5 * scale, lh: 1.5, color: '#1D2939'})); y += hs[k] + 14 + gapX; });
     });
@@ -482,6 +498,8 @@ const LAY = {
   },
   colCards(E, items, b, P){ // 상단 컬러 보더 카드 + 불릿
     const n = Math.min(4, items.length || 1), g = 16, cw = (b.w - (n - 1) * g) / n;
+    const need = Math.max(...items.slice(0, n).map(it => 22 + Math.max(24, tH(it.h, 16.5, cw - 78, 1.3, 700)) + 26 + (it.v ? 24 : 0) + lines(it.d).reduce((a, l) => a + tH(l, 13.5, cw - 62, 1.5, 400) + 8, 0)));
+    b = {...b, h: Math.min(b.h, Math.max(220, need + 30))};
     items.slice(0, n).forEach((it, i) => {
       const x = b.x + i * (cw + g), acc = i === n - 1 && n >= 3 ? P.c3 : P.c1, bl = lines(it.d);
       E.push(R(x, b.y, cw, b.h, '#F5F6F8', {r: 4}));
@@ -497,6 +515,8 @@ const LAY = {
   },
   stepCards(E, items, b, P){ // 헤더 띠 박스 + 화살표 단계
     const n = Math.min(6, items.length || 1), g = 26, cw = (b.w - (n - 1) * g) / n;
+    const need = Math.max(...items.slice(0, n).map(it => 58 + (it.v ? 26 : 0) + lines(it.d).reduce((a, l) => a + tH(l, 13, cw - 46, 1.5, 400) + 7, 0)));
+    b = {...b, h: Math.min(b.h, Math.max(200, need + 28))};
     items.slice(0, n).forEach((it, i) => {
       const x = b.x + i * (cw + g), hf = i === n - 1 ? P.c3 : (P.draft ? '#3A3A3A' : P.c1);
       E.push(R(x, b.y, cw, b.h, '#FFFFFF', {r: 6, line: '#D3DCEB'}));
@@ -642,7 +662,7 @@ function buildSpec(it){
   }
   if (box){
     if (!items.length && !['image', 'quote'].includes(layout)) E.push(T(box.x, box.y, box.w, 40, '세부 항목을 추가하세요', {size: 16, light: true, color: '#98A2B3'}));
-    else (LAY[layout] || LAY.list)(E, items, box, P, pg);
+    else { const i0 = E.length; (LAY[layout] || LAY.list)(E, items, box, P, pg); if (!lateImg && !(pg.image || pg.img)) balanceBody(E, i0, box, layout); }
   }
   if (lateImg) imgEl(E, pg, lateImg);
   if (showKey && tb.madup){
@@ -808,6 +828,17 @@ const IN = px => +(px / 96).toFixed(3);
 const hx = c => (c || '#000000').replace('#', '').toUpperCase();
 const stripData = d => d.replace(/^data:/, '');
 const fname = n => `${(S.project.client || 'proposal')}_${n}`.replace(/[\\/:*?"<>|\s]+/g, '_');
+/* 가독성 보정 — 본문 영역의 너무 작은 글자를 키우고, 박스가 모자라면 prepText가 원래 크기까지만 줄임 */
+const READ_MIN = 13.5;
+function readable(spec){
+  if (!spec || spec.fx || !spec.els) return spec;
+  spec.els = spec.els.map(e => {
+    if (e.k !== 't' || !e.text || e.ls != null || e.y < 64 || e.y + e.h > 664) return e;
+    if (e.size >= READ_MIN || e.size < 11.5 || e.text.length < 12) return e;
+    return {...e, size: READ_MIN, minScale: Math.min(1, e.size * (e.minScale || .62) / READ_MIN)};
+  });
+  return spec;
+}
 async function coverCrop(e){ // object-fit:cover 결과를 미리 잘라 PPT에 동일하게
   if (!e.cover || !e.nw) return e.data;
   const im = new Image(); im.src = e.data; await new Promise(r => { im.onload = r; im.onerror = r; if (im.complete) r(); });
@@ -816,6 +847,12 @@ async function coverCrop(e){ // object-fit:cover 결과를 미리 잘라 PPT에 
   const cv = document.createElement('canvas'); cv.width = Math.min(1600, Math.round(sw)); cv.height = Math.round(cv.width / tr);
   cv.getContext('2d').drawImage(im, sx, sy, sw, sh, 0, 0, cv.width, cv.height); return cv.toDataURL('image/jpeg', .9);
 }
+/* PPT 폰트 모드 — Pretendard(디자인 동일, 설치 필요) / 맑은 고딕(설치 없이 어느 PC에서나 안 깨짐) */
+const PPT_FONTS = {
+  pretendard: {face: e => e.bold ? 'Pretendard' : e.light ? 'Pretendard Light' : 'Pretendard', lh: 1.2, spc: true, slack: .06, note: 'PPT 다운로드 완료 — 열람 PC에 Pretendard 폰트가 설치돼 있어야 화면과 동일합니다'},
+  malgun: {face: () => '맑은 고딕', lh: 1.32, spc: false, slack: .12, note: 'PPT 다운로드 완료 — 맑은 고딕으로 저장해 어느 PC에서나 깨지지 않습니다'}
+};
+let FM = PPT_FONTS.pretendard;
 async function exportPPTX(items, name){
   if (!window.PptxGenJS){ toast('PPT 라이브러리 로딩 실패 — 새로고침 후 다시 시도하세요'); return; }
   busy('PPT 생성 중…', `${items.length}장`); EXPORTING = true;
@@ -824,7 +861,8 @@ async function exportPPTX(items, name){
     const pptx = new PptxGenJS();
     pptx.layout = 'LAYOUT_WIDE';
     pptx.author = S.project.proposer || 'MADUP'; pptx.company = S.project.proposer || 'MADUP'; pptx.title = S.project.name || name;
-    pptx.theme = {headFontFace: 'Pretendard', bodyFontFace: 'Pretendard Light'};
+    FM = PPT_FONTS[S.template.pptFont] || PPT_FONTS.pretendard;
+    pptx.theme = {headFontFace: FM.face({bold: true}), bodyFontFace: FM.face({light: true})};
     for (const it of items){
       const spec = buildSpec(it), sl = pptx.addSlide();
       sl.background = spec.bgImg ? {data: stripData(spec.bgImg)} : {color: hx(spec.bg)};
@@ -835,7 +873,7 @@ async function exportPPTX(items, name){
         if (e.k === 'g' || e.k === 'rt'){ await fxToPPT(sl, pptx, e, IN, hx); continue; }
         if (e.k === 'i' && e.video?.vdata){ sl.addMedia({x: IN(e.x), y: IN(e.y), w: IN(e.w), h: IN(e.h), type: 'video', data: e.video.vdata.replace(/^data:/, ''), cover: e.video.poster || e.data}); continue; }
         if (e.k === 'i' && (e.stretch || e.rot)){ sl.addImage({x: IN(e.x), y: IN(e.y), w: Math.max(.01, IN(e.w)), h: Math.max(.01, IN(e.h)), data: stripData(e.data), ...(e.rot ? {rotate: e.rot} : {}), ...(e.fh ? {flipH: true} : {}), ...(e.fv ? {flipV: true} : {}), ...(e.round ? {rounding: true} : {}), ...(e.shd ? {shadow: {type: 'outer', blur: +(e.shd.blur * .75).toFixed(1), offset: +(e.shd.dist * .75).toFixed(1), angle: Math.round(e.shd.dir), color: hx(e.shd.c), opacity: +(e.shd.a ?? .35).toFixed(2)}} : {})}); continue; }
-        if (e.k === 'r') sl.addShape(e.r ? pptx.ShapeType.roundRect : pptx.ShapeType.rect, {...base, fill: e.nofill ? {color: 'FFFFFF', transparency: 100} : {color: hx(e.fill), transparency: tr}, line: e.line ? {color: hx(e.line), width: .75, dashType: e.dash ? 'dash' : 'solid'} : {type: 'none'}, ...(e.r ? {rectRadius: Math.min(.5, e.r / Math.min(e.w, e.h))} : {})});
+        if (e.k === 'r') sl.addShape(e.r ? pptx.ShapeType.roundRect : pptx.ShapeType.rect, {...base, fill: e.nofill ? {color: 'FFFFFF', transparency: 100} : {color: hx(e.fill), transparency: tr}, line: e.line ? {color: hx(e.line), width: .75, dashType: e.dash ? 'dash' : 'solid'} : {type: 'none'}, ...(e.r ? {rectRadius: IN(Math.min(e.r, Math.min(e.w, e.h) / 2))} : {})});
         else if (e.k === 'e') sl.addShape(pptx.ShapeType.ellipse, {...base, fill: e.nofill ? {color: 'FFFFFF', transparency: 100} : {color: hx(e.fill), transparency: tr}, line: e.line ? {color: hx(e.line), width: (e.lw || 1) * .75} : {type: 'none'}});
         else if (e.k === 's'){
           const pts = shapePoints(e).split(' ').map(q => { const [px, py] = q.split(',').map(Number); return {x: IN(px), y: IN(py)}; });
@@ -845,13 +883,16 @@ async function exportPPTX(items, name){
         else if (e.text){
           const {size, paras} = prepText(e), pt = +(size * .75).toFixed(1);
           const runs = []; paras.forEach((ls, pi) => ls.forEach((ln, li) => { const last = pi === paras.length - 1 && li === ls.length - 1; runs.push({text: ln || ' ', options: {breakLine: !last, paraSpaceAfter: !last && li === ls.length - 1 ? +(size * PARA_GAP * .75).toFixed(1) : 0}}); }));
-          sl.addText(runs, {...base, w: base.w + .06, fontFace: e.bold ? 'Pretendard' : e.light ? 'Pretendard Light' : 'Pretendard', fontSize: pt, bold: !!e.bold, color: hx(e.color), align: e.align, valign: e.valign, margin: 0, lineSpacingMultiple: +(e.lh / 1.2).toFixed(2), transparency: tr, charSpacing: e.ls != null ? e.ls * .75 : +(LS_EM * size * .75).toFixed(2), wrap: true, fit: 'none'});
+          // 폰트 메트릭 차이로 줄이 다시 꺾이지 않도록 정렬 방향으로 여유 폭 확보(슬라이드 밖으로는 안 나감)
+          const slack = Math.min(IN(Math.max(12, e.w * (FM.slack))), 1.2), sx = e.align === 'center' ? slack / 2 : e.align === 'right' ? slack : 0;
+          const bx = Math.max(0, base.x - sx), bw = Math.min(13.333 - bx, base.w + slack);
+          sl.addText(runs, {...base, x: bx, w: bw, fontFace: FM.face(e), fontSize: pt, bold: !!e.bold, color: hx(e.color), align: e.align, valign: e.valign, margin: 0, lineSpacingMultiple: +(e.lh / FM.lh).toFixed(2), transparency: tr, charSpacing: FM.spc ? (e.ls != null ? e.ls * .75 : +(LS_EM * size * .75).toFixed(2)) : (e.ls != null && e.ls > 0 ? e.ls * .75 : 0), lang: 'ko-KR', wrap: paras.reduce((a, q) => a + q.length, 0) > 1, fit: 'none'});
         }
       }
       if (it.page?.notes) sl.addNotes(it.page.notes);
     }
     await pptx.writeFile({fileName: `${fname(name)}.pptx`});
-    toast('PPT 다운로드 완료 — 열람 PC에 Pretendard 폰트가 있어야 동일하게 보입니다', 4200);
+    toast(FM.note, 4600);
   } catch(e){ console.error(e); toast('PPT 생성 오류: ' + e.message); }
   EXPORTING = false; unbusy();
 }
@@ -885,3 +926,7 @@ function printPDF(items, name){
   w.document.write(`<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>${esc(fname(name))}</title><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pretendard@1.3.9/dist/web/static/pretendard.css"><style>${css}@page{size:1280px 720px;margin:0}html,body{background:#fff;margin:0}.slide{page-break-after:always;break-after:page;-webkit-print-color-adjust:exact;print-color-adjust:exact}</style></head><body>${body}<script>document.fonts.ready.then(()=>setTimeout(()=>print(),400))<\/script></body></html>`);
   w.document.close();
 }
+
+/* buildSpec 래퍼 — 모든 HTML·PPT·PDF 출력에 가독성 보정 적용 */
+const _buildSpec0 = buildSpec;
+buildSpec = function(it){ return readable(_buildSpec0(it)); };
