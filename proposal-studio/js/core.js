@@ -38,13 +38,14 @@ function defaultState(){
     v: 2, id: uid(), created: Date.now(), updated: Date.now(), step: 'input',
     project: {name: '', client: '', proposer: 'MADUP (매드업)', date: today(), status: '준비', due: '', pt: '', owner: '', budget: '', memo: ''},
     settings: {model: 'claude-sonnet-5-5', web: true},
-    design: {theme: 'madup', brandColor: false},
+    design: {theme: 'consult', brandColor: false},
     input: {
       rfp: [], urls: [{type: '자사몰', url: ''}], product: '', brand: [], notes: '', competitors: '', currentMix: '',
       analysis: null,
       colors: [{hex: '#1F3A93', role: 'Main', name: 'Deep Navy', reason: ''}, {hex: '#4C8BF5', role: 'Sub', name: 'Sky Blue', reason: ''}, {hex: '#FFB020', role: 'Accent', name: 'Amber', reason: ''}],
       colorConcept: '',
-      mediaMix: {unit: '월', total: 0, months: 12, scenario: 'base', rows: []}
+      mediaMix: {unit: '월', total: 0, months: 12, scenario: 'base', rows: []},
+      brief: {points: '', flow: [], preset: 'auto', mediaDeep: true, reorder: true}
     },
     template: {logo: null, logoW: 0, logoH: 0, logoPos: 'tr', coverBg: null, footer: 'MADUP', useDefaultLogo: true},
     refLayouts: [], useLibrary: true,
@@ -58,10 +59,12 @@ function normalize(s){
   const o = Object.assign(d, s);
   o.project = Object.assign(defaultState().project, s.project || {});
   o.input = Object.assign(defaultState().input, s.input || {});
+  o.input.brief = Object.assign(defaultState().input.brief, (s.input || {}).brief || {});
   o.input.mediaMix = Object.assign(defaultState().input.mediaMix, (s.input || {}).mediaMix || {});
   o.template = Object.assign(defaultState().template, s.template || {});
   o.refLayouts = s.refLayouts || [];
   o.design = Object.assign({theme: 'madup', brandColor: false}, s.design || {});
+  if (typeof DS3 !== 'undefined' && !DS3[o.design.theme]) o.design.theme = 'consult';
   o.merge = Object.assign(defaultState().merge, s.merge || {});
   o.sections = (o.sections || []).map(x => ({...x, role: x.role && x.role !== 'custom' ? x.role : (x.kind && x.kind !== 'strategy' ? x.kind : (typeof inferRole === 'function' ? inferRole((x.title || '') + ' ' + (x.goal || '')) : 'custom'))}));
   if (!s.tplBuiltin && !o.isLibrary && typeof BUILTIN_TPLS !== 'undefined'){ o.refLayouts = [...BUILTIN_TPLS.map(t => JSON.parse(JSON.stringify(t))), ...o.refLayouts.filter(t => !t.builtin)]; o.tplBuiltin = true; o.design.useRef = true; }

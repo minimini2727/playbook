@@ -314,7 +314,7 @@ function planSections(c){
   const hasPB = roles.some(x => x.role === 'playbook');
   return roles.map(r => { const d = ROLE_DEF[r.role] || [r.title, '', '']; const lib = useLib(r.role); const n = lib ? lib.pageList.filter(p => p.type !== 'divider').length : enginePool(r.role, c, {title: r.title, hasPlaybook: hasPB}).length; return {role: r.role, title: r.title || d[0], en: d[1], goal: d[2] + (r.added ? ' (RFP 목차 외 추가 권장)' : ''), pages: n + (n >= 2 ? 1 : 0), divider: n >= 2, fromLib: !!lib}; });
 }
-const useLib = role => (S.useLibrary !== false && !S.isLibrary && typeof LIB_ROLES !== 'undefined' && LIB_ROLES.includes(role)) ? libSection(role) : null;
+const useLib = (role, sec) => (sec && sec.useLib && !S.isLibrary && typeof LIB_ROLES !== 'undefined' && LIB_ROLES.includes(role)) ? libSection(role) : null; // 라이브러리는 사용자가 [라이브러리 넣기]를 눌렀을 때만
 
 /* ---------- 섹션별 장표 생성 ---------- */
 const PG = (type, layout, title, subtitle, items = [], o = {}) => ({type, layout, title, subtitle, keyMsg: o.keyMsg || '', items: items.map(i => Array.isArray(i) ? {h: i[0] || '', d: i[1] || '', v: i[2] || ''} : i), notes: o.notes || '', tag: o.tag || '', source: o.source || '', cols: o.cols || null, mediaName: o.mediaName || '', prio: o.prio || 2});
@@ -434,7 +434,7 @@ function generateEngine(sec){
   const c = signals();
   let role = sec.role && sec.role !== 'custom' ? sec.role : inferRole(sec.title + ' ' + (sec.goal || ''));
   if (sec.kind && sec.kind !== 'strategy' && role === 'custom') role = sec.kind;
-  const lib = useLib(role);
+  const lib = useLib(role, sec);
   if (lib){ // 기본 장표 라이브러리 그대로 사용
     const pages = clone(lib.pageList).map(p => ({...p, id: uid(), washed: p.washed}));
     if (sec.divider && !pages.some(p => p.type === 'divider')) pages.unshift(newPage('divider', {title: sec.title, subtitle: sec.goal || '', items: []}));

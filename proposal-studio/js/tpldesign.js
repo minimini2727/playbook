@@ -153,7 +153,7 @@ function designSpec(it, pg, P, tpl){
   const units = tpl.els.filter(e => e.unit != null), used = units.filter(u => u.unit < items.length);
   const hideBox = units.filter(u => u.unit >= items.length);
   const keyEl = tpl.els.find(e => e.slot === 'key');
-  const km = tpl.mode === 'frame' && ['tkSplit', 'split', 'spec', 'hero', 'cycle', 'hub', 'quote', 'mediaQuad'].includes(pg.tplBody) ? '' : pg.keyMsg;
+  const km = tpl.mode === 'frame' && ['tkSplit', 'tkSpec', 'tkQuad', 'split', 'spec', 'hero', 'cycle', 'hub', 'quote', 'mediaQuad'].includes(pg.tplBody) ? '' : pg.keyMsg;
   const keyHide = keyEl && !km ? tpl.els.filter(e => e.k !== 'rt' && e.k !== 'i' && inside2(e, keyEl) && e.h < 90 && e.w * e.h < W * H * .3) : [];
   const frame = tpl.mode === 'frame' && tpl.body, inBody = e => frame && cOf(e).y > tpl.body.y - 6 && cOf(e).y < tpl.body.y + tpl.body.h + 6 && !['title', 'sub', 'label', 'key', 'no', 'src'].includes(e.slot);
   const imgs = [pg.image, ...(pg.media || []).map(m => m && m.data)].filter(Boolean); let ii = 0;
