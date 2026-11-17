@@ -2,7 +2,7 @@
    Proposal Studio v2 — app (views · AI/Claude 연동 · events)
    ========================================================= */
 function newSection(kind, title, goal = '', pages = 3, divider = true, role){ return {id: uid(), kind, role: role || (kind === 'strategy' ? 'custom' : kind), title, en: '', goal, pages, divider, include: true, collapsed: false, pageList: []}; }
-function newPage(type = 'explain', o = {}){ const p = {id: uid(), type, layout: type === 'strategy' ? 'cards' : 'list', title: '', subtitle: '', keyMsg: '', items: [{h: '', d: '', v: ''}], image: null, washed: false, notes: '', tag: '', source: '', cols: null, ...o}; delete p.prio; p.id = uid(); p.type = PAGE_TYPES[p.type] ? p.type : type; if (!LAYOUTS[p.layout]) p.layout = 'list'; p.items = (p.items || []).map(i => ({h: i.h || '', d: i.d || '', v: i.v || ''})); return p; }
+function newPage(type = 'explain', o = {}){ const p = {id: uid(), type, layout: type === 'strategy' ? 'cards' : 'list', title: '', subtitle: '', keyMsg: '', items: [{h: '', d: '', v: ''}], image: null, washed: false, notes: '', tag: '', source: '', cols: null, ...o}; delete p.prio; p.id = uid(); p.type = PAGE_TYPES[p.type] ? p.type : type; if (!LAYOUTS[p.layout] && !String(p.layout).startsWith('tpl:')) p.layout = 'list'; p.items = (p.items || []).map(i => ({h: i.h || '', d: i.d || '', v: i.v || ''})); return p; }
 
 /* ---------- AI (선택: API 키) ---------- */
 async function callClaude({system, content, maxTokens = 8000, web = false}){
@@ -30,8 +30,11 @@ const PLAYBOOK_RULES = `[작성 규칙 — 반드시 따를 것]
 3. 매체별 실행안 장표는 layout "spec" — items: 대상 / 소재 / 랜딩 / 운영 방법(번호 3개) / 평가 지표 / 일정·예산. keyMsg=매체 역할 한 줄, tag="DISCOVER · 확장 트랙" 형식.
 4. 숫자는 source에 출처(기관·매체명, 날짜)를 쓰고, 추정치는 "(가정)"·"(추정)" 표기. 회사 실적·인력명·단가처럼 모르는 사실은 지어내지 말고 "[입력 필요]".
 5. 실행 주체·시점(누가/언제/어떻게)을 항상 명시. "무조건 성과 상승" 같은 단정 금지 — 전제 조건·리스크 병기.
+6. 문체: 장표 본문은 개조식(~확보, ~운영, ~점검)으로 짧게. 한 항목 d는 40자 안팎, 여러 줄이면 줄바꿈으로 2~3줄. "혁신적인", "극대화", "시너지", "다양한", "효과적인", "~를 통해 ~를 실현" 같은 상투어와 말줄임표·이모지·em dash(—) 금지. 업계 실무자가 쓰는 구체 명사(매체명·지표·기간·금액)로 쓸 것.
+7. 매체별 실행안은 매체마다 layout을 spec / mediaFlow / mediaQuad로 번갈아 써서 같은 모양이 연속되지 않게 할 것.
 [layout 카탈로그 — items 필드 의미]
 cards(병렬 2~4: h 제목, d 설명, v 수치) · process(단계 3~6: h 단계명, d 내용, v 산출물) · kpi(2~4: h 지표, v 수치, d 설명) · hero(첫 항목 v 큰 숫자 + 나머지 근거) · split(keyMsg 핵심 주장 + 근거 3~5) · spec(매체 실행안: h 라벨, d 내용) · table(5행 이상 비교: h 구분, d 내용, v 수치) · compare(h 항목, v AS-IS, d TO-BE) · funnel(h 단계, d 매체·역할, v 지표) · timeline(h 시점, d 실행, v 산출물) · chart(h 항목, v "35%", d 설명) · matrix(4칸: h, d, v 라벨) · grid(6칸) · list(기타)
+추가 레이아웃: mediaFlow(매체: 대상→소재→랜딩→평가 흐름 + 운영 방법) · mediaQuad(매체: 4분면 + 운영 방법) · summary(현황→제안 요약표: h 항목, v 현황, d 제안) · statBars(막대+핵심 수치: h 항목, v 수치%, d 설명) · colCards(컬럼 카드: h 제목, d 줄바꿈 불릿 2~4줄) · stepCards(단계 박스: h 단계, d 줄바꿈 불릿)
 page type: divider(간지) · bridge(논리 전환 한 문장, keyMsg가 크게 노출) · strategy(전략·실행) · explain(근거·설명)`;
 const SYS_BASE = `너는 한국 디지털 퍼포먼스 마케팅 대행사의 10년차 제안 전략가다. 경쟁 PT에서 이겨야 하는 제안자 입장에서 판단한다.\n${PLAYBOOK_RULES}\n모든 출력은 한국어, 요청한 JSON만 출력한다.`;
 
@@ -225,10 +228,16 @@ function washPage(p, prev){
 function washSections(idxs){
   const secs = idxs.map(i => S.sections[i]).filter(s => s && s.pageList.length);
   if (!secs.length){ toast('워싱할 페이지가 없습니다 — 로직 단계에서 내용을 먼저 작성하세요'); return; }
-  secs.forEach(sec => { let prev = ''; sec.pageList.forEach(p => { prev = (p.type === 'strategy' || p.type === 'explain') ? washPage(p, prev) : (washPage(p, prev), prev); }); });
+  const tpls = S.design.useRef ? (S.refLayouts || []).filter(t => t.use && t.tag === 'body') : []; let ti = 0;
+  secs.forEach(sec => { let prev = ''; sec.pageList.forEach(p => {
+    if (tpls.length && (p.type === 'strategy' || p.type === 'explain') && !MEDIA_LAYOUTS.includes(p.layout)){
+      const n = itemsOf(p).length, fit = tpls.filter(t => t.mode === 'frame' || (t.cnt.h >= n && t.cnt.h <= n + 2) || (t.cnt.d >= n && t.cnt.d <= n + 2));
+      if (fit.length){ if (!p.washed) p.draft = clone({...p, draft: undefined}); if (!p.tplBody && !String(p.layout).startsWith('tpl:')) p.tplBody = p.layout; p.layout = 'tpl:' + fit[ti++ % fit.length].id; p.washed = true; prev = p.layout; return; }
+    }
+    prev = (p.type === 'strategy' || p.type === 'explain') ? washPage(p, prev) : (washPage(p, prev), prev); }); });
   save(); render(); toast('디자인 워싱 완료 — 컬러칩·레이아웃 변주·Pretendard 위계 적용');
 }
-function shuffleLayout(p){ const c = layoutCandidates(p).concat(['cards', 'split', 'list', 'table', 'grid']).filter((v, i, a) => a.indexOf(v) === i && v !== 'image'); const i = c.indexOf(p.layout); p.layout = c[(i + 1) % c.length]; if (!p.washed){ p.draft = clone({...p, draft: undefined}); p.washed = true; } }
+function shuffleLayout(p){ if (String(p.layout).startsWith('tpl:')) p.layout = p.tplBody || 'list'; const c = layoutCandidates(p).concat(['cards', 'colCards', 'split', 'list', 'table', 'grid', 'summary', 'stepCards']).filter((v, i, a) => a.indexOf(v) === i && v !== 'image'); const i = c.indexOf(p.layout); p.layout = c[(i + 1) % c.length]; if (!p.washed){ p.draft = clone({...p, draft: undefined}); p.washed = true; } }
 function unwash(p){ if (p.draft){ const d = p.draft; Object.assign(p, d); p.draft = null; } p.washed = false; }
 
 /* ---------- 4) 점검 ---------- */
@@ -297,12 +306,13 @@ function stageOf(p){ const pages = p.sections.reduce((a, s) => a + s.pageList.le
 function dday(d){ if (!d) return ''; const t = Math.round((new Date(d) - new Date(isoToday())) / 864e5); return t === 0 ? 'D-DAY' : t > 0 ? `D-${t}` : `D+${-t}`; }
 let MF = {q: '', st: '', sort: 'due'};
 function vManage(){
-  const L = LIST.filter(p => (!MF.st || p.project.status === MF.st) && (!MF.q || `${p.project.client} ${p.project.name} ${p.project.owner}`.toLowerCase().includes(MF.q.toLowerCase())));
+  const L = LIST.filter(p => p.id !== LIB_ID).filter(p => (!MF.st || p.project.status === MF.st) && (!MF.q || `${p.project.client} ${p.project.name} ${p.project.owner}`.toLowerCase().includes(MF.q.toLowerCase())));
   L.sort((a, b) => MF.sort === 'due' ? ((a.project.due || '9999') > (b.project.due || '9999') ? 1 : -1) : b.updated - a.updated);
-  const act = LIST.filter(p => ['준비', '작성중', '검토'].includes(p.project.status)).length, soon = LIST.filter(p => { const d = dday(p.project.due); return d && /D-[0-7]$|D-DAY/.test(d) && !['제출', '수주', '실주'].includes(p.project.status); }).length;
-  const won = LIST.filter(p => p.project.status === '수주').length, lost = LIST.filter(p => p.project.status === '실주').length;
+  const PL = LIST.filter(p => p.id !== LIB_ID);
+  const act = PL.filter(p => ['준비', '작성중', '검토'].includes(p.project.status)).length, soon = PL.filter(p => { const d = dday(p.project.due); return d && /D-[0-7]$|D-DAY/.test(d) && !['제출', '수주', '실주'].includes(p.project.status); }).length;
+  const won = PL.filter(p => p.project.status === '수주').length, lost = PL.filter(p => p.project.status === '실주').length;
   return `<h2 class="pt">제안 관리</h2><p class="pd">모든 제안서를 한곳에서 보고, 언제든 열어서 수정합니다. 데이터는 이 브라우저(IndexedDB)에 저장되며 [내보내기]로 백업·공유할 수 있습니다.</p>
-  <div class="grid4 mb12">${[['전체 제안', LIST.length, ''], ['진행 중', act, '준비·작성중·검토'], ['마감 임박', soon, '7일 이내'], ['수주율', won + lost ? Math.round(won / (won + lost) * 100) + '%' : '-', `수주 ${won} · 실주 ${lost}`]].map(k => `<div class="card kpi"><div class="kl">${k[0]}</div><div class="kv">${k[1]}</div><div class="ks">${k[2]}</div></div>`).join('')}</div>
+  <div class="grid4 mb12">${[['전체 제안', PL.length, ''], ['진행 중', act, '준비·작성중·검토'], ['마감 임박', soon, '7일 이내'], ['수주율', won + lost ? Math.round(won / (won + lost) * 100) + '%' : '-', `수주 ${won} · 실주 ${lost}`]].map(k => `<div class="card kpi"><div class="kl">${k[0]}</div><div class="kv">${k[1]}</div><div class="ks">${k[2]}</div></div>`).join('')}</div>
   <div class="card"><div class="toolbar"><button class="btn pri" data-act="newProject">＋ 새 제안</button><button class="btn" data-act="importProject">가져오기(JSON)</button><span class="sp"></span>
     <input type="text" id="mq" placeholder="광고주·제안명·담당 검색" value="${esc(MF.q)}" style="width:220px">
     <select id="mst" style="width:120px"><option value="">전체 상태</option>${STATUS.map(s => `<option ${MF.st === s ? 'selected' : ''}>${s}</option>`).join('')}</select>
@@ -317,7 +327,7 @@ function vManage(){
     <td><div class="dots">${['인풋', '로직', '워싱', '취합'].map((n, i) => `<i class="${g.st[i] ? 'on' : ''}" title="${n}"></i>`).join('')}</div><span class="ks">${g.pages}p</span></td>
     <td><input type="text" data-pf="memo" ${pid} value="${esc(p.project.memo)}" placeholder="메모"></td>
     <td class="ks">${new Date(p.updated).toLocaleDateString('ko-KR', {month: '2-digit', day: '2-digit'})}</td>
-    <td style="white-space:nowrap"><button class="btn sm pri" data-act="openP" ${pid}>열기</button> <button class="btn sm" data-act="openP" data-step="check" ${pid}>미리보기</button> <button class="btn sm ghost" data-act="dupP" ${pid}>복제</button> <button class="btn sm ghost" data-act="expP" ${pid}>내보내기</button> <button class="btn sm ghost bad" data-act="delP" ${pid}>삭제</button></td></tr>`; }).join('')}</table></div>` : `<div class="empty"><b>제안서가 없습니다</b>[＋ 새 제안]으로 시작하세요.</div>`}</div>`;
+    <td style="white-space:nowrap"><button class="btn sm pri" data-act="openP" ${pid}>열기</button> <button class="btn sm" data-act="openP" data-step="check" ${pid}>미리보기</button> <button class="btn sm ghost" data-act="dupP" ${pid}>복제</button> <button class="btn sm ghost" data-act="expP" ${pid}>내보내기</button> <button class="btn sm ghost bad" data-act="delP" ${pid}>삭제</button></td></tr>`; }).join('')}</table></div>` : `<div class="empty"><b>제안서가 없습니다</b>[＋ 새 제안]으로 시작하세요.</div>`}</div>${vLibraryCard()}`;
 }
 
 /* ---------- 인풋 ---------- */
@@ -353,8 +363,11 @@ function vInput(){
     <div class="card"><h3><span class="n">D</span>주요사항 (제안자 메모)</h3><p class="hint">OT 내용, 광고주 페인포인트, 경쟁 PT 정보, 우리 강점, 꼭 넣을 메시지</p>
       ${ta('input.notes', '예) OT: 작년 대행사는 리포트만 많고 액션이 없었다는 불만 / 경쟁 3사 PT / 신제품 3월 런칭', 9)}</div>
   </div>
-  <div class="cta"><button class="btn pri big" data-act="analyze">${A ? '↻ 다시 분석' : '▶ 전략가 분석'} — 우선순위·로직·섹션 (즉시)</button><button class="btn dark big" data-act="claudeAll">✦ Claude 심화 리서치 (웹 검색·상세페이지)</button>${apiKey() ? '<button class="btn big" data-act="analyzeApi">API로 분석</button>' : ''}</div>
+  <div class="cta"><button class="btn pri big" data-act="claudeAll">✦ Claude 심화 리서치 — 웹 검색·상세페이지 기반 우선순위·로직·섹션</button>${apiKey() ? '<button class="btn big" data-act="analyzeApi">API로 바로 분석</button>' : ''}</div>
+  <div style="text-align:center;margin:-10px 0 18px"><button class="btn sm ghost" data-act="analyze">Claude 없이 즉시 초안 만들기 (내장 엔진)</button></div>
   ${vColors()}
+  ${vRefLayouts()}
+  ${vMediaMix()}
   ${A ? vAnalysis() : ''}`;
 }
 function vColors(){
@@ -381,7 +394,7 @@ function vAnalysis(){
     <label class="f">스토리라인</label>
     ${A.logic.storyline.map((s, i) => `<div class="story"><div class="ix">${i + 1}</div>${inp(`input.analysis.logic.storyline.${i}.title`, '단계')}<textarea data-bind="input.analysis.logic.storyline.${i}.point" rows="1">${esc(s.point)}</textarea><button class="btn sm ghost bad" data-act="storyDel" data-i="${i}">✕</button></div>`).join('')}
     <button class="btn sm" data-act="storyAdd">+ 단계 추가</button>
-    ${A.mix?.length ? `<div class="mt12"><label class="f">추천 매체 믹스 (균형형)</label><div class="mixbar">${A.mix.map(m => `<span style="flex:${m.pct}" class="mx-${m.stage}" title="${esc(m.name)} ${m.pct}%">${esc(m.name)} ${m.pct}%</span>`).join('')}</div></div>` : ''}
+    <div class="note info mt12">매체 구성과 예산은 위 <b>미디어믹스</b> 항목에서 조정합니다.</div>
     <div class="cta mt12"><button class="btn dark big" data-act="goLogic">로직 단계로 → 섹션 구성</button></div></div>
   <div class="grid2">
     <div class="card"><h3><span class="n">H</span>RFP 핵심 요약</h3>
@@ -400,6 +413,8 @@ function vLogic(){
   const head = `<h2 class="pt">2. 로직 — 섹션별로 실제 장표 내용까지 작성합니다</h2><p class="pd">[로직 작성] → 섹션별 희망 페이지 수 조정 → [전체 자동 작성] → 타이틀·내용 수정/삭제/추가 · 페이지 유형(간지/브릿지/전략/설명)·레이아웃 지정</p>`;
   if (!S.sections.length) return head + `<div class="card empty"><b>아직 섹션이 없습니다</b>${A ? (A.sections?.length ? `분석에서 설계한 ${A.sections.length}개 섹션으로 구성합니다${signals().toc ? ' (RFP 지정 목차를 따름)' : ''}.` : '') : '인풋 분석 없이도 기본 퍼포먼스 제안 구조로 시작할 수 있어요.'}<div class="cta mt12"><button class="btn pri big" data-act="buildLogic">▶ 로직 작성</button></div></div>`;
   let h = head + `<div class="toolbar card" style="padding:12px 16px"><button class="btn" data-act="buildLogic">↻ 로직 재작성</button><button class="btn pri" data-act="genAll">✦ 전체 섹션 자동 작성</button><button class="btn dark" data-act="claudeAll">Claude로 전체 고도화</button><span class="sp"></span><span class="tag pri">포함 ${includedSecs().length}섹션 · 약 ${total}p</span><button class="btn sm" data-act="addExtra" data-k="company">+ 회사소개</button><button class="btn sm" data-act="addExtra" data-k="brand">+ 브랜드 스터디</button><button class="btn sm" data-act="addExtra" data-k="case">+ 케이스 스터디</button></div>`;
+  if (S.isLibrary) h += `<div class="note mb12"><b>기본 장표 라이브러리 편집 중</b> — 여기서 만든 장표가 모든 제안서의 회사 소개·조직·보고 체계·기술·사례·이슈 대응 섹션에 기본값으로 들어갑니다. [✦ 자동 작성]으로 틀을 만든 뒤 회사 자료로 채우세요.</div>`;
+  else h += `<div class="row mb12" style="gap:12px"><label class="ck" style="display:flex;gap:6px;align-items:center;font-size:13px"><input type="checkbox" data-bind="useLibrary" ${S.useLibrary !== false ? 'checked' : ''}>고정 섹션은 <b>기본 장표 라이브러리</b> 사용</label><button class="btn sm ghost" data-act="openLib">라이브러리 편집</button></div>`;
   if (A?.logic?.concept) h += `<div class="note info mb12"><b>컨셉</b> ${esc(A.logic.concept)} &nbsp;·&nbsp; <b>메시지</b> ${esc(A.logic.message || '')}</div>`;
   h += `<div class="ins"><button class="btn sm" data-act="insSec" data-at="0">+ 섹션 추가</button></div>`;
   S.sections.forEach((sec, si) => { h += vSection(sec, si) + `<div class="ins"><button class="btn sm" data-act="insSec" data-at="${si + 1}">+ 섹션 추가</button></div>`; });
@@ -432,7 +447,7 @@ function vPage(sec, si, p, pi){
     <div class="pf">
       <div class="row" style="flex-wrap:wrap"><span class="tag">p${pi + 1}</span>
         <select data-bind="${base}.type">${Object.entries(PAGE_TYPES).map(([k, n]) => `<option value="${k}" ${p.type === k ? 'selected' : ''}>${n}</option>`).join('')}</select>
-        ${content ? `<select data-bind="${base}.layout">${Object.entries(LAYOUTS).map(([k, n]) => `<option value="${k}" ${p.layout === k ? 'selected' : ''}>${n}</option>`).join('')}</select>` : ''}
+        ${content ? layoutSelect(base, p) : ''}
         ${p.washed ? '<span class="tag ok">워싱</span>' : '<span class="tag">초안</span>'}
         <span style="flex:1"></span>
         <button class="btn sm" data-act="pagePPT" ${b}>PPT</button><button class="btn sm" data-act="pagePDF" ${b}>PDF</button>
@@ -442,7 +457,7 @@ function vPage(sec, si, p, pi){
       <input type="text" data-bind="${base}.subtitle" value="${esc(p.subtitle)}" placeholder="서브 타이틀 (근거·방법)">
       ${p.type !== 'divider' ? `<div class="row"><input type="text" data-bind="${base}.keyMsg" value="${esc(p.keyMsg)}" placeholder="${p.type === 'bridge' ? '브릿지 핵심 문장 (크게 노출)' : '키 메시지 (하단 강조 바 / 좌측 패널)'}" style="flex:3">${content ? `<input type="text" data-bind="${base}.source" value="${esc(p.source)}" placeholder="출처" style="flex:1">` : ''}</div>` : ''}
       <div class="items"><div class="it ih"><div></div><div>${hint[0]}</div><div>${hint[1]}</div><div>${hint[2]}</div><div></div></div>${p.items.map((it, ii) => `<div class="it"><div class="ix">${ii + 1}</div><input type="text" data-bind="${base}.items.${ii}.h" value="${esc(it.h)}" placeholder="${hint[0]}"><input type="text" data-bind="${base}.items.${ii}.v" value="${esc(it.v)}" placeholder="${hint[1] || '-'}"><textarea data-bind="${base}.items.${ii}.d" rows="${Math.min(5, Math.max(1, (it.d || '').split('\n').length))}" placeholder="${hint[2]}">${esc(it.d)}</textarea><button class="btn sm ghost bad" data-act="itemDel" ${b} data-i="${ii}">✕</button></div>`).join('')}</div>
-      <div class="row"><button class="btn sm" data-act="itemAdd" ${b}>+ 항목</button>${content ? `<label class="btn sm" style="position:relative;overflow:hidden">${p.image ? '이미지 교체' : '+ 이미지'}<input type="file" accept="image/*" data-pimg="${si}.${pi}" style="position:absolute;inset:0;opacity:0;cursor:pointer"></label>${p.image ? `<button class="btn sm ghost bad" data-act="imgDel" ${b}>이미지 삭제</button>` : ''}` : ''}<span style="flex:1"></span></div>
+      <div class="row" style="flex-wrap:wrap"><button class="btn sm" data-act="itemAdd" ${b}>+ 항목</button>${content ? imgControls(base, si, pi, p) : ''}<span style="flex:1"></span></div>
       <details><summary style="font-size:12px;color:var(--sub);cursor:pointer">발표자 노트</summary><textarea data-bind="${base}.notes" rows="2">${esc(p.notes)}</textarea></details>
     </div></div>`;
 }
@@ -454,6 +469,8 @@ function vWash(){
   if (!pages) return h + `<div class="card empty"><b>워싱할 페이지가 없습니다</b>로직 단계에서 내용을 먼저 작성하세요.<div class="cta mt12"><button class="btn" data-act="tab" data-v="logic">로직 단계로</button></div></div>`;
   h += `<div class="toolbar card" style="padding:12px 16px"><button class="btn pri" data-act="washAll">✦ 전체 디자인 워싱</button><button class="btn" data-act="unwashAll">초안으로 되돌리기</button>
     <label class="ck" style="display:flex;gap:6px;align-items:center;margin-left:8px">테마 <select data-bind="design.theme" style="width:160px">${Object.entries(THEMES).map(([k, n]) => `<option value="${k}" ${S.design.theme === k ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
+    ${S.design.theme === 'madup' ? `<label class="ck" style="display:flex;gap:6px;align-items:center"><input type="checkbox" data-bind="design.brandColor" ${S.design.brandColor ? 'checked' : ''}>브랜드 컬러칩 적용</label>` : ''}
+    ${(S.refLayouts || []).some(t => t.use && t.tag === 'body') ? `<label class="ck" style="display:flex;gap:6px;align-items:center"><input type="checkbox" data-bind="design.useRef" ${S.design.useRef ? 'checked' : ''}>희망 레이아웃 적용</label>` : ''}
     <span class="sp"></span><span style="display:flex;gap:4px;align-items:center">${S.input.colors.map(c => `<span title="${esc(c.role)} ${esc(c.hex)}" style="width:22px;height:22px;border-radius:6px;background:${c.hex};box-shadow:0 0 0 1px var(--line)"></span>`).join('')}</span>
     <span class="tag ${washed === pages ? 'ok' : 'warn'}">워싱 ${washed} / ${pages}p</span><button class="btn sm" data-act="tab" data-v="input">컬러칩 수정</button></div>`;
   S.sections.forEach((sec, si) => {
@@ -644,7 +661,7 @@ document.addEventListener('change', e => {
   if (el.id === 'msort'){ MF.sort = el.value; render(); return; }
   if (el.dataset.pf){ const p = LIST.find(x => x.id === el.dataset.pid); if (p){ p.project[el.dataset.pf] = el.value; p.updated = Date.now(); DB.put(clone(p)); if (el.dataset.pf !== 'memo' && el.dataset.pf !== 'owner') render(); } return; }
   if (el.dataset.file){ addFiles(el.dataset.file, [...el.files]); el.value = ''; return; }
-  if (el.dataset.pimg){ const [si, pi] = el.dataset.pimg.split('.').map(Number), f = el.files[0]; if (!f) return; readDataURL(f).then(d => resizeImage(d, 1600)).then(r => { const p = S.sections[si].pageList[pi]; p.image = r.data; p.imageW = r.w; p.imageH = r.h; rr(); }); return; }
+  if (el.dataset.pimg){ const [si, pi] = el.dataset.pimg.split('.').map(Number), f = el.files[0]; if (!f) return; readDataURL(f).then(d => resizeImage(d, 1600)).then(r => { const p = S.sections[si].pageList[pi]; p.image = r.data; p.imageW = r.w; p.imageH = r.h; if (!p.img) p.img = {mode: 'right', ratio: .42, fit: 'cover'}; rr(); }); return; }
   const p = el.dataset.bind; if (!p) return;
   let v = el.type === 'checkbox' ? el.checked : el.type === 'number' ? Math.max(1, +el.value || 1) : el.value;
   if (el.type === 'color') v = v.toUpperCase();
@@ -658,4 +675,4 @@ document.addEventListener('dragleave', e => { e.target.closest('.drop')?.classLi
 document.addEventListener('drop', e => { const d = e.target.closest('[data-drop]'); if (!d) return; e.preventDefault(); d.classList.remove('over'); addFiles(d.dataset.drop, [...e.dataTransfer.files]); });
 $('#jsonIn').addEventListener('change', async e => { const f = e.target.files[0]; if (!f) return; try { const s = normalize(JSON.parse(await f.text())); if (LIST.some(p => p.id === s.id)) s.id = uid(); LIST.push(s); await DB.put(clone(s)); openProject(s.id, 'input'); toast('제안서를 가져왔습니다'); } catch(er){ toast('가져오기 실패: ' + er.message); } e.target.value = ''; });
 
-boot().then(() => { render(); fontsReady().then(() => render()); });
+
