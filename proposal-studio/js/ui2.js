@@ -51,6 +51,25 @@ function openImgEditor(si, pi){
   m.querySelector('#iedSave').onclick = () => { Object.assign(im, {x: st.x, y: st.y, w: st.w, h: st.h, mode: 'free'}); m.remove(); rr(); toast('이미지 위치를 저장했습니다'); };
 }
 
+/* ---------- 크리에이티브 슬롯 (이미지·영상) ---------- */
+function crControls(si, pi, p){
+  const n = CR_SLOTS[p.layout] || 1, M = p.media || [];
+  return `<div class="crs mt8"><div style="font-size:12.5px;color:#475467;margin-bottom:6px"><b>소재 슬롯 ${n}개</b> · 이미지(JPG·PNG) 또는 영상(MP4, 25MB 이하는 PPT에 영상 그대로 삽입)</div><div class="row" style="flex-wrap:wrap;gap:8px">${Array.from({length: n}, (_, k) => { const m = M[k]; return `<div class="crslot">${m?.data ? `<img src="${m.poster || m.data}">${m.video ? '<span class="tag">영상</span>' : ''}` : `<span class="ph">${k + 1}</span>`}<label class="btn sm" style="position:relative;overflow:hidden">${m?.data ? '교체' : '넣기'}<input type="file" accept="image/*,video/mp4,video/webm,video/quicktime" data-crm="${si}.${pi}.${k}" style="position:absolute;inset:0;opacity:0;cursor:pointer"></label>${m?.data ? `<button class="btn sm ghost bad" data-act="crDel" data-s="${si}" data-p="${pi}" data-k="${k}">✕</button>` : ''}</div>`; }).join('')}</div></div>`;
+}
+async function setCrMedia(si, pi, k, f){
+  const p = S.sections[si]?.pageList[pi]; if (!p) return;
+  p.media = p.media || [];
+  if (/^video\//.test(f.type)){
+    busy('영상 불러오는 중…', f.name);
+    const url = await readDataURL(f), po = await videoPoster(url);
+    unbusy();
+    if (!po) return toast('영상 첫 장면을 읽지 못했습니다. MP4(H.264)로 다시 시도해 주세요');
+    p.media[k] = {data: po.data, poster: po.data, w: po.w, h: po.h, video: true, vdata: f.size <= 25e6 ? url : null, name: f.name};
+    if (f.size > 25e6) toast('25MB를 넘는 영상은 첫 장면 이미지만 넣습니다 (PPT 용량 보호)', 4000);
+  } else { const r = await readDataURL(f).then(d => resizeImage(d, 1600)); p.media[k] = {data: r.data, w: r.w, h: r.h}; }
+  rr();
+}
+
 /* ---------- 희망 레이아웃 (참고 PPT) ---------- */
 function vRefLayouts(){
   const L = S.refLayouts || [];
@@ -178,6 +197,7 @@ function ensureLibSections(){
 
 /* ---------- 액션 ---------- */
 Object.assign(ACT, {
+  crDel: b => { const p = pgOf(b); if (p?.media) p.media[+b.dataset.k] = null; rr(); },
   imgSlot: b => { ensureImg(pgOf(b)); rr(); },
   imgEdit: b => openImgEditor(+b.dataset.s, +b.dataset.p),
   imgDel: b => { const p = pgOf(b); p.image = null; p.img = null; if (p.layout === 'image') p.layout = 'list'; rr(); },
@@ -203,6 +223,7 @@ document.addEventListener('change', async e => {
   if (el.id === 'libIn'){ const f = el.files[0]; el.value = ''; if (!f) return; try { const j = JSON.parse(await f.text()); const L = LIB(); const secs = (j.sections || []).map(s => { const role = LIB_ROLES.includes(s.role) ? s.role : inferRole((s.title || '') + ' ' + (s.goal || '')); const sec = newSection(kindOfRole(role), s.title || ROLES[role], s.goal || '', 1, s.divider !== false, role); sec.en = s.en || ''; sec.pageList = (s.pageList || s.pages || []).map(p => newPage(p.type || 'explain', p)); sec.pages = sec.pageList.length; return sec; }).filter(s => LIB_ROLES.includes(s.role));
       secs.forEach(s => { const i = L.sections.findIndex(x => x.role === s.role); if (i >= 0) L.sections[i] = s; else L.sections.push(s); }); L.updated = Date.now(); await DB.put(clone(L)); render(); toast(`라이브러리 ${secs.length}개 섹션을 불러왔습니다`); } catch(er){ toast('불러오기 실패: ' + er.message); } return; }
   if (el.dataset.libppt){ const f = el.files[0]; el.value = ''; if (f) await libFromPptx(el.dataset.libppt, f); return; }
+  if (el.dataset.crm){ const [si, pi, k] = el.dataset.crm.split('.').map(Number), f = el.files[0]; el.value = ''; if (f) await setCrMedia(si, pi, k, f); return; }
   if (el.dataset.rt){ const [si, pi, k] = el.dataset.rt.split('.').map(Number); const e = S.sections[si]?.pageList[pi]?.fixed.els[k]; if (e){ rtApply(e, el.value); rr(); } return; }
   if (el.dataset.fixedimg){ const [si, pi] = el.dataset.fixedimg.split('.').map(Number), f = el.files[0]; el.value = ''; if (!f) return; const p = S.sections[si].pageList[pi]; const fr = p.fixed.els.find(e => e.k === 'frame'); if (!fr) return; const r = await readDataURL(f).then(d => resizeImage(d, 1600)); Object.assign(fr, {k: 'i', data: r.data, cover: false}); rr(); return; }
   if (el.dataset.mm){ const k = el.dataset.mm, M = S.input.mediaMix; M[k] = el.type === 'number' ? Math.max(0, +el.value || 0) : el.value; if (k === 'scenario' && M.rows.length && confirm('시나리오에 맞춰 비중을 다시 계산할까요?')){ const c = signals(); const base = M.rows.map(r => ({...(MEDIA_LIB(c)[r.key] || {w: 8}), ...r, fixedPct: 0})); const al = allocate(base, el.value); M.rows.forEach((r, i) => r.pct = al[i].pct); } rr(); return; }

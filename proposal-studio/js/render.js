@@ -76,7 +76,7 @@ function chrome(E, it, P, dark, opts = {}){
 
 /* ---------- 본문 레이아웃 (box = {x,y,w,h}) ---------- */
 function rowsFit(items, b, measure, gap, maxExtra = 18){
-  for (const scale of [1.1, 1.05, 1, .93, .86, .8]){
+  for (const scale of [1.22, 1.15, 1.1, 1.05, 1, .93, .86, .8]){
     const hs = items.map(i => measure(i, scale)); const tot = hs.reduce((a, c) => a + c, 0) + gap * (items.length - 1);
     if (tot <= b.h || scale === .8){ const slack = Math.max(0, b.h - tot); return {hs, scale, gapX: items.length > 1 ? Math.min(maxExtra, slack / (items.length - 1) * .6) : 0}; }
   }
@@ -101,16 +101,17 @@ const LAY = {
     const n = items.length || 1, cols = n <= 4 ? n : 3, rows = Math.min(2, Math.ceil(n / cols));
     const g = 18, cw = (b.w - (cols - 1) * g) / cols, pad = 26, iw = cw - pad * 2;
     const need = items.slice(0, cols * rows).map(it => 22 + 16 + (it.v ? tH(it.v, 28, iw, 1.2, 700) + 8 : 0) + tH(it.h, 19, iw, 1.3, 700) + 10 + tH(it.d, 14.5, iw, 1.55, 300));
-    const ch = rows > 1 ? (b.h - g) / 2 : Math.min(b.h, Math.max(230, Math.max(...need) + pad * 2 + 10));
+    const ch = rows > 1 ? (b.h - g) / 2 : Math.min(b.h, Math.max(b.h * .92, Math.max(...need) + pad * 2 + 10));
+    const sc = rows > 1 ? 1 : Math.min(1.22, Math.max(1, (ch - pad * 2 - 10) / Math.max(1, ...need)));
     items.slice(0, cols * rows).forEach((it, i) => {
       const x = b.x + (i % cols) * (cw + g), y = b.y + Math.floor(i / cols) * (ch + g);
       E.push(R(x, y, cw, ch, '#FFFFFF', {r: 14, line: P.draft ? '#E4E4E4' : P.tint2}));
       let yy = y + pad;
       E.push(T(x + pad, yy, 60, 22, two(i + 1), {size: 14, bold: true, color: P.c3 === P.c1 ? P.ink : P.ink}));
       E.push(R(x + pad + 30, yy + 10, iw - 30, 1, P.draft ? '#E4E4E4' : P.tint2)); yy += 22 + 16;
-      if (it.v){ const vh = tH(it.v, 28, iw, 1.2, 700); E.push(T(x + pad, yy, iw, vh, it.v, {size: 28, bold: true, color: P.ink, lh: 1.2})); yy += vh + 8; }
-      const hh = tH(it.h, 19, iw, 1.3, 700); E.push(T(x + pad, yy, iw, hh, it.h, {size: 19, bold: true, lh: 1.3})); yy += hh + 10;
-      E.push(T(x + pad, yy, iw, y + ch - yy - pad + 4, it.d, {size: 14.5, light: true, color: '#475467', lh: 1.55}));
+      if (it.v){ const vh = tH(it.v, 28 * sc, iw, 1.2, 700); E.push(T(x + pad, yy, iw, vh, it.v, {size: 28 * sc, bold: true, color: P.ink, lh: 1.2})); yy += vh + 8; }
+      const hh = tH(it.h, 19 * sc, iw, 1.3, 700); E.push(T(x + pad, yy, iw, hh, it.h, {size: 19 * sc, bold: true, lh: 1.3})); yy += hh + 10;
+      E.push(T(x + pad, yy, iw, y + ch - yy - pad + 4, it.d, {size: 14.5 * sc, light: true, color: '#475467', lh: 1.55}));
     });
   },
   process(E, items, b, P){
@@ -187,8 +188,9 @@ const LAY = {
     const hf = P.draft ? '#3A3A3A' : P.c1;
     const hs0 = items.map(i => Math.max(tH(i.h, 15.5, c1w - 36, 1.35, 700), tH(i.d, 14.5, c2w - 36, 1.5, 300), tH(i.v, 14.5, c3w - 30, 1.35, 700)) + 24);
     const tot = hs0.reduce((a, c) => a + c, 0), sc = tot > b.h - hdr ? (b.h - hdr) / tot : 1;
-    const fill = Math.min(70, (b.h - hdr) / Math.max(1, items.length) * .8);
-    const hs = hs0.map(h => Math.max(34, sc < 1 ? h * sc : Math.max(h, fill))), fs = sc < 1 ? Math.max(.8, sc) : 1;
+    const fill = Math.min(items.length <= 3 ? 150 : 96, (b.h - hdr) / Math.max(1, items.length) * .9);
+    const grow = sc < 1 ? 1 : Math.min(1.18, Math.max(1, fill / Math.max(...hs0) * .8));
+    const hs = hs0.map(h => Math.max(34, sc < 1 ? h * sc : Math.max(h * grow, fill))), fs = sc < 1 ? Math.max(.8, sc) : grow;
     const head = pg.cols || ['구분', '내용', '비고'];
     const filled = P.madup, hc = filled ? '#FFFFFF' : P.ink;
     if (filled) E.push(R(b.x, b.y, b.w, hdr - 4, hf, {r: 2})); else E.push(R(b.x, b.y + hdr - 2, b.w, 2, hf));
@@ -544,6 +546,7 @@ function titleBlock(E, it, pg, P){
     if (pg.subtitle) E.push(T(MX, SP.subY, W - MX * 2, SP.subH, pg.subtitle, {size: 17, light: true, color: P.ink}));
     return {bodyY: SP.bodyY};
   }
+  const tt = typeof themeTitle === 'function' ? themeTitle(theme, E, it, pg, P) : null; if (tt) return tt;
   E.push(T(MX, SP.titleY, W - MX * 2, SP.titleH, pg.title, {size: 32, bold: true, lh: 1.3}));
   if (pg.subtitle) E.push(T(MX, SP.subY, W - MX * 2, SP.subH, pg.subtitle, {size: 17, light: true, color: '#475467'}));
   return {bodyY: SP.bodyY};
@@ -596,6 +599,7 @@ function buildSpec(it){
       chrome(E, it, P, '#000000');
       return {bg: '#000000', bgImg: MADUP_BG.divider, els: E};
     }
+    if (!P.draft && typeof themeDivider === 'function'){ const td = themeDivider(S.design?.theme, E, it, pg, P); if (td){ chrome(E, it, P, td.on || null); return {bg: td.bg, els: E}; } }
     const bg = P.draft ? '#2B2B2B' : P.c1, fg = onC(bg);
     if (!P.draft) E.push(R(W - 360, 0, 360, H, P.c2, {alpha: .18}));
     E.push(T(MX, 190, 400, 30, it.secNo ? two(it.secNo) : '', {size: 22, bold: true, color: fg, alpha: .75, ls: 2}));
@@ -624,8 +628,9 @@ function buildSpec(it){
   const layout = pg.layout || (pg.type === 'strategy' ? 'cards' : 'list');
   const showKey = pg.keyMsg && !['split', 'spec', 'hero', 'cycle', 'hub', 'quote', 'mediaQuad'].includes(layout);
   const keyY = tb.madup ? 590 : SP.keyY, keyH = tb.madup ? 38 : SP.keyH;
-  const top = tb.bodyY, bottom = showKey ? keyY - 20 : (tb.madup ? 630 : SP.bodyEnd);
-  let box = {x: MX, y: top, w: W - MX * 2, h: bottom - top};
+  const top = tb.bodyY, bottom = showKey ? keyY - 20 : (tb.bodyEnd || (tb.madup ? 630 : SP.bodyEnd));
+  const px = tb.padX || MX;
+  let box = {x: px, y: top, w: W - px * 2, h: bottom - top};
   let lateImg = null;
   if ((pg.image || pg.img) && layout !== 'image'){
     const bx = imgBoxes(pg, box);
@@ -652,7 +657,7 @@ function buildSpec(it){
   }
   if (pg.source) E.push(T(MX, tb.madup ? 640 : SP.bodyEnd + 12, W - MX * 2 - 300, 14, '출처: ' + pg.source, {size: 9, light: true, color: '#8C8C8C'}));
   chrome(E, it, P, null, {labelOn: tb.labelOn, logoOn: tb.logoOn});
-  return {bg: '#FFFFFF', bgImg: tb.madup ? MADUP_BG.content : null, els: E};
+  return {bg: tb.bg || '#FFFFFF', bgImg: tb.madup ? MADUP_BG.content : null, els: E};
 }
 
 function coverSpec(){
@@ -667,6 +672,7 @@ function coverSpec(){
     chrome(E, {}, P);
     return {bg: '#FFFFFF', bgImg: MADUP_BG.content, els: E};
   }
+  if (!tp.coverBg && typeof themeCover === 'function'){ const tc = themeCover(S.design?.theme, E, P); if (tc){ chrome(E, {}, P, tc.on || null); return {bg: tc.bg, els: E}; } }
   if (!tp.coverBg){ E.push(R(880, 0, 400, H, P.c1)); E.push(R(880, 520, 400, 200, P.c2)); }
   E.push(T(MX, 206, 740, 20, 'PERFORMANCE MARKETING PROPOSAL', {size: 13, bold: true, color: P.ink, ls: 1.2}));
   E.push(T(MX, 236, 760, 130, S.project.name || `${S.project.client || '브랜드'} 퍼포먼스 마케팅 제안`, {size: 46, bold: true, lh: 1.25, valign: 'bottom'}));
@@ -747,6 +753,9 @@ function shapePoints(e){
     case 'home': return `0,0 ${w - d},0 ${w},${h / 2} ${w - d},${h} 0,${h}`;
     case 'arrow': { const hd = Math.min(w * .5, h * .9); return `0,${h * .3} ${w - hd},${h * .3} ${w - hd},0 ${w},${h / 2} ${w - hd},${h} ${w - hd},${h * .7} 0,${h * .7}`; }
     case 'poly': return e.pts.map(p => p.join(',')).join(' ');
+    case 'triR': return `0,0 ${w},${h / 2} 0,${h}`;
+    case 'cornerTR': return `0,0 ${w},0 ${w},${h}`;
+    case 'cornerBR': return `${w},0 ${w},${h} 0,${h}`;
     case 'tri': return `0,${h} ${w / 2},0 ${w},${h}`;
     case 'trap': { const t = e.inset ?? Math.min(w, h) * .25; return `${t},0 ${w - t},0 ${w},${h} 0,${h}`; }
     case 'trap-down': { const t = e.inset ?? Math.min(w, h) * .25; return `0,0 ${w},0 ${w - t},${h} ${t},${h}`; }
@@ -824,6 +833,7 @@ async function exportPPTX(items, name){
         const tr = e.alpha != null ? Math.round((1 - e.alpha) * 100) : 0;
         if (e.k === 'frame') continue;
         if (e.k === 'g' || e.k === 'rt'){ await fxToPPT(sl, pptx, e, IN, hx); continue; }
+        if (e.k === 'i' && e.video?.vdata){ sl.addMedia({x: IN(e.x), y: IN(e.y), w: IN(e.w), h: IN(e.h), type: 'video', data: e.video.vdata.replace(/^data:/, ''), cover: e.video.poster || e.data}); continue; }
         if (e.k === 'i' && (e.stretch || e.rot)){ sl.addImage({x: IN(e.x), y: IN(e.y), w: Math.max(.01, IN(e.w)), h: Math.max(.01, IN(e.h)), data: stripData(e.data), ...(e.rot ? {rotate: e.rot} : {}), ...(e.fh ? {flipH: true} : {}), ...(e.fv ? {flipV: true} : {}), ...(e.round ? {rounding: true} : {}), ...(e.shd ? {shadow: {type: 'outer', blur: +(e.shd.blur * .75).toFixed(1), offset: +(e.shd.dist * .75).toFixed(1), angle: Math.round(e.shd.dir), color: hx(e.shd.c), opacity: +(e.shd.a ?? .35).toFixed(2)}} : {})}); continue; }
         if (e.k === 'r') sl.addShape(e.r ? pptx.ShapeType.roundRect : pptx.ShapeType.rect, {...base, fill: e.nofill ? {color: 'FFFFFF', transparency: 100} : {color: hx(e.fill), transparency: tr}, line: e.line ? {color: hx(e.line), width: .75, dashType: e.dash ? 'dash' : 'solid'} : {type: 'none'}, ...(e.r ? {rectRadius: Math.min(.5, e.r / Math.min(e.w, e.h))} : {})});
         else if (e.k === 'e') sl.addShape(pptx.ShapeType.ellipse, {...base, fill: e.nofill ? {color: 'FFFFFF', transparency: 100} : {color: hx(e.fill), transparency: tr}, line: e.line ? {color: hx(e.line), width: (e.lw || 1) * .75} : {type: 'none'}});

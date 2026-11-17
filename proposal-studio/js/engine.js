@@ -362,7 +362,7 @@ function enginePool(role, c, sec = {}){
   ];
   case 'media': {
     const pages = [];
-    if (!(sec.hasPlaybook ?? S.sections.some(s => s.role === 'playbook' && s.include !== false))) pages.push(...enginePool('playbook', c).slice(1, 2));
+    if (!(sec.hasPlaybook ?? S.sections.some(s => s.role === 'playbook' && s.include !== false))) pages.push(...(typeof _enginePool0 === 'function' ? _enginePool0 : enginePool)('playbook', c).slice(1, 2));
     pages.push(PG('explain', al.length <= 6 ? 'hub' : 'table', `${mix.length}개 매체 퍼널 운영 구조`, '매체별 역할 요약, 상세 실행안은 다음 장부터', al.length <= 6 ? al.map(m => [m.name, `${m.role}\n${st(m.stage).en}  ${m.pct}%`]) : al.map(m => [m.name, m.role, `${st(m.stage).en}  ${m.pct}%`]), {cols: ['매체', '역할', '트랙, 비중'], keyMsg: `${B}\n미디어 믹스`, prio: 1}));
     al.forEach((m, i) => pages.push(PG('strategy', MEDIA_LAYOUTS[i % MEDIA_LAYOUTS.length], m.head, m.sub, [['대상', m.who], ['소재', m.what], ['랜딩', m.land], ['운영 방법', m.acts.map((a, k) => `${k + 1}) ${a}`).join('\n')], ['평가 지표', m.kpi], ['일정·예산', m.when + (bud ? `, 비중 ${m.pct}% (${amt(m.pct)})` : `, 비중 ${m.pct}%`)]], {keyMsg: m.role, tag: `${st(m.stage).en}  ${st(m.stage).type}`, mediaName: m.name, notes: `${m.name}: ${m.role}`, prio: 1})));
     return pages;

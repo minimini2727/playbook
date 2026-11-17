@@ -2,7 +2,7 @@
    Proposal Studio v2 — app (views · AI/Claude 연동 · events)
    ========================================================= */
 function newSection(kind, title, goal = '', pages = 3, divider = true, role){ return {id: uid(), kind, role: role || (kind === 'strategy' ? 'custom' : kind), title, en: '', goal, pages, divider, include: true, collapsed: false, pageList: []}; }
-function newPage(type = 'explain', o = {}){ const p = {id: uid(), type, layout: type === 'strategy' ? 'cards' : 'list', title: '', subtitle: '', keyMsg: '', items: [{h: '', d: '', v: ''}], image: null, washed: false, notes: '', tag: '', source: '', cols: null, ...o}; delete p.prio; p.id = uid(); p.type = PAGE_TYPES[p.type] ? p.type : type; if (!LAYOUTS[p.layout] && !String(p.layout).startsWith('tpl:')) p.layout = 'list'; p.items = (p.items || []).map(i => ({h: i.h || '', d: i.d || '', v: i.v || ''})); return p; }
+function newPage(type = 'explain', o = {}){ const p = {id: uid(), type, layout: type === 'strategy' ? 'cards' : 'list', title: '', subtitle: '', keyMsg: '', items: [{h: '', d: '', v: ''}], image: null, washed: false, notes: '', tag: '', source: '', cols: null, ...o}; delete p.prio; p.id = uid(); if (typeof deAIPage === 'function') deAIPage(p); p.type = PAGE_TYPES[p.type] ? p.type : type; if (!LAYOUTS[p.layout] && !String(p.layout).startsWith('tpl:')) p.layout = 'list'; p.items = (p.items || []).map(i => ({h: i.h || '', d: i.d || '', v: i.v || ''})); return p; }
 
 /* ---------- AI (선택: API 키) ---------- */
 async function callClaude({system, content, maxTokens = 8000, web = false}){
@@ -32,9 +32,13 @@ const PLAYBOOK_RULES = `[작성 규칙 — 반드시 따를 것]
 5. 실행 주체·시점(누가/언제/어떻게)을 항상 명시. "무조건 성과 상승" 같은 단정 금지 — 전제 조건·리스크 병기.
 6. 문체: 장표 본문은 개조식(~확보, ~운영, ~점검)으로 짧게. 한 항목 d는 40자 안팎, 여러 줄이면 줄바꿈으로 2~3줄. "혁신적인", "극대화", "시너지", "다양한", "효과적인", "~를 통해 ~를 실현" 같은 상투어와 말줄임표·이모지·em dash(—) 금지. 업계 실무자가 쓰는 구체 명사(매체명·지표·기간·금액)로 쓸 것.
 7. 매체별 실행안은 매체마다 layout을 spec / mediaFlow / mediaQuad로 번갈아 써서 같은 모양이 연속되지 않게 할 것.
+8. 밀도: strategy/explain 장표는 items 4~6개, 각 d는 줄바꿈 2~3줄(한 줄 25~40자). 한 줄짜리 빈약한 장표 금지. 각 장표에 이 브랜드 고유 정보(제품명·가격대·리뷰 표현·경쟁사명·판매 채널·시즌·RFP 문구) 최소 1개 포함. 다른 브랜드에 그대로 붙여도 말이 되는 문장은 다시 쓸 것.
+9. 전략가 관점: 장표마다 "관찰(데이터·리서치 사실) → 의미(그래서 무엇이 문제인가) → 실행(누가·언제·무엇을)"이 보이게. 브랜드 진단에는 고객 행동 인사이트 3개와 구매 여정별 공백 장표를 반드시 포함.
+10. 마무리 금지 표현: "~할 것입니다", "~하겠습니다", "기대됩니다", "성공적인 파트너", "함께 성장", "극대화", "시너지", "혁신", "최적의 솔루션", "다양한". keyMsg는 숫자·조건·근거가 들어간 판단 문장으로.
+11. 크리에이티브 섹션: 이미지·영상을 넣을 장표로 구성. crHero(대표 비주얼+컨셉: 첫 항목 h=컨셉 문장, 이후 항목 h=라벨/d=내용), crShorts(숏폼 3컷: 항목 h=훅 유형, v=길이·비율, d=장면·자막), crGrid(소재 라인업 4종: h=트랙·소재명, v=매체·규격, d=메시지), crStory(스토리보드 4~6장면: h=장면, v=시간, d=화면·자막), crAB(A/B안 2개: h=안 이름, d=메시지·차이, v=확인 지표, keyMsg=가설), crFeed(피드 목업 2개: h=CTA, v=규격, d=본문 카피) 중 4개 이상 사용.
 [layout 카탈로그 — items 필드 의미]
 cards(병렬 2~4: h 제목, d 설명, v 수치) · process(단계 3~6: h 단계명, d 내용, v 산출물) · kpi(2~4: h 지표, v 수치, d 설명) · hero(첫 항목 v 큰 숫자 + 나머지 근거) · split(keyMsg 핵심 주장 + 근거 3~5) · spec(매체 실행안: h 라벨, d 내용) · table(5행 이상 비교: h 구분, d 내용, v 수치) · compare(h 항목, v AS-IS, d TO-BE) · funnel(h 단계, d 매체·역할, v 지표) · timeline(h 시점, d 실행, v 산출물) · chart(h 항목, v "35%", d 설명) · matrix(4칸: h, d, v 라벨) · grid(6칸) · list(기타)
-추가 레이아웃: mediaFlow(매체: 대상→소재→랜딩→평가 흐름 + 운영 방법) · mediaQuad(매체: 4분면 + 운영 방법) · summary(현황→제안 요약표: h 항목, v 현황, d 제안) · statBars(막대+핵심 수치: h 항목, v 수치%, d 설명) · colCards(컬럼 카드: h 제목, d 줄바꿈 불릿 2~4줄) · stepCards(단계 박스: h 단계, d 줄바꿈 불릿)
+추가 레이아웃: crHero · crShorts · crGrid · crStory · crAB · crFeed(위 11번 참조) · mediaFlow(매체: 대상→소재→랜딩→평가 흐름 + 운영 방법) · mediaQuad(매체: 4분면 + 운영 방법) · summary(현황→제안 요약표: h 항목, v 현황, d 제안) · statBars(막대+핵심 수치: h 항목, v 수치%, d 설명) · colCards(컬럼 카드: h 제목, d 줄바꿈 불릿 2~4줄) · stepCards(단계 박스: h 단계, d 줄바꿈 불릿)
 page type: divider(간지) · bridge(논리 전환 한 문장, keyMsg가 크게 노출) · strategy(전략·실행) · explain(근거·설명)`;
 const SYS_BASE = `너는 한국 디지털 퍼포먼스 마케팅 대행사의 10년차 제안 전략가다. 경쟁 PT에서 이겨야 하는 제안자 입장에서 판단한다.\n${PLAYBOOK_RULES}\n모든 출력은 한국어, 요청한 JSON만 출력한다.`;
 
@@ -459,7 +463,7 @@ function vPage(sec, si, p, pi){
       <input type="text" data-bind="${base}.subtitle" value="${esc(p.subtitle)}" placeholder="서브 타이틀 (근거·방법)">
       ${p.type !== 'divider' ? `<div class="row"><input type="text" data-bind="${base}.keyMsg" value="${esc(p.keyMsg)}" placeholder="${p.type === 'bridge' ? '브릿지 핵심 문장 (크게 노출)' : '키 메시지 (하단 강조 바 / 좌측 패널)'}" style="flex:3">${content ? `<input type="text" data-bind="${base}.source" value="${esc(p.source)}" placeholder="출처" style="flex:1">` : ''}</div>` : ''}
       <div class="items"><div class="it ih"><div></div><div>${hint[0]}</div><div>${hint[1]}</div><div>${hint[2]}</div><div></div></div>${p.items.map((it, ii) => `<div class="it"><div class="ix">${ii + 1}</div><input type="text" data-bind="${base}.items.${ii}.h" value="${esc(it.h)}" placeholder="${hint[0]}"><input type="text" data-bind="${base}.items.${ii}.v" value="${esc(it.v)}" placeholder="${hint[1] || '-'}"><textarea data-bind="${base}.items.${ii}.d" rows="${Math.min(5, Math.max(1, (it.d || '').split('\n').length))}" placeholder="${hint[2]}">${esc(it.d)}</textarea><button class="btn sm ghost bad" data-act="itemDel" ${b} data-i="${ii}">✕</button></div>`).join('')}</div>
-      <div class="row" style="flex-wrap:wrap"><button class="btn sm" data-act="itemAdd" ${b}>+ 항목</button>${content ? imgControls(base, si, pi, p) : ''}<span style="flex:1"></span></div>
+      <div class="row" style="flex-wrap:wrap"><button class="btn sm" data-act="itemAdd" ${b}>+ 항목</button>${content && !CR_LAYOUTS.includes(p.layout) ? imgControls(base, si, pi, p) : ''}<span style="flex:1"></span></div>${CR_LAYOUTS.includes(p.layout) ? crControls(si, pi, p) : ''}
       <details><summary style="font-size:12px;color:var(--sub);cursor:pointer">발표자 노트</summary><textarea data-bind="${base}.notes" rows="2">${esc(p.notes)}</textarea></details>
     </div></div>`;
 }
