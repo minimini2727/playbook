@@ -82,7 +82,7 @@ ${JSON_SCHEMA.replace(/\n}$/, `,
 }
 
 /* ---------- 심화 리서치 창: ① 브리프 → ② 프롬프트 → ③ 적용 ---------- */
-const PROMPT_VER = '2026-11-18b'; // 기본 프롬프트 규칙이 바뀌면 올림 → 예전에 직접 고친 프롬프트는 자동으로 무효화
+const PROMPT_VER = '2026-11-18c'; // 기본 프롬프트 규칙이 바뀌면 올림 → 예전에 직접 고친 프롬프트는 자동으로 무효화
 const briefKey = () => { const B = S.input.brief || {}; return JSON.stringify([PROMPT_VER, B.points, B.flow, B.reorder, B.mediaDeep, S.input.notes]); };
 const currentPrompt = () => { const B = S.input.brief || {}; return B.customPrompt && B.customFor === briefKey() ? B.customPrompt : claudePromptAll(); };
 const _openBridge0 = openClaudeBridge;
