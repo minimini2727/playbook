@@ -111,9 +111,24 @@ function MEDIA_LIB(c){
       kpi: 'CPI, 가입 CPA, 7일 재방문율', when: '4주 학습 후 최적화 이벤트 전환'}
   };
 }
+function mediaTgt(n){ // 매체별 타겟 세그먼트 우선순위·확장 순서
+  if (/브랜드검색/.test(n)) return '브랜드·제품명 검색자 전부, 경쟁 유입 방어가 목적';
+  if (/쇼핑/.test(n)) return '구매 의도 상품 키워드 → 비교·가격 키워드 순 확장, 저효율 상품 제외';
+  if (/파워링크|검색광고|네이버 검색/.test(n)) return '브랜드·제품명 → 문제 인식 → 비교·가격 키워드 순, 의도별 그룹 분리';
+  if (/GFA/.test(n)) return /전환/.test(n) ? '상세·장바구니 이탈 3·7·14일 세그먼트 분리, 구매자 제외' : '구매자 유사 → 관심사 순 확장, 조회 고객은 전환 캠페인으로';
+  if (/메타/.test(n)) return /전환|카탈로그/.test(n) ? '넓은 타겟 + 기존 고객 비중 상한, 상세 이탈자는 별도 리타겟' : '넓은 타겟으로 시작, 시청·참여자를 전환 캠페인 시드로';
+  if (/구글|PMax/.test(n)) return '브랜드 검색 분리, PMax는 구매자 목록·고객 일치로 시그널 보강';
+  if (/유튜브|Demand/.test(n)) return '관련 검색어 맞춤 세그먼트 → 유사 세그먼트 순, 구매자 제외';
+  if (/카카오/.test(n)) return '채널 친구·리타겟 우선, 성과 확인 후 관심사 확장';
+  if (/크리테오/.test(n)) return '장바구니 → 상세 조회 순 우선, 최근성 7·14·30일 분리, 타 매체 리타겟과 기간 분리';
+  if (/쿠팡/.test(n)) return '카테고리 검색 고객, 신규 고객 타겟팅으로 미구매 고객 집중';
+  if (/틱톡/.test(n)) return '넓은 타겟 테스트 → 반응 세그먼트로 압축';
+  if (/앱/.test(n)) return '유사 타겟 신규 설치 → 휴면 사용자 재참여 순';
+  return '[세그먼트·우선순위·확장 순서 입력]';
+}
 /* 매체별 KPI 목표·레버·증감액 기준 (수치는 첫 2주 실측으로 재설정하는 가정치) */
 function mediaKPI(m){
-  const n = m.name || '', R = (target, lever, scale) => ({target, lever, scale});
+  const n = m.name || '', R = (target, lever, scale) => ({target, lever, scale, tgt: mediaTgt(n)});
   if (/브랜드검색/.test(n)) return R('브랜드 클릭률·전환 ROAS', '브랜드 검색자 이탈을 막는 게 목적\n소재에 대표 상품·혜택을 걸어 CVR 유지', '노출 대비 클릭률 하락 시 소재 교체\n계약 단위라 증감액 대신 지면 조정');
   if (/쇼핑/.test(n)) return R('목표 ROAS (가정)', 'CTR은 상품명·대표 이미지, CVR은 리뷰 수가 좌우\n상위 상품 이미지 A/B부터', '7일 ROAS 목표 120% 이상 상품 입찰 10% 상향\n80% 미만 2주 지속 시 제외');
   if (/파워링크|검색광고|네이버 검색/.test(n)) return R('키워드별 CPA (가정)', '전환 키워드와 탐색 키워드 입찰 분리\n전환 없는 고비용 키워드가 CPA를 끌어올림', '전환 키워드 CPA 목표 80% 이하면 순위 상향\n클릭 30회 무전환 키워드 입찰 하향');
@@ -381,7 +396,7 @@ function enginePool(role, c, sec = {}){
     const pages = [];
     if (!(sec.hasPlaybook ?? S.sections.some(s => s.role === 'playbook' && s.include !== false))) pages.push(...(typeof _enginePool0 === 'function' ? _enginePool0 : enginePool)('playbook', c).slice(1, 2));
     pages.push(PG('explain', al.length <= 6 ? 'hub' : 'table', `${mix.length}개 매체 퍼널 운영 구조`, '매체별 역할 요약, 상세 실행안은 다음 장부터', al.length <= 6 ? al.map(m => [m.name, `${m.role}\n${st(m.stage).en}  ${m.pct}%`]) : al.map(m => [m.name, m.role, `${st(m.stage).en}  ${m.pct}%`]), {cols: ['매체', '역할', '트랙, 비중'], keyMsg: `${B}\n미디어 믹스`, prio: 1}));
-    al.forEach((m, i) => { const K = mediaKPI(m); pages.push(PG('strategy', MEDIA_LAYOUTS[i % MEDIA_LAYOUTS.length], m.head, m.sub, [['KPI 목표', K.lever, K.target], ['대상', m.who], ['소재', m.what], ['랜딩', m.land], ['운영 방법', m.acts.map((a, k) => `${k + 1}) ${a}`).join('\n')], ['증감액 기준', K.scale], ['일정·예산', m.when + (bud ? `, 비중 ${m.pct}% (${amt(m.pct)})` : `, 비중 ${m.pct}%`)]], {keyMsg: `${m.role} · ${K.target}`, tag: `${st(m.stage).en}  ${st(m.stage).type}`, mediaName: m.name, notes: `${m.name}은 ${K.lever.split('\n')[0]} 쪽이 병목이라 여기부터 손봅니다.`, prio: 1})); });
+    al.forEach((m, i) => { const K = mediaKPI(m); pages.push(PG('strategy', MEDIA_LAYOUTS[i % MEDIA_LAYOUTS.length], m.head, m.sub, [['KPI 목표', K.lever, K.target], ['타겟팅 어프로치', `${m.who}\n${K.tgt}`], ['운영 실행안', m.acts.map((a, k) => `${k + 1}) ${a}`).join('\n')], ['타겟 × 소재 결합', `${m.who.split(',')[0]} → ${m.what} → ${m.land}`], ['증감액 기준', K.scale], ['일정·예산', m.when + (bud ? `, 비중 ${m.pct}% (${amt(m.pct)})` : `, 비중 ${m.pct}%`)]], {keyMsg: `${m.role} · ${K.target}`, tag: `${st(m.stage).en}  ${st(m.stage).type}`, mediaName: m.name, notes: `${m.name}은 ${K.lever.split('\n')[0]} 쪽이 병목이라 여기부터 손봅니다.`, prio: 1})); });
     return pages;
   }
   case 'budget': {

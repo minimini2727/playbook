@@ -432,7 +432,7 @@ Object.assign(TK_NAMES, {tkBars: '템플릿: 막대 강조', tkHero: '템플릿:
 if (typeof LAYOUTS !== 'undefined') Object.assign(LAYOUTS, TK_NAMES);
 
 /* ---------------- 매체 실행안 3종 ---------------- */
-const isMethod = h => /운영\s*방법|운영 방식|실행 방법|방법/.test(h || ''), isBudget = h => /예산|일정/.test(h || '');
+const isMethod = h => /운영\s*방법|운영 방식|실행 방법|실행안|방법/.test(h || ''), isBudget = h => /예산|일정/.test(h || '');
 const MEDIA3 = {
   tkSpec(E, items, b, P, pg, K = K3(P, pg)){
     const lw = Math.min(330, b.w * .28), rx = b.x + lw + 40, rw = b.w - lw - 40, labW = 118;
