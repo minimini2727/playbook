@@ -21,14 +21,32 @@ function briefDraft(){
   (A.priorities || []).slice(0, 3).forEach((p, i) => L.push(`- 승부처 ${i + 1}: ${p.title}${p.angle ? ` → ${p.angle}` : ''}`));
   return L.join('\n');
 }
-const MEDIA_RESEARCH = `[매체 전략 리서치: 겉핥기 금지]
-미디어믹스에 들어가는 매체마다 웹에서 직접 찾아 확인하고 장표에 녹일 것. 공식 문서만 보지 말고 실무자 글로 교차 확인한다.
-- 공식 자료: Google Ads 고객센터·Google Ads & Commerce Blog, Meta 비즈니스 도움말·Meta for Business 소식, 네이버 검색광고 공식 블로그·네이버 광고 고객센터(GFA·쇼핑검색·ADVoost), 카카오비즈니스 가이드, Criteo 도움말·블로그, 쿠팡 광고 센터 등 해당 매체
-- 실무 자료(최근 12개월 우선): 아이보스·오픈애즈 실무 글, 운영자 브런치·블로그 후기, 대행사 리포트(메조미디어·나스미디어 등), Search Engine Land, Jon Loomer 같은 해외 실무 블로그
-- 매체마다 정리할 것: ① 이 브랜드에서 맡는 역할(퍼널 위치·KPI) ② 캠페인 구조(캠페인·광고그룹 나누는 기준, 입찰 전략, 학습에 필요한 전환 수·일 예산) ③ 타겟·시그널 설정 ④ 소재 포맷·규격과 이번 브랜드용 소재 아이디어 ⑤ 최근 1년 안의 제품 변화와 활용법(해당되는 것만) ⑥ 실무에서 자주 하는 실수와 막는 방법 ⑦ 평가 지표와 증액·감액 판단 기준 ⑧ 예산·일정 ⑨ 다른 대행사가 잘 안 하는, 이 브랜드만을 위한 운영 아이디어 1개
-- 업종 규제(심의, 금지 표현, 타겟 제한)가 있으면 매체별 제약과 대응을 함께 쓸 것.
-- 확인한 사실은 source에 매체·문서명·날짜를 쓰고, 확인하지 못한 기능·수치는 쓰지 말 것.
-- 매체 장표는 매체당 1~2장. 매체 이름만 바꾸면 다른 브랜드에도 쓸 수 있는 문장이면 다시 쓸 것.`;
+const MEDIA_RESEARCH = `[매체 전략 리서치: 겉핥기 금지, KPI 달성 기준으로 쓸 것]
+목표는 "매체 소개"가 아니라 ROAS·CPA·CVR 목표를 실제로 맞추는 운영안이다. 매체마다 웹에서 직접 확인하고, 공식 문서와 실무자 글을 교차 확인한다.
+- 대상 매체: RFP 매체 전부 + 이 브랜드에 효과가 있으면 메타·구글(유튜브)·네이버(검색·쇼핑·GFA·ADVoost)·카카오(비즈보드·모먼트)·크리테오(리타겟·커머스 미디어)·쿠팡 중 빠진 매체도 검토. RFP 범위 밖이면 "추가 제안"으로 구분하고 넣을지 말지 근거를 한 줄로.
+- 공식 자료: Google Ads 고객센터·Google Ads & Commerce Blog, Meta 비즈니스 도움말·Meta for Business, 네이버 검색광고 공식 블로그·광고 고객센터(쇼핑검색·GFA·ADVoost), 카카오비즈니스 가이드, Criteo 도움말·블로그, 쿠팡 광고 센터
+- 실무 자료(최근 12개월 우선): 아이보스·오픈애즈, 운영자 브런치·블로그, 대행사 리포트(메조미디어·나스미디어·AMPM 인사이트 등), Search Engine Land, Jon Loomer 등
+[매체마다 반드시 쓸 것]
+① KPI 목표: 이 매체의 역할(퍼널 위치)과 목표 ROAS·CPA·CVR·CTR 숫자. 근거는 업종 벤치마크(출처) 또는 "월 예산 ÷ 목표 CPA = 필요 전환 수" 같은 역산. 근거 없는 숫자는 "(가정)"
+② KPI 분해: ROAS = CTR × CVR × 객단가 ÷ CPC 처럼 쪼개서, 이 브랜드에서 가장 약한 고리 하나와 그걸 올릴 레버를 지정 (예: 객단가 40만 원 고관여 → CVR이 병목 → 랜딩 첫 화면·리뷰·사용 영상)
+③ 캠페인 구조: 캠페인·광고그룹 나누는 기준, 입찰 전략(목표 ROAS·목표 CPA·최대 전환 등)과 전환 시점, 학습에 필요한 주간 전환 수와 그에 맞는 일 예산 계산
+④ 타겟·시그널: 1st party(구매자·장바구니·상세 조회) 활용, 제외 타겟, 신규 고객 비중 관리
+⑤ 소재: 포맷·규격, 이 브랜드 전용 소재 아이디어, 소재 피로도 기준과 교체 주기
+⑥ 최근 1년 제품 변화와 활용법(확인된 것만, 날짜 포함)
+⑦ 흔한 실수와 막는 방법 (예: 학습 중 잦은 수정, 브랜드 키워드 잠식, 전환 중복 집계, 리타겟 과다 노출)
+⑧ 증액·감액·중지 기준: "7일 CPA가 목표의 80% 이하면 예산 20% 증액" 처럼 숫자로
+⑨ 다른 대행사가 잘 안 하는, 이 브랜드만을 위한 운영 아이디어 1개
+- 업종 규제(심의, 금지 표현, 타겟·데이터 제한)는 매체별 제약과 대응까지.
+- 확인한 사실은 source에 매체·문서명·날짜. 확인 못 한 기능·수치는 쓰지 말 것.
+- 매체 장표는 매체당 1~2장, items에 "KPI 목표"(h)와 수치(v)를 반드시 포함. 매체 이름만 바꾸면 다른 브랜드에도 쓸 수 있는 문장은 다시 쓸 것.
+- 매체 간 역할이 겹치면(예: 메타 리타겟과 크리테오, 네이버 쇼핑검색과 ADVoost) 누가 무엇을 맡는지와 중복 측정 방지책을 명시.`;
+const MEDIA_LEVERS = `[매체별 KPI 레버 체크리스트 — 실무 기준, 최신 여부는 검색으로 재확인]
+- 메타: 소재 다양성(컨셉이 다른 소재 묶음)이 타겟팅 역할 · 판매 캠페인은 넓은 타겟 + 기존 고객 비중 상한 · 광고세트 학습은 주 50전환 전후가 기준(미달 시 상위 이벤트나 예산 통합) · CAPI·이벤트 품질 점검 · 피로도는 빈도와 CTR 하락으로 판단
+- 구글/유튜브: 검색은 브랜드·제품명 방어와 일반 키워드 분리 · PMax·Demand Gen은 피드 품질(제목·이미지·가격)과 전환 가치가 성과를 좌우 · 목표 ROAS는 실제 달성치 근처에서 시작해 단계적으로 조정 · 향상된 전환·오프라인 전환으로 신호 보강 · 유튜브는 조회 후 검색·전환 기여까지 평가
+- 네이버: 검색광고는 키워드 의도별 그룹·입찰, 쇼핑검색은 상품명·대표 이미지·리뷰 수가 CTR·CVR 좌우 · 브랜드검색으로 브랜드 키워드 방어 · GFA는 리타겟·유사 확장 · ADVoost 등 자동화 상품은 기존 캠페인과 잠식 여부 점검
+- 카카오: 비즈보드는 도달·클릭 단가가 강점, 랜딩 전환율이 성패 · 모먼트 리타겟·카카오톡 채널 친구로 재접촉 · 메시지(알림톡·친구톡)는 첫 구매 후 리뷰·재구매 유도
+- 크리테오: 상품 피드 기반 다이내믹 리타겟 · 메타·GFA 리타겟과 대상 중복과 기여 중복을 먼저 정리 · 장바구니·상세 이탈자 대상 · 빈도 상한과 최근성(일수) 기준으로 효율 관리
+- 쿠팡: 자동 운영 → 목표 ROAS 기반 매출최적화로 전환하며 학습 기간 유지 · 대표 이미지·상품명·리뷰가 CVR 좌우 · 외부 측정 불가라 쿠팡 리포트와 판매 데이터 대조`;
 const ORDER_RULE = `[목차 순서: 우선순위 기반]
 1) 먼저 priorities를 정한다. 2) sections 순서는 priorities가 정한다(전형적인 제안서 순서를 따르지 않아도 됨). 1순위 승부처 섹션을 회사소개 바로 다음, 또는 맨 앞에 둔다. 3) 각 섹션 goal에 어떤 우선순위를 푸는 섹션인지 적는다. 4) 우선순위가 낮은 일반 항목(운영·리포트·비용)은 뒤로 모으고 장수를 줄인다.`;
 
@@ -46,7 +64,7 @@ ${bt ? `[제안자 브리프: 사람이 판단한 내용이니 최우선으로 �
 5) 예산이 있으면 매체별 비중과 월 금액을 계산하고 3안 제시.
 ${B.mediaDeep === false ? '' : '6) 아래 [매체 전략 리서치]를 수행하고 결과를 mediaResearch와 매체 장표에 반영.\n'}
 ${B.reorder === false ? '' : ORDER_RULE + '\n'}
-${B.mediaDeep === false ? '' : MEDIA_RESEARCH + '\n'}
+${B.mediaDeep === false ? '' : MEDIA_RESEARCH + '\n' + MEDIA_LEVERS + '\n'}
 ${PLAYBOOK_RULES}
 ${eng}
 
@@ -54,11 +72,13 @@ ${inputDump()}
 
 [출력] 설명 없이 아래 스키마의 JSON 코드블록 하나만 출력해. (대시보드에 그대로 붙여넣음)
 ${JSON_SCHEMA.replace(/\n}$/, `,
- "mediaResearch":[{"media":"","role":"퍼널 위치·KPI","structure":"캠페인 구조·입찰·학습 조건","signals":"타겟·시그널","creative":"포맷·규격·소재 아이디어","latest":"최근 제품 변화와 활용","pitfalls":"자주 하는 실수와 방지책","kpi":"평가 지표·증감액 기준","idea":"이 브랜드만의 운영 아이디어","sources":["매체·문서명·날짜"]}]
+ "mediaResearch":[{"media":"","role":"퍼널 위치·KPI","kpiTarget":"목표 ROAS·CPA·CVR·CTR 수치와 근거(역산·벤치마크 출처)","kpiTree":"KPI 분해와 가장 약한 고리·올릴 레버","structure":"캠페인 구조·입찰·학습 조건","signals":"타겟·시그널","creative":"포맷·규격·소재 아이디어","latest":"최근 제품 변화와 활용","pitfalls":"자주 하는 실수와 방지책","kpi":"평가 지표·증감액 기준","idea":"이 브랜드만의 운영 아이디어","sources":["매체·문서명·날짜"]}]
 }`)}`;
 }
 
 /* ---------- 심화 리서치 창: ① 브리프 → ② 프롬프트 → ③ 적용 ---------- */
+const briefKey = () => { const B = S.input.brief || {}; return JSON.stringify([B.points, B.flow, B.reorder, B.mediaDeep, S.input.notes]); };
+const currentPrompt = () => { const B = S.input.brief || {}; return B.customPrompt && B.customFor === briefKey() ? B.customPrompt : claudePromptAll(); };
 const _openBridge0 = openClaudeBridge;
 openClaudeBridge = function(sec){
   if (sec) return _openBridge0(sec);
@@ -89,13 +109,12 @@ openClaudeBridge = function(sec){
       <div class="row mb8"><b style="flex:1">프롬프트 (${prompt.length.toLocaleString()}자) · 직접 수정 가능</b><button class="btn sm ghost" id="resetP">초기화</button><button class="btn sm pri" id="cpy">복사</button><a class="btn sm" href="https://claude.ai/new" target="_blank" rel="noopener">Claude 열기 ↗</a></div>
       <textarea id="pr" style="min-height:56vh;font-size:12px;line-height:1.55">${esc(prompt)}</textarea>
       <div class="row mt12" style="justify-content:space-between;margin-top:14px"><button class="btn" data-step="1">← 브리프 수정</button><button class="btn pri" id="next2">Claude 답변 붙여넣기 →</button></div>` : `
-      <div class="row mb8"><b style="flex:1">Claude 답변(JSON) 붙여넣기</b><span class="hint" style="margin:0">답변 앞뒤의 설명 문장은 자동으로 무시됩니다</span></div>
+      <div class="row mb8"><b style="flex:1">Claude 답변(JSON) 붙여넣기</b><span class="hint" style="margin:0">붙여넣는 즉시 적용되고 JSON 파일로 저장됩니다 · 앞뒤 설명 문장은 자동 무시</span></div>
       <textarea id="js" style="min-height:50vh;font-size:12px" placeholder='{"research":{...}, "priorities":[...], "sections":[...]}'></textarea>
       <label class="ck mt12" style="display:flex;gap:6px;align-items:center;margin-top:12px"><input type="checkbox" id="withSec" checked>섹션·장표 내용까지 적용 (기존 로직 대체)</label>
       <div class="row mt12" style="justify-content:space-between;margin-top:12px"><button class="btn" data-step="2">← 프롬프트</button><button class="btn pri" id="apply">적용</button></div>`}`;
     bind();
   };
-  const briefKey = () => JSON.stringify([B.points, B.flow, B.reorder, B.mediaDeep, S.input.notes]);
   const keep = () => {
     if ($('#pts', m)) B.points = $('#pts', m).value;
     if ($('#nts', m)) S.input.notes = $('#nts', m).value;
@@ -114,10 +133,66 @@ openClaudeBridge = function(sec){
     on('next2', () => { keep(); step = 3; draw(); });
     on('resetP', () => { B.customPrompt = ''; save(); draw(); });
     on('cpy', async () => { keep(); const v = $('#pr', m).value; try { await navigator.clipboard.writeText(v); toast('프롬프트 복사됨 — Claude에 붙여넣으세요'); } catch(e){ $('#pr', m).select(); document.execCommand('copy'); toast('복사됨'); } });
-    on('apply', () => { try { importClaude(parseJSON($('#js', m).value), $('#withSec', m)?.checked); m.remove(); save(); render(); toast('Claude 결과를 적용했습니다'); } catch(e){ toast('적용 실패: ' + e.message, 4500); } });
+    on('apply', () => { if (applyClaudeJSON($('#js', m).value, {withSec: $('#withSec', m)?.checked})) m.remove(); });
+    const ta = $('#js', m); if (ta) ta.addEventListener('paste', () => setTimeout(() => { if (applyClaudeJSON(ta.value, {withSec: $('#withSec', m)?.checked, quiet: true})) m.remove(); }, 30));
     const ps = $('#preset', m); if (ps) ps.onchange = () => { keep(); B.preset = ps.value; const f = FLOW_PRESETS[ps.value]?.flow || []; if (ps.value === 'auto' || !B.flow.filter(x => x.trim()).length || confirm('현재 흐름을 프리셋으로 바꿀까요?')) B.flow = [...f]; draw(); };
     m.querySelectorAll('[data-fm]').forEach(b => b.onclick = () => { keep(); const i = +b.dataset.fm, j = i + +b.dataset.d; if (j < 0 || j >= B.flow.length) return; [B.flow[i], B.flow[j]] = [B.flow[j], B.flow[i]]; draw(); });
     m.querySelectorAll('[data-fx]').forEach(b => b.onclick = () => { keep(); B.flow.splice(+b.dataset.fx, 1); draw(); });
   };
   draw();
 };
+
+
+/* ---------- 인풋 단계 전용: 프롬프트 → Claude → JSON 붙여넣기(자동 적용·파일 저장) ---------- */
+function jsonStats(j){ const secs = j.sections || []; return {sections: secs.length, pages: secs.reduce((a, x) => a + (x.pages || []).length + (x.divider ? 1 : 0), 0), media: (j.mediaResearch || []).length}; }
+function jsonFileName(){ return `${(S.project.client || 'proposal').replace(/[\\/:*?"<>|\s]+/g, '_')}_리서치_${isoToday().replace(/-/g, '')}_${new Date().toTimeString().slice(0, 5).replace(':', '')}.json`; }
+function saveJSONFile(j, name){ const blob = new Blob([JSON.stringify(j, null, 1)], {type: 'application/json'}); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500); }
+function applyClaudeJSON(text, o = {}){
+  let j; try { j = parseJSON(text); } catch(e){ if (!o.quiet || String(text || '').trim().length > 20) toast('JSON을 읽지 못했습니다 — Claude 답변 전체를 다시 붙여넣어 주세요 (' + e.message + ')', 5000); return false; }
+  if (!j || (!j.sections && !j.priorities && !j.research)){ toast('제안 로직 JSON이 아닙니다 — research·priorities·sections가 있는 답변을 붙여넣으세요', 5000); return false; }
+  importClaude(j, o.withSec !== false);
+  const st = jsonStats(j), name = o.name || jsonFileName();
+  S.input.claudeJson = {name, at: Date.now(), ...st, data: j};
+  if (S.input.jsonAutoSave !== false && !o.noFile) saveJSONFile(j, name);
+  if (S.project.status === '준비') S.project.status = '작성중';
+  save(); render();
+  toast(`적용 완료 — 섹션 ${st.sections}개 · ${st.pages}장${st.media ? ` · 매체 ${st.media}개` : ''}${S.input.jsonAutoSave !== false && !o.noFile ? ' · JSON 파일 저장됨' : ''}. 로직 단계에 자동 반영됐습니다`, 4500);
+  return true;
+}
+async function genJsonAPI(){
+  const prompt = currentPrompt();
+  busy('Claude API로 JSON 생성 중…', '내 프롬프트 그대로 · 웹 검색 포함 2~5분');
+  try { const t = await callClaude({system: SYS_BASE, content: prompt, maxTokens: 32000, web: S.settings.web !== false}); applyClaudeJSON(t); }
+  catch(e){ toast(e.message === 'NOKEY' ? '설정에서 API 키를 넣어주세요' : '생성 실패: ' + e.message, 5000); }
+  unbusy();
+}
+function vClaudeCard(){
+  const C = S.input.claudeJson, B = S.input.brief || {}, hasBrief = !!(B.points || (B.flow || []).some(f => f && f.trim()));
+  return `<div class="card" id="cjCard"><h3><span class="n">D</span>Claude 심화 리서치 → 제안 로직 JSON <span style="flex:1"></span>${C ? `<span class="tag ok">적용됨 · ${esc(C.name)}</span>` : '<span class="tag warn">미적용</span>'}</h3>
+    <p class="hint">프롬프트와 JSON 적용은 여기서만 합니다. 붙여넣는 즉시 우선순위·로직·섹션·장표가 채워지고 로직 단계에 그대로 반영됩니다.</p>
+    <div class="grid2" style="align-items:stretch">
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <div class="cjstep"><b>① 브리프·프롬프트</b><span class="ks">${hasBrief ? '브리프 작성됨' : '브리프 미작성 — RFP 핵심 포인트와 제안 흐름을 먼저 적으면 결과가 훨씬 날카로워집니다'}${B.customPrompt && B.customFor === briefKey() ? ' · 직접 수정한 프롬프트 사용 중' : ''}</span>
+          <div class="row" style="gap:6px;margin-top:8px"><button class="btn sm" data-act="claudeAll">브리프 작성·프롬프트 편집</button></div></div>
+        <div class="cjstep"><b>② 프롬프트 복사 → Claude에 붙여넣기</b><span class="ks">Claude가 웹 검색·상세페이지 확인 후 JSON 코드블록으로 답합니다</span>
+          <div class="row" style="gap:6px;margin-top:8px"><button class="btn sm pri" data-act="cjCopy">프롬프트 복사 (${currentPrompt().length.toLocaleString()}자)</button><a class="btn sm" href="https://claude.ai/new" target="_blank" rel="noopener">Claude 열기 ↗</a>${apiKey() ? '<button class="btn sm dark" data-act="cjApi">API로 바로 생성</button>' : ''}</div></div>
+        ${C ? `<div class="cjstep" style="background:var(--okbg,#ECFDF3)"><b>적용된 JSON</b><span class="ks">${new Date(C.at).toLocaleString('ko-KR', {month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'})} · 섹션 ${C.sections}개 · ${C.pages}장${C.media ? ` · 매체 리서치 ${C.media}개` : ''}</span>
+          <div class="row" style="gap:6px;margin-top:8px"><button class="btn sm" data-act="cjDown">JSON 파일 받기</button><button class="btn sm" data-act="cjReapply">다시 적용</button><button class="btn sm" data-act="tab" data-v="logic">로직 단계에서 보기 →</button></div></div>` : ''}
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div class="row"><b style="flex:1">③ Claude 답변 붙여넣기 — 붙여넣는 즉시 적용·저장</b><button class="btn sm" data-act="cjClip">클립보드에서 가져오기</button></div>
+        <textarea id="cjPaste" style="flex:1;min-height:170px;font-size:12px" placeholder="Claude 답변을 그대로 붙여넣으세요 (Ctrl+V). 앞뒤 설명 문장·코드블록 표시는 자동으로 무시합니다."></textarea>
+        <div class="row" style="gap:12px;flex-wrap:wrap"><label class="ck" style="display:flex;gap:6px;align-items:center"><input type="checkbox" data-bind="input.jsonAutoSave" ${S.input.jsonAutoSave !== false ? 'checked' : ''}>적용할 때 JSON 파일로 자동 저장</label><span class="sp"></span><label class="btn sm ghost" style="cursor:pointer">.json 파일 불러오기<input type="file" accept=".json,application/json" id="cjFile" style="display:none"></label><button class="btn sm pri" data-act="cjApply">적용</button></div>
+      </div>
+    </div></div>`;
+}
+Object.assign(ACT, {
+  cjCopy: async () => { const v = currentPrompt(); try { await navigator.clipboard.writeText(v); } catch(e){ const t = document.createElement('textarea'); t.value = v; document.body.appendChild(t); t.select(); document.execCommand('copy'); t.remove(); } toast('프롬프트 복사됨 — Claude에 붙여넣고, 답변을 ③에 붙여넣으세요'); },
+  cjApply: () => applyClaudeJSON($('#cjPaste')?.value || ''),
+  cjClip: async () => { try { const t = await navigator.clipboard.readText(); if (!t.trim()) return toast('클립보드가 비어 있습니다'); applyClaudeJSON(t); } catch(e){ toast('브라우저가 클립보드 읽기를 막았습니다 — 칸에 직접 붙여넣어 주세요', 4000); $('#cjPaste')?.focus(); } },
+  cjApi: () => genJsonAPI(),
+  cjDown: () => { const C = S.input.claudeJson; if (C?.data) saveJSONFile(C.data, C.name); },
+  cjReapply: () => { const C = S.input.claudeJson; if (C?.data && confirm('저장된 JSON으로 우선순위·로직·섹션을 다시 채울까요? (로직 단계에서 고친 내용은 덮어씁니다)')) applyClaudeJSON(JSON.stringify(C.data), {name: C.name, noFile: true}); }
+});
+document.addEventListener('paste', e => { if (e.target && e.target.id === 'cjPaste') setTimeout(() => applyClaudeJSON(e.target.value, {quiet: true}), 30); });
+document.addEventListener('change', e => { if (e.target && e.target.id === 'cjFile'){ const f = e.target.files[0]; if (f) f.text().then(t => applyClaudeJSON(t, {name: f.name, noFile: true})); e.target.value = ''; } });

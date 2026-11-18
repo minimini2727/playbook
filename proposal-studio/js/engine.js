@@ -111,6 +111,23 @@ function MEDIA_LIB(c){
       kpi: 'CPI, 가입 CPA, 7일 재방문율', when: '4주 학습 후 최적화 이벤트 전환'}
   };
 }
+/* 매체별 KPI 목표·레버·증감액 기준 (수치는 첫 2주 실측으로 재설정하는 가정치) */
+function mediaKPI(m){
+  const n = m.name || '', R = (target, lever, scale) => ({target, lever, scale});
+  if (/브랜드검색/.test(n)) return R('브랜드 클릭률·전환 ROAS', '브랜드 검색자 이탈을 막는 게 목적\n소재에 대표 상품·혜택을 걸어 CVR 유지', '노출 대비 클릭률 하락 시 소재 교체\n계약 단위라 증감액 대신 지면 조정');
+  if (/쇼핑/.test(n)) return R('목표 ROAS (가정)', 'CTR은 상품명·대표 이미지, CVR은 리뷰 수가 좌우\n상위 상품 이미지 A/B부터', '7일 ROAS 목표 120% 이상 상품 입찰 10% 상향\n80% 미만 2주 지속 시 제외');
+  if (/파워링크|검색광고|네이버 검색/.test(n)) return R('키워드별 CPA (가정)', '전환 키워드와 탐색 키워드 입찰 분리\n전환 없는 고비용 키워드가 CPA를 끌어올림', '전환 키워드 CPA 목표 80% 이하면 순위 상향\n클릭 30회 무전환 키워드 입찰 하향');
+  if (/GFA/.test(n)) return R(/전환/.test(n) ? '리타겟 ROAS (가정)' : '신규 도달 단가·CTR', /전환/.test(n) ? '이탈 경과일별 메시지로 CVR 확보\n타 매체 리타겟과 대상 기간 분리' : '반응 지면·타겟만 남겨 클릭 단가 관리\n조회 고객은 전환 캠페인으로 넘김', '주간 CPA 목표 대비 120% 초과 시 타겟 축소\n80% 이하 2주 연속 시 예산 20% 증액');
+  if (/메타/.test(n)) return /전환|카탈로그/.test(n) ? R('목표 CPA·ROAS (가정)', '학습은 광고세트당 주 50전환 전후 필요\n예산을 쪼개지 말고 소재 수로 테스트', '7일 CPA 목표 80% 이하면 예산 20% 증액\n학습 중 수정은 주 1회 이내') : R('3초 시청률·CTR', '첫 3초 훅이 CTR을 결정\n컨셉이 다른 소재 4종 이상 동시 운영', '빈도 3회 이상·CTR 30% 하락 시 소재 교체\n상위 소재만 전환 캠페인으로 이관');
+  if (/구글|PMax/.test(n)) return R('목표 ROAS (가정)', '피드 제목·이미지 품질이 노출과 CTR을 좌우\n브랜드 검색은 별도 캠페인으로 분리', '목표 ROAS는 실적 근처에서 시작해 2주 단위 10~15% 조정\n학습 중 대폭 변경 금지');
+  if (/유튜브|Demand/.test(n)) return R('조회 후 전환·검색 증가', '조회 단가보다 시청 후 사이트 방문·브랜드 검색으로 판단\n첫 5초에 제품 노출', '조회 후 전환 CPA 목표 대비 150% 초과 3주 시 비중 축소');
+  if (/카카오/.test(n)) return R('클릭 후 CVR·친구 단가', '비즈보드는 클릭은 싸지만 랜딩 CVR이 병목\n랜딩 첫 화면을 소재 메시지와 맞춤', 'CPA 목표 150% 초과 시 리타겟·메시지로 예산 이동');
+  if (/크리테오/.test(n)) return R('리타겟 ROAS (가정)', '메타·GFA 리타겟과 대상 겹침이 ROAS 착시를 만듦\n최근성(일수)·빈도 상한으로 관리', '중복 제거 후 증분 ROAS 기준으로 판단\n목표 미달 시 최근성 7일 이내로 축소');
+  if (/쿠팡/.test(n)) return R('쿠팡 광고 ROAS (가정)', '대표 이미지·리뷰 수가 CVR 좌우\n학습 7~14일은 끄고 켜지 않기', '목표 ROAS 대비 120% 초과 시 목표 상향\n80% 미만 2주 시 목표 하향 후 재학습');
+  if (/틱톡/.test(n)) return R('시청 지속률·CTR', '크리에이터 콘텐츠 다수 테스트 후 상위만 확장', '지속률 상위 20% 영상만 예산 증액');
+  if (/앱/.test(n)) return R('첫 구매 CPA (가정)', '설치가 아닌 첫 구매 이벤트로 최적화 단계 상향', '7일 재방문율 하위 매체 예산 축소');
+  return R('[목표 KPI 입력]', '[가장 약한 KPI와 레버 입력]', '[증감액 기준 입력]');
+}
 const STAGE = {upper: {k: 'T1', en: 'DISCOVER', ko: '발견', type: '확장 트랙', lb: 'Upper funnel', desc: '브랜드를 모르는 고객 대상 첫 노출'}, mid: {k: 'T2', en: 'DECIDE', ko: '선택', type: '전환 트랙', lb: 'Mid funnel', desc: '비교·검색 고객의 선택 유도'}, low: {k: 'T3', en: 'RETURN', ko: '재방문', type: '유지 트랙', lb: 'Low funnel', desc: '방문 고객 결제, 구매 고객 재구매'}};
 /* 인풋의 미디어믹스(직접 입력)가 있으면 그것을 우선 사용 */
 function customMedia(c, row){
@@ -364,7 +381,7 @@ function enginePool(role, c, sec = {}){
     const pages = [];
     if (!(sec.hasPlaybook ?? S.sections.some(s => s.role === 'playbook' && s.include !== false))) pages.push(...(typeof _enginePool0 === 'function' ? _enginePool0 : enginePool)('playbook', c).slice(1, 2));
     pages.push(PG('explain', al.length <= 6 ? 'hub' : 'table', `${mix.length}개 매체 퍼널 운영 구조`, '매체별 역할 요약, 상세 실행안은 다음 장부터', al.length <= 6 ? al.map(m => [m.name, `${m.role}\n${st(m.stage).en}  ${m.pct}%`]) : al.map(m => [m.name, m.role, `${st(m.stage).en}  ${m.pct}%`]), {cols: ['매체', '역할', '트랙, 비중'], keyMsg: `${B}\n미디어 믹스`, prio: 1}));
-    al.forEach((m, i) => pages.push(PG('strategy', MEDIA_LAYOUTS[i % MEDIA_LAYOUTS.length], m.head, m.sub, [['대상', m.who], ['소재', m.what], ['랜딩', m.land], ['운영 방법', m.acts.map((a, k) => `${k + 1}) ${a}`).join('\n')], ['평가 지표', m.kpi], ['일정·예산', m.when + (bud ? `, 비중 ${m.pct}% (${amt(m.pct)})` : `, 비중 ${m.pct}%`)]], {keyMsg: m.role, tag: `${st(m.stage).en}  ${st(m.stage).type}`, mediaName: m.name, notes: `${m.name}: ${m.role}`, prio: 1})));
+    al.forEach((m, i) => { const K = mediaKPI(m); pages.push(PG('strategy', MEDIA_LAYOUTS[i % MEDIA_LAYOUTS.length], m.head, m.sub, [['KPI 목표', K.lever, K.target], ['대상', m.who], ['소재', m.what], ['랜딩', m.land], ['운영 방법', m.acts.map((a, k) => `${k + 1}) ${a}`).join('\n')], ['증감액 기준', K.scale], ['일정·예산', m.when + (bud ? `, 비중 ${m.pct}% (${amt(m.pct)})` : `, 비중 ${m.pct}%`)]], {keyMsg: `${m.role} · ${K.target}`, tag: `${st(m.stage).en}  ${st(m.stage).type}`, mediaName: m.name, notes: `${m.name}은 ${K.lever.split('\n')[0]} 쪽이 병목이라 여기부터 손봅니다.`, prio: 1})); });
     return pages;
   }
   case 'budget': {

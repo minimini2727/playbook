@@ -27,7 +27,7 @@ const PLAYBOOK_RULES = `[작성 규칙 — 반드시 따를 것]
 0. 참고용으로 받은 다른 제안서가 있더라도 흐름·장표 구성만 참고하고, 그 문장·카피·수치·사례·캠페인명은 절대 재사용하지 말 것. 모든 문장은 이번 광고주에 맞게 새로 쓸 것.
 1. 목차는 우선순위가 정한다: 전형적인 흐름(진단 → 전략 → 매체 → 크리에이티브 → KPI → 운영)은 참고일 뿐이다. priorities 1순위를 다루는 섹션을 회사소개 다음(필요하면 맨 앞)에 두고, 이후도 우선순위 가중치 순으로 배치한다. 예) 크리에이티브가 1순위면 진단 직후(또는 맨 앞)에 크리에이티브 전략 섹션, 측정 신뢰가 1순위면 측정 설계가 매체 실행안보다 앞. 제안자 브리프에 흐름이 있으면 그 순서가 최우선, RFP가 목차를 지정했으면 그 지정이 그다음.
 2. 장표 타이틀은 주장이 담긴 한 문장, subtitle은 근거나 방법 한 문장.
-3. 매체별 실행안 장표는 layout "spec" — items: 대상 / 소재 / 랜딩 / 운영 방법(번호 3개) / 평가 지표 / 일정·예산. keyMsg=매체 역할 한 줄, tag="DISCOVER · 확장 트랙" 형식.
+3. 매체별 실행안 장표는 layout "spec" — items: KPI 목표(v에 목표 ROAS·CPA 수치) / 대상 / 소재 / 랜딩 / 운영 방법(번호 3개) / 증감액 기준 / 일정·예산. keyMsg=이 매체가 맞출 숫자가 들어간 역할 한 줄(예: "결정 단계 · 월 5,000만 원 · 목표 ROAS 350%"), tag="DISCOVER · 확장 트랙" 형식. 운영 방법은 "그래서 KPI가 왜 오르는지"가 보이는 레버로 쓸 것(예: "상세 이탈자만 14일 리타겟 → CVR 2배 구간에 예산 집중").
 4. 숫자는 source에 출처(기관·매체명, 날짜)를 쓰고, 추정치는 "(가정)"·"(추정)" 표기. 회사 실적·인력명·단가처럼 모르는 사실은 지어내지 말고 "[입력 필요]".
 5. 실행 주체·시점(누가/언제/어떻게)을 항상 명시. "무조건 성과 상승" 같은 단정 금지 — 전제 조건·리스크 병기.
 6. 문체: 사람이 쓴 제안서처럼. 개조식(~확보, ~운영, ~점검)을 기본으로 하고 한 문장에 정보 하나, 수식어는 하나까지. 숫자·매체명·기간·금액 같은 구체 명사로 시작할 것. 한 항목 d는 줄바꿈 2~3줄(한 줄 25~40자). 상투어·번역투·말줄임표·이모지·em dash(—) 금지. "~를 통해 ~를 실현", "~적인 ~화", "~함으로써", "~에 있어서", "~을 진행" 같은 늘어지는 수식은 동사 하나로 줄일 것.
@@ -39,6 +39,7 @@ const PLAYBOOK_RULES = `[작성 규칙 — 반드시 따를 것]
 8. 밀도: strategy/explain 장표는 items 4~6개, 각 d는 줄바꿈 2~3줄(한 줄 25~40자). 한 줄짜리 빈약한 장표 금지. 각 장표에 이 브랜드 고유 정보(제품명·가격대·리뷰 표현·경쟁사명·판매 채널·시즌·RFP 문구) 최소 1개 포함. 다른 브랜드에 그대로 붙여도 말이 되는 문장은 다시 쓸 것.
 9. 전략가 관점: 장표마다 "관찰(데이터·리서치 사실) → 의미(그래서 무엇이 문제인가) → 실행(누가·언제·무엇을)"이 보이게. 브랜드 진단에는 고객 행동 인사이트 3개와 구매 여정별 공백 장표를 반드시 포함.
 10. 금지 표현: "~할 것입니다", "~하겠습니다", "기대됩니다", "성공적인 파트너", "함께 성장", "극대화", "시너지", "혁신", "최적의 솔루션", "다양한", "효과적인", "효율적인", "획기적", "차별화된", "고도화", "선제적", "유기적", "전방위", "원스톱", "인사이트 도출", "니즈 충족", "맞춤형 솔루션", "가치 창출", "패러다임", "게임체인저", "임팩트 있는". keyMsg는 숫자·조건·근거가 들어간 판단 문장으로.
+12. 발표자 노트(notes)·코멘트는 발표자가 실제로 말하듯 1~2문장. "이 장표에서는 ~을 설명합니다" 같은 안내문, "~라는 점이 핵심입니다", "~를 강조하고자 합니다" 같은 문장 금지. 질문이 나올 지점이나 근거 보충만 짧게.
 11. 크리에이티브 섹션: 이미지·영상을 넣을 장표로 구성. crHero(대표 비주얼+컨셉: 첫 항목 h=컨셉 문장, 이후 항목 h=라벨/d=내용), crShorts(숏폼 3컷: 항목 h=훅 유형, v=길이·비율, d=장면·자막), crGrid(소재 라인업 4종: h=트랙·소재명, v=매체·규격, d=메시지), crStory(스토리보드 4~6장면: h=장면, v=시간, d=화면·자막), crAB(A/B안 2개: h=안 이름, d=메시지·차이, v=확인 지표, keyMsg=가설), crFeed(피드 목업 2개: h=CTA, v=규격, d=본문 카피) 중 4개 이상 사용.
 [layout 카탈로그 — items 필드 의미]
 cards(병렬 2~4: h 제목, d 설명, v 수치) · process(단계 3~6: h 단계명, d 내용, v 산출물) · kpi(2~4: h 지표, v 수치, d 설명) · hero(첫 항목 v 큰 숫자 + 나머지 근거) · split(keyMsg 핵심 주장 + 근거 3~5) · spec(매체 실행안: h 라벨, d 내용) · table(5행 이상 비교: h 구분, d 내용, v 수치) · compare(h 항목, v AS-IS, d TO-BE) · funnel(h 단계, d 매체·역할, v 지표) · timeline(h 시점, d 실행, v 산출물) · chart(h 항목, v "35%", d 설명) · matrix(4칸: h, d, v 라벨) · grid(6칸) · list(기타)
@@ -374,8 +375,8 @@ function vInput(){
   </div>
   <div class="card"><h3><span class="n">C</span>브랜드 자료</h3><p class="hint">브랜드북·소개서·성과 리포트(문서), 로고·제품·상세 이미지(컬러칩 자동 추출)</p>
     <div class="drop" data-drop="brand"><b>브랜드 자료를 끌어놓거나 클릭</b>PDF / PPTX / DOCX / TXT / PNG·JPG<input type="file" multiple accept=".pdf,.pptx,.docx,.txt,.md,.csv,.png,.jpg,.jpeg,.webp" data-file="brand"></div>${fileList('brand')}</div>
-  <div class="cta"><button class="btn pri big" data-act="claudeAll">✦ Claude 심화 리서치 — ① 브리프 작성 → ② 프롬프트 확인 → ③ 결과 적용</button>${apiKey() ? '<button class="btn big" data-act="analyzeApi">API로 바로 분석</button>' : ''}</div>
-  <div style="text-align:center;margin:-10px 0 18px"><button class="btn sm ghost" data-act="analyze">Claude 없이 즉시 초안 만들기 (내장 엔진)</button></div>
+  ${typeof vClaudeCard === 'function' ? vClaudeCard() : ''}
+  <div style="text-align:center;margin:-6px 0 18px"><button class="btn sm ghost" data-act="analyze">Claude 없이 즉시 초안 만들기 (내장 엔진)</button></div>
   ${vColors()}
   ${vRefLayouts()}
   ${vMediaMix()}
@@ -423,7 +424,7 @@ function vLogic(){
   const A = S.input.analysis, total = includedSecs().reduce((a, s) => a + (s.pageList.length || +s.pages || 0), 0);
   const head = `<h2 class="pt">2. 로직 — 섹션별로 실제 장표 내용까지 작성합니다</h2><p class="pd">[로직 작성] → 섹션별 희망 페이지 수 조정 → [전체 자동 작성] → 타이틀·내용 수정/삭제/추가 · 페이지 유형(간지/브릿지/전략/설명)·레이아웃 지정</p>`;
   if (!S.sections.length) return head + `<div class="card empty"><b>아직 섹션이 없습니다</b>${A ? (A.sections?.length ? `분석에서 설계한 ${A.sections.length}개 섹션으로 구성합니다${signals().toc ? ' (RFP 지정 목차를 따름)' : ''}.` : '') : '인풋 분석 없이도 기본 퍼포먼스 제안 구조로 시작할 수 있어요.'}<div class="cta mt12"><button class="btn pri big" data-act="buildLogic">▶ 로직 작성</button></div></div>`;
-  let h = head + `<div class="toolbar card" style="padding:12px 16px"><button class="btn" data-act="buildLogic">↻ 로직 재작성</button><button class="btn pri" data-act="genAll">✦ 전체 섹션 자동 작성</button><button class="btn dark" data-act="claudeAll">Claude로 전체 고도화</button><span class="sp"></span><span class="tag pri">포함 ${includedSecs().length}섹션 · 약 ${total}p</span><button class="btn sm" data-act="addExtra" data-k="company">+ 회사소개</button><button class="btn sm" data-act="addExtra" data-k="brand">+ 브랜드 스터디</button><button class="btn sm" data-act="addExtra" data-k="case">+ 케이스 스터디</button></div>`;
+  let h = head + `<div class="toolbar card" style="padding:12px 16px"><button class="btn" data-act="buildLogic">↻ 로직 재작성</button><button class="btn pri" data-act="genAll">✦ 전체 섹션 자동 작성</button>${S.input.claudeJson ? `<span class="tag ok" title="인풋 단계에서 적용한 Claude JSON">✦ ${esc(S.input.claudeJson.name)} 기반</span>` : ''}<span class="sp"></span><span class="tag pri">포함 ${includedSecs().length}섹션 · 약 ${total}p</span><button class="btn sm" data-act="addExtra" data-k="company">+ 회사소개</button><button class="btn sm" data-act="addExtra" data-k="brand">+ 브랜드 스터디</button><button class="btn sm" data-act="addExtra" data-k="case">+ 케이스 스터디</button></div>`;
   if (S.isLibrary) h += `<div class="note mb12"><b>기본 장표 라이브러리 편집 중</b> — 여기서 만든 장표가 모든 제안서의 회사 소개·조직·보고 체계·기술·사례·이슈 대응 섹션에 기본값으로 들어갑니다. [✦ 자동 작성]으로 틀을 만든 뒤 회사 자료로 채우세요.</div>`;
   else { const LS = (LIB()?.sections || []).filter(x => x.pageList.length); h += `<div class="row mb12" style="gap:8px;flex-wrap:wrap"><span class="hint" style="margin:0">기본 장표 라이브러리는 자동으로 들어가지 않습니다. 필요할 때 눌러서 넣으세요 →</span>${LS.map(x => `<button class="btn sm" data-act="libAddSec" data-r="${x.role}">＋ ${esc(x.title)} (${x.pageList.filter(p => p.type !== 'divider').length}p)</button>`).join('') || '<span class="ks">라이브러리가 비어 있습니다</span>'}<button class="btn sm ghost" data-act="openLib">라이브러리 편집</button></div>`; }
   if (A?.logic?.concept) h += `<div class="note info mb12"><b>컨셉</b> ${esc(A.logic.concept)} &nbsp;·&nbsp; <b>메시지</b> ${esc(A.logic.message || '')}</div>`;
@@ -481,13 +482,13 @@ function vWash(){
   let h = `<h2 class="pt">3. 디자인 워싱 — 초안을 제안서 디자인으로 디벨롭합니다</h2><p class="pd">내용 구조에 맞는 레이아웃 자동 선택(15종) · 연속 장표 레이아웃 변주 · 인풋 컬러칩 · Pretendard 위계(타이틀 Bold / 서브·본문 Light) · 표준 간격</p>`;
   if (!pages) return h + `<div class="card empty"><b>워싱할 페이지가 없습니다</b>로직 단계에서 내용을 먼저 작성하세요.<div class="cta mt12"><button class="btn" data-act="tab" data-v="logic">로직 단계로</button></div></div>`;
   h += `<div class="toolbar card" style="padding:12px 16px"><button class="btn pri" data-act="washAll">✦ 전체 디자인 워싱</button><button class="btn" data-act="unwashAll">초안으로 되돌리기</button>
-    <label class="ck" style="display:flex;gap:6px;align-items:center;margin-left:8px">테마 <select data-bind="design.theme" style="width:230px">${Object.entries(THEMES).map(([k, n]) => `<option value="${k}" ${S.design.theme === k ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
+    <label class="ck" style="display:flex;gap:6px;align-items:center;margin-left:8px">전체 테마 <select data-bind="design.theme" style="width:230px">${Object.entries(THEMES).map(([k, n]) => `<option value="${k}" ${S.design.theme === k ? 'selected' : ''}>${n}</option>`).join('')}</select></label>
     <span class="hint" style="margin:0">${esc(typeof DS3 !== 'undefined' && DS3[S.design.theme] ? DS3[S.design.theme].desc : '')}</span>
     <span class="sp"></span><span style="display:flex;gap:4px;align-items:center">${S.input.colors.map(c => `<span title="${esc(c.role)} ${esc(c.hex)}" style="width:22px;height:22px;border-radius:6px;background:${c.hex};box-shadow:0 0 0 1px var(--line)"></span>`).join('')}</span>
     <span class="tag ${washed === pages ? 'ok' : 'warn'}">워싱 ${washed} / ${pages}p</span><button class="btn sm" data-act="tab" data-v="input">컬러칩 수정</button></div>`;
   S.sections.forEach((sec, si) => {
     if (!sec.pageList.length) return;
-    h += `<div class="card"><h3><span class="kind ${sec.kind}">${KINDS[sec.kind]}</span>${esc(sec.title)} <span style="flex:1"></span><button class="btn sm pri" data-act="washSec" data-s="${si}">이 섹션 워싱</button><button class="btn sm" data-act="secPPT" data-s="${si}">PPT</button><button class="btn sm" data-act="secPDF" data-s="${si}">PDF</button></h3>
+    h += `<div class="card"><h3><span class="kind ${sec.kind}">${KINDS[sec.kind]}</span>${esc(sec.title)} <span style="flex:1"></span><label class="ck" style="display:flex;gap:6px;align-items:center;font-size:12px;font-weight:600">섹션 테마 <select data-bind="sections.${si}.theme" style="width:180px"><option value="">전체 테마 따름</option>${Object.entries(THEMES).map(([k, n]) => `<option value="${k}" ${sec.theme === k ? 'selected' : ''}>${n}</option>`).join('')}</select></label><label class="ck" style="display:flex;gap:6px;align-items:center;font-size:12px;font-weight:600" title="이 섹션만 포인트 컬러 변경">포인트 <input type="color" data-bind="sections.${si}.accent" value="${validHex(sec.accent || '') ? sec.accent : (S.input.colors[0]?.hex || '#1F3A93')}" style="width:34px;height:26px;padding:0;border:0"></label>${sec.accent || sec.theme ? `<button class="btn sm ghost" data-act="secStyleReset" data-s="${si}" title="섹션 설정 해제">↺ 전체와 동일</button>` : ''}<button class="btn sm pri" data-act="washSec" data-s="${si}">이 섹션 워싱</button><button class="btn sm" data-act="secPPT" data-s="${si}">PPT</button><button class="btn sm" data-act="secPDF" data-s="${si}">PDF</button></h3>
       <div class="gallery">${sec.pageList.map((p, pi) => `<div class="gi"><div data-act="preview" data-s="${si}" data-p="${pi}" style="cursor:zoom-in">${thumbHTML(pageItem(sec, p, pi + 1), 290)}</div><div class="lb"><span>p${pi + 1} · ${PAGE_TYPES[p.type]}${p.type === 'strategy' || p.type === 'explain' ? ' · ' + ((typeof ds3On === 'function' && ds3On() && p.washed && p.tkLayout ? TK_NAMES[p.tkLayout] : LAYOUTS[p.layout]) || '').replace('템플릿: ', '') : ''}</span><span class="row" style="gap:4px">${p.type === 'strategy' || p.type === 'explain' ? `<button class="btn sm ghost" data-act="shuffle" data-s="${si}" data-p="${pi}" title="다른 레이아웃">⟳ 레이아웃</button>` : ''}${p.washed ? `<button class="btn sm ghost" data-act="unwashPage" data-s="${si}" data-p="${pi}">되돌리기</button>` : '<span class="tag">초안</span>'}</span></div></div>`).join('')}</div></div>`;
   });
   return h;
@@ -652,6 +653,7 @@ const ACT = {
   fit: () => fitCheck(),
   merge: () => { if (!includedSecs().some(s => s.pageList.length)){ toast('취합할 페이지가 없습니다'); return; } S.merge.done = true; if (S.project.status === '준비' || S.project.status === '작성중') S.project.status = '검토'; rr(); toast(`제안서 취합 완료 — 총 ${assemble().length}장`); },
   finalPPT: () => exportPPTX(assemble(), 'final_proposal'),
+  secStyleReset: b => { const s = S.sections[+b.dataset.s]; if (s){ s.theme = ''; s.accent = ''; save(); render(); toast('섹션 테마를 전체 설정으로 되돌렸습니다'); } },
   finalPDF: () => exportPDF(assemble(), 'final_proposal'),
   finalPrint: () => printPDF(assemble(), 'final_proposal')
 };

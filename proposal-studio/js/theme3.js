@@ -27,12 +27,13 @@ function ds3Tok(P, draft){
 const ds3P = (K, P) => ({...P, c1: K.p, c2: K.p2, ink: K.ink, tint: K.soft, tint2: K.line, draft: K.draft});
 
 /* ---------------- 컴포넌트 ---------------- */
+const cardLine = K => K.dark || K.theme === 'bento' ? {} : {line: K.line}; // 밝은 테마 카드는 헤어라인 테두리로 면 구분
 const C3 = {
   card(E, K, x, y, w, h, o = {}){
     const hi = !!o.hi;
     if (K.card === 'rule'){ E.push(R(x, y, w, hi ? 3 : 1.5, hi ? K.p : K.ink)); if (o.fillRule) E.push(R(x, y + 3, w, h - 3, K.panel)); return {on: K.ink, sub: K.sub, pad: 0, top: 18}; }
     if (hi){ const f = K.dark ? mix(K.p, K.bg, .5) : K.p; E.push(R(x, y, w, h, f, {r: K.r})); return {on: onC(f), sub: onC(f), pad: K.r >= 12 ? 24 : 20, top: K.r >= 12 ? 22 : 18, alpha: .86}; }
-    E.push(R(x, y, w, h, K.panel, {r: K.r, ...(K.theme === 'bento' || K.dark ? {} : {line: K.panel === '#FFFFFF' ? K.line : undefined})}));
+    E.push(R(x, y, w, h, K.panel, {r: K.r, ...cardLine(K)}));
     return {on: K.ink, sub: K.sub, pad: K.r >= 12 ? 24 : 20, top: K.r >= 12 ? 22 : 18};
   },
   head(E, K, x, y, w, h, text, o = {}){
@@ -50,7 +51,7 @@ const C3 = {
     E.push(EL(cx - d / 2, cy - d / 2, d, d, on ? K.p : K.bg, {line: K.p, lw: 2})); E.push(T(cx - d / 2, cy - d / 2, d, d, t, {size: d * .32, bold: true, color: on ? K.onP : K.p, align: 'center', valign: 'middle', lh: 1}));
   },
   chip(E, K, x, y, w, h, text, o = {}){
-    const f = o.hi ? K.p : K.soft; E.push(R(x, y, w, h, f, {r: h / 2})); E.push(T(x + 8, y, w - 16, h, text, {size: 12.5, bold: true, color: o.hi ? K.onP : K.p, align: 'center', valign: 'middle', minScale: .6}));
+    const f = o.hi ? K.p : K.soft; E.push(R(x, y, w, h, f, {r: h / 2, ...(o.hi ? {} : {line: mix(K.p, K.bg, .72)})})); E.push(T(x + 8, y, w - 16, h, text, {size: 12.5, bold: true, color: o.hi ? K.onP : K.p, align: 'center', valign: 'middle', minScale: .6}));
   },
   key(E, K, x, y, w, h, text){
     const st = K.key;
@@ -76,7 +77,8 @@ function ds3Tracker(E, K, cur){
   let secs = typeof includedSecs === 'function' ? includedSecs() : []; if (!secs.length) return;
   if (secs.length > 7){ const ci = Math.max(0, secs.indexOf(cur)), st = Math.max(0, Math.min(secs.length - 7, ci - 3)); secs = secs.slice(st, st + 7); }
   const x0 = GEO.x, w = GEO.w - 150, cw = w / secs.length;
-  secs.forEach((s, i) => { const on = s === cur; E.push(T(x0 + i * cw, 24, cw - 10, 16, s.title, {size: 10.5, bold: on, color: on ? K.p : K.mute, minScale: .85})); E.push(R(x0 + i * cw, 44, cw - 10, on ? 3 : 1, on ? K.p : K.line)); });
+  const ac = lum(K.bg) < .4 ? K.ink : K.p, ic = lum(K.bg) < .4 ? mix(K.ink, K.bg, .45) : K.mute;
+  secs.forEach((s, i) => { const on = s === cur; E.push(T(x0 + i * cw, 24, cw - 10, 16, s.title, {size: 10.5, bold: on, color: on ? ac : ic, minScale: .85})); E.push(R(x0 + i * cw, 44, cw - 10, on ? 3 : 1, on ? ac : K.line)); });
 }
 function ds3Chrome(E, K, it, o = {}){
   const sec = it.sec, lab = it.secNo ? `${two(it.secNo)}  ${(sec?.en || it.secTitle || '').toUpperCase()}` : (o.label || '');
@@ -239,30 +241,21 @@ function ds3Toc(it, K){
     E.push(R(x, y + rh - 4, cw, 1, K.line)); });
   return {bg: K.bg, els: E, ds3: true};
 }
-function ds3Divider(it, K){
+function ds3Divider(it, K){ // 간지: 섹션 번호·제목만, 가운데 정렬로 좌우 균형 (페이지 목록 패널 없음)
   const E = [], pg = it.page, sec = it.sec, big = pg.title || it.secTitle || '', sub = pg.subtitle || '';
-  const solid = ['consult', 'dark', 'draft'].includes(K.chrome) || K.chrome === 'bento';
-  let bg = K.bg; if (K.chrome === 'consult') bg = K.pDark; if (K.chrome === 'draft') bg = '#2B2B2B';
-  const fg = onC(bg), muted = mix(fg, bg, .45);
-  const KK = {...K, bg, ink: fg, sub: muted, mute: muted, line: mix(fg, bg, .82), dark: lum(bg) < .4};
+  let bg = K.bg; if (K.chrome === 'consult') bg = K.pDark; if (K.chrome === 'draft') bg = '#2B2B2B'; if (K.chrome === 'bento') bg = K.p;
+  const fg = onC(bg), muted = mix(fg, bg, .38);
+  const KK = {...K, bg, ink: fg, sub: muted, mute: muted, line: mix(fg, bg, .8), dark: lum(bg) < .4};
   ds3Chrome(E, KK, {...it, no: it.no}, {});
-  if (K.chrome === 'bento'){ E.push(R(GEO.x, 120, GEO.w * .58, 440, K.p, {r: K.r})); E.push(T(GEO.x + 40, 150, 300, 120, two(it.secNo || 0), {size: 96, bold: true, color: K.onP, lh: 1})); E.push(T(GEO.x + 40, 400, GEO.w * .58 - 80, 120, big, {size: 40, bold: true, color: K.onP, lh: 1.2, valign: 'bottom', minScale: .6})); if (sec?.en) E.push(T(GEO.x + 40, 380, 400, 18, String(sec.en).toUpperCase(), {size: 12, bold: true, color: K.onP, alpha: .7, ls: 1.4})); }
-  else {
-    const accent = K.chrome === 'consult' || K.chrome === 'draft' ? '#FFFFFF' : K.p;
-    E.push(T(GEO.x, 190, 400, 140, two(it.secNo || 0), {size: K.chrome === 'editorial' ? 150 : 110, bold: true, color: accent, alpha: K.chrome === 'consult' ? .9 : 1, lh: 1}));
-    E.push(R(GEO.x + 4, 352, 64, 4, accent));
-    if (sec?.en) E.push(T(GEO.x + 4, 376, 700, 20, String(sec.en).toUpperCase(), {size: 13, bold: true, color: muted, ls: 1.6}));
-    E.push(T(GEO.x, 404, GEO.w * .58, 120, big, {size: 44, bold: true, color: fg, lh: 1.2, minScale: .6}));
-    if (sub) E.push(T(GEO.x + 2, 470 + (tH(big, 44, GEO.w * .58, 1.2, 800) > 60 ? 54 : 0), GEO.w * .58, 60, sub, {size: 18, color: muted, lh: 1.5, minScale: .7}));
-  }
-  const list = (sec?.pageList || []).filter(p => p.type !== 'divider' && p.title).slice(0, 7);
-  if (list.length){ const x = K.chrome === 'bento' ? GEO.x + GEO.w * .58 + 24 : W - GEO.x - 360, w = K.chrome === 'bento' ? GEO.w * .42 - 24 : 360, ph = 64 + list.length * 52, py = K.chrome === 'bento' ? 120 : Math.max(150, 360 - ph / 2);
-    if (K.chrome === 'bento') E.push(R(x, py, w, Math.max(440, ph), K.panel, {r: K.r}));
-    else if (lum(bg) < .4) E.push(R(x, py, w, ph, '#FFFFFF', {r: K.r, alpha: .07}));
-    else E.push(R(x, py, w, ph, K.panel === '#FFFFFF' || K.panel === bg ? mix(K.ink, bg, .95) : K.panel, {r: K.r}));
-    const tc = K.chrome === 'bento' ? K.ink : fg, sc = K.chrome === 'bento' ? K.sub : muted;
-    E.push(T(x + 26, py + 24, 200, 16, 'IN THIS SECTION', {size: 10.5, bold: true, color: sc, ls: 1.2}));
-    list.forEach((p, i) => { const y = py + 54 + i * 52; E.push(T(x + 26, y + 2, 30, 20, two(i + 1), {size: 12.5, bold: true, color: K.chrome === 'consult' || K.chrome === 'draft' ? '#FFFFFF' : K.p})); E.push(T(x + 62, y, w - 88, 44, p.title, {size: 14, color: tc, lh: 1.35, minScale: .7})); if (i < list.length - 1) E.push(R(x + 26, y + 46, w - 52, 1, tc, {alpha: .12})); }); }
+  const accent = lum(bg) < .4 || K.chrome === 'bento' ? fg : K.p, cw = Math.min(900, GEO.w - 120), cx = W / 2 - cw / 2;
+  const ts = 46, th = Math.max(1, Math.min(2, Math.round(tH(big, ts, cw, 1.22, 800) / (ts * 1.22)))) * ts * 1.22, sh = sub ? Math.min(3, Math.ceil(tH(sub, 18, cw - 120, 1.55, 400) / 28)) * 28 : 0;
+  const ns = K.chrome === 'editorial' ? 132 : 112, tot = ns + 30 + 26 + 18 + th + (sub ? 20 + sh : 0);
+  let y = Math.max(110, (H - tot) / 2 - 6);
+  E.push(T(cx, y, cw, ns, two(it.secNo || 0), {size: ns, bold: true, color: accent, align: 'center', lh: 1, alpha: K.chrome === 'editorial' ? .9 : 1})); y += ns + 18;
+  E.push(R(W / 2 - 28, y, 56, 4, accent, {alpha: .9})); y += 22;
+  if (sec?.en){ E.push(T(cx, y, cw, 18, String(sec.en).toUpperCase(), {size: 13, bold: true, color: muted, align: 'center', ls: 1.8})); } y += 30;
+  E.push(T(cx, y, cw, th + 4, big, {size: ts, bold: true, color: fg, align: 'center', lh: 1.22, minScale: .6})); y += th + 20;
+  if (sub) E.push(T(cx + 60, y, cw - 120, sh + 6, sub, {size: 18, color: muted, align: 'center', lh: 1.55, minScale: .7}));
   return {bg, els: E, ds3: true};
 }
 function ds3Bridge(it, K){
@@ -270,12 +263,17 @@ function ds3Bridge(it, K){
   let bg = K.bg; if (K.chrome === 'bento') bg = '#151515'; if (K.chrome === 'consult') bg = K.soft;
   const fg = lum(bg) < .4 ? '#FFFFFF' : K.ink, muted = lum(bg) < .4 ? '#B8BEC6' : K.sub;
   ds3Chrome(E, {...K, bg, ink: fg, sub: muted, line: mix(fg, bg, .82), dark: lum(bg) < .4}, it);
-  const mh = Math.min(190, tH(main, 40, W - 300, 1.35, 800)), tot = 40 + mh + (sub ? 70 : 0) + (items.length ? 70 : 0);
+  const mh = Math.min(190, tH(main, 40, W - 300, 1.35, 800)), tot = 40 + mh + (sub ? 70 : 0) + (items.length ? (items.some(i => i.h && i.d) ? 150 : 70) : 0);
   let y = Math.max(150, 120 + (520 - tot) / 2);
   E.push(T(150, y, W - 300, 22, it.secTitle || '', {size: 13, bold: true, color: K.p, align: 'center', ls: .8})); y += 40;
   E.push(T(150, y, W - 300, mh, main, {size: 40, bold: true, color: fg, align: 'center', lh: 1.35, minScale: .6})); y += mh + 22;
   if (sub){ E.push(T(200, y, W - 400, 50, sub, {size: 18, color: muted, align: 'center', lh: 1.5, minScale: .7})); y += 70; }
-  if (items.length){ const ws = items.slice(0, 4), cw = 220, x0 = W / 2 - (ws.length * cw + (ws.length - 1) * 14) / 2; ws.forEach((w, i) => C3.chip(E, {...K, soft: lum(bg) < .4 ? '#262626' : K.panel === '#FFFFFF' ? K.soft : K.panel}, x0 + i * (cw + 14), y, cw, 44, w.h || w.d, {hi: i === ws.length - 1})); }
+  if (items.length){ const ws = items.slice(0, 4), n = ws.length, g = 16, cw = Math.min(300, (W - 240 - (n - 1) * g) / n), x0 = W / 2 - (n * cw + (n - 1) * g) / 2, dk = lum(bg) < .4;
+    const ch = Math.min(150, Math.max(64, ...ws.map(w => 44 + (w.d && w.h ? tH(w.d, 14.5, cw - 40, 1.5, 500) : 0))));
+    ws.forEach((w, i) => { const x = x0 + i * (cw + g), hi = i === n - 1, f = hi ? K.p : dk ? '#FFFFFF' : K.bg === '#FFFFFF' ? K.panel : '#FFFFFF', on = hi ? onC(K.p) : dk ? '#FFFFFF' : K.ink;
+      E.push(R(x, y, cw, ch, f, {r: Math.min(K.r, 14), ...(hi ? {} : dk ? {alpha: .08} : {line: K.line})}));
+      E.push(T(x + 20, y + 16, cw - 40, 22, w.h || w.d, {size: 15, bold: true, color: hi ? on : K.p, minScale: .6}));
+      if (w.d && w.h) E.push(T(x + 20, y + 44, cw - 40, ch - 54, w.d, {size: 14.5, color: hi ? on : dk ? '#D5DAE0' : K.sub, lh: 1.5, wt: 500, minScale: .7})); }); }
   return {bg, els: E, ds3: true};
 }
 
@@ -383,7 +381,7 @@ Object.assign(TKL, {
     let y = y0 + 50;
     items.forEach((it, i) => { const rh = hs[i];
       E.push(T(b.x, y, lab - 20, rh, it.h, {size: 15.5, bold: true, color: K.ink, valign: 'middle', lh: 1.35, minScale: .7}));
-      E.push(R(ax, y, cw, rh, K.panel, {r: Math.min(K.r, 12), ...(K.panel === '#FFFFFF' ? {line: K.line} : {})})); E.push(T(ax + 24, y, cw - 48, rh, it.v || '-', {size: 14.5, color: K.mute, valign: 'middle', lh: 1.5, wt: 500, minScale: .7}));
+      E.push(R(ax, y, cw, rh, K.panel, {r: Math.min(K.r, 12), ...cardLine(K)})); E.push(T(ax + 24, y, cw - 48, rh, it.v || '-', {size: 14.5, color: K.mute, valign: 'middle', lh: 1.5, wt: 500, minScale: .7}));
       E.push(SH('chevron', ax + cw + 15, y + rh / 2 - 9, g - 30, 18, K.p));
       E.push(R(bx, y, cw, rh, K.soft, {r: Math.min(K.r, 12)})); E.push(T(bx + 24, y, cw - 48, rh, it.d, {size: 14.5, bold: true, color: K.dark ? K.ink : K.pDark, valign: 'middle', lh: 1.5, minScale: .7}));
       y += rh + 10; });
@@ -394,7 +392,7 @@ Object.assign(TKL, {
     const sc = Math.min(1, b.h / tot), grow = sc < 1 ? 1 : Math.min(1.3, b.h * .82 / tot), hs = hs0.map(h => h * (sc < 1 ? sc : grow)), fs = Math.max(.78, Math.min(1.08, sc < 1 ? sc : 1 + (grow - 1) * .35));
     let y = startY(b, hs.reduce((a, c) => a + c + g, 0) - g);
     items.forEach((it, i) => { const rh = hs[i];
-      if (K.card === 'rule') E.push(R(b.x, y, b.w, i ? 1 : 2, i ? K.line : K.ink)); else E.push(R(b.x, y, b.w, rh, K.panel, {r: K.r, ...(K.panel === '#FFFFFF' ? {line: K.line} : {})}));
+      if (K.card === 'rule') E.push(R(b.x, y, b.w, i ? 1 : 2, i ? K.line : K.ink)); else E.push(R(b.x, y, b.w, rh, K.panel, {r: K.r, ...cardLine(K)}));
       C3.num(E, K, b.x + 38, y + rh / 2, 34, i + 1, {on: i === 0});
       E.push(T(b.x + 76, y + (it.v ? 6 : 0), lw - 80, rh - (it.v ? 34 : 0), it.h, {size: 17.5 * fs, bold: true, color: K.num === 'plain' ? K.ink : K.p, valign: 'middle', lh: 1.3, minScale: .7}));
       if (it.v) E.push(T(b.x + 76, y + rh - 34, lw - 80, 20, it.v, {size: 13, bold: true, color: K.mute, minScale: .6}));
@@ -422,7 +420,7 @@ Object.assign(TKL, {
   },
   tkHero(E, items, b, P, pg, K = K3(P, pg)){
     const [h0, ...rest] = items, lw = b.w * .42;
-    if (K.card !== 'rule') E.push(R(b.x, b.y, lw, b.h, K.panel, {r: K.r, ...(K.panel === '#FFFFFF' ? {line: K.line} : {})})); else E.push(R(b.x, b.y, lw, 3, K.p));
+    if (K.card !== 'rule') E.push(R(b.x, b.y, lw, b.h, K.panel, {r: K.r, ...cardLine(K)})); else E.push(R(b.x, b.y, lw, 3, K.p));
     E.push(T(b.x + 36, b.y + 34, lw - 72, 24, h0.h, {size: 17, bold: true, color: K.ink, minScale: .7}));
     E.push(T(b.x + 32, b.y + 70, lw - 64, Math.min(170, b.h * .45), h0.v || '', {size: 84, bold: true, color: K.p, lh: 1.05, minScale: .4}));
     E.push(T(b.x + 36, b.y + b.h - 120, lw - 72, 96, h0.d, {size: 15, color: K.sub, lh: 1.5, wt: 500, valign: 'bottom', minScale: .7}));
@@ -443,7 +441,7 @@ const MEDIA3 = {
     E.push(T(b.x + 30, b.y + 28, lw - 60, 16, pg.tag || pg.mediaName || 'MEDIA', {size: 11, bold: true, color: pc, alpha: .72, ls: 1, minScale: .6}));
     E.push(T(b.x + 30, b.y + 56, lw - 60, b.h - 150, pg.keyMsg || '', {size: 25, bold: true, color: pc, lh: 1.38, minScale: .55}));
     const bud = items.find(i => isBudget(i.h)); if (bud){ E.push(R(b.x + 30, b.y + b.h - 86, lw - 60, 1, pc, {alpha: .3})); E.push(T(b.x + 30, b.y + b.h - 72, lw - 60, 16, bud.h, {size: 11, bold: true, color: pc, alpha: .7})); E.push(T(b.x + 30, b.y + b.h - 52, lw - 60, 36, bud.d, {size: 17, bold: true, color: pc, lh: 1.3, minScale: .55})); }
-    const rows = items.filter(i => i !== bud), hs0 = rows.map(r => Math.max(20, isMethod(r.h) ? bl(r.d).reduce((a, l) => a + tH(l, 15, rw - labW - 50, 1.45, 500) + 6, 0) : tH(r.d, 15, rw - labW - 20, 1.5, 500)) + 22), tot = hs0.reduce((a, c) => a + c, 0), sc = Math.min(1, b.h / tot), grow = sc < 1 ? 1 : Math.min(1.35, b.h * .9 / tot);
+    const rows = items.filter(i => i !== bud).map(r => r.v && !isMethod(r.h) ? {...r, d: r.v + '\n' + (r.d || '')} : r), hs0 = rows.map(r => Math.max(20, isMethod(r.h) ? bl(r.d).reduce((a, l) => a + tH(l, 15, rw - labW - 50, 1.45, 500) + 6, 0) : tH(r.d, 15, rw - labW - 20, 1.5, 500)) + 22), tot = hs0.reduce((a, c) => a + c, 0), sc = Math.min(1, b.h / tot), grow = sc < 1 ? 1 : Math.min(1.35, b.h * .9 / tot);
     let y = b.y + Math.max(0, (b.h - tot * (sc < 1 ? sc : grow)) * .3);
     rows.forEach((r, i) => { const rh = hs0[i] * (sc < 1 ? sc : grow), fs = sc < 1 ? Math.max(.74, sc) : 1;
       E.push(T(rx, y + 11, labW - 10, 22, r.h, {size: 13.5, bold: true, color: K.p, minScale: .6}));
@@ -451,27 +449,36 @@ const MEDIA3 = {
       else E.push(T(rx + labW, y + 11, rw - labW, rh - 18, r.d, {size: 15 * fs, color: K.ink, lh: 1.5, wt: 500, minScale: .7}));
       y += rh; if (i < rows.length - 1) E.push(R(rx, y, rw, 1, K.line)); });
   },
-  tkFlow(E, items, b, P, pg, K = K3(P, pg)){
+  tkFlow(E, items, b, P, pg, K = K3(P, pg)){ // 흐름 4~5단계 + 운영 방법 카드, 내용 높이에 맞춰 세로 가운데 배치
     const meth = items.find(i => isMethod(i.h)), bud = items.find(i => isBudget(i.h)), steps = items.filter(i => i !== meth && i !== bud).slice(0, 5);
-    const n = steps.length || 1, g = 12, sw = (b.w - (n - 1) * g) / n, sh = Math.min(170, b.h * .42);
+    const n = steps.length || 1, g = 12, sw = (b.w - (n - 1) * g) / n, ms = meth ? bl(meth.d).map(l => l.replace(/^\s*\d+[).]\s*/, '')) : [], mw2 = (b.w - (Math.max(1, ms.length) - 1) * 16) / Math.max(1, ms.length);
+    let fs = 15.5; const need = f => { const sh = 56 + Math.max(...steps.map(s => tH(s.d, f, sw - 16, 1.5, 500))) + 8, mh = ms.length ? 52 + Math.max(...ms.map(m => tH(m, f, mw2 - 44, 1.5, 500))) + 26 : 0; return {sh, mh, tot: sh + (ms.length ? 26 + 34 + mh : 0) + (bud ? 62 : 0)}; };
+    let L = need(fs); while (L.tot > b.h && fs > 12.5){ fs -= .5; L = need(fs); }
+    while (fs < 17 && need(fs + .5).tot < b.h * .78){ fs += .5; L = need(fs); }
+    const extra = Math.max(0, b.h - L.tot), sh = L.sh + Math.min(70, extra * .3), mh = L.mh + Math.min(70, extra * .3);
+    let y = b.y + Math.max(0, (b.h - (sh + (ms.length ? 26 + 34 + mh : 0) + (bud ? 62 : 0))) * .42);
     steps.forEach((s, i) => { const x = b.x + i * (sw + g);
-      E.push(SH(i === 0 ? 'home' : 'chevron', x, b.y, sw + (i < n - 1 ? 10 : 0), 40, i === n - 1 ? K.p : (K.dark ? '#262D37' : K.pDark)));
-      E.push(T(x + (i ? 24 : 16), b.y, sw - 40, 40, s.h, {size: 14, bold: true, color: '#FFFFFF', valign: 'middle', minScale: .6}));
-      E.push(T(x + 4, b.y + 54, sw - 14, sh - 54, s.d, {size: 14.5, color: K.ink, lh: 1.5, wt: 500, minScale: .7})); });
-    let y = b.y + sh + 18;
-    if (meth){ const ms = bl(meth.d).map(l => l.replace(/^\s*\d+[).]\s*/, '')), mw2 = (b.w - (ms.length - 1) * 16) / Math.max(1, ms.length), mh = Math.min(b.h - sh - (bud ? 80 : 30), 150);
-      C3.head(E, {...K, head: K.head === 'pill' || K.head === 'bar' ? 'label' : K.head}, b.x, y, 300, 22, meth.h, {hi: true}); y += 40;
-      ms.forEach((m, k) => { const x = b.x + k * (mw2 + 16); const c = C3.card(E, K, x, y, mw2, mh - 40, {fillRule: true}); C3.num(E, {...K, num: K.num === 'big' ? 'plain' : K.num}, x + (c.pad || 0) + 14, y + (c.top || 16) + 12, 28, k + 1, {on: k === 0}); E.push(T(x + (c.pad || 0), y + (c.top || 16) + 36, mw2 - (c.pad || 0) * 2, mh - 40 - (c.top || 16) - 44, m, {size: 15, color: c.on, lh: 1.5, wt: 500, minScale: .7})); });
-      y += mh - 24; }
-    if (bud){ const by = Math.min(b.y + b.h - 44, y + 4); E.push(R(b.x, by, b.w, 44, K.soft, {r: Math.min(K.r, 22)})); E.push(T(b.x + 22, by, 140, 44, bud.h, {size: 13, bold: true, color: K.p, valign: 'middle'})); E.push(T(b.x + 160, by, b.w - 180, 44, bud.d, {size: 15, bold: true, color: K.dark ? K.ink : K.pDark, valign: 'middle', minScale: .6})); }
+      E.push(SH(i === 0 ? 'home' : 'chevron', x, y, sw + (i < n - 1 ? 10 : 0), 42, i === n - 1 ? K.p : (K.dark ? '#262D37' : K.pDark)));
+      E.push(T(x + (i ? 26 : 18), y, sw - 44, 42, s.h, {size: 14.5, bold: true, color: '#FFFFFF', valign: 'middle', minScale: .6}));
+      if (K.card !== 'rule') E.push(R(x, y + 50, sw, sh - 50, K.dark ? K.panel : K.bg === '#FFFFFF' ? '#FFFFFF' : K.panel, {r: Math.min(K.r, 10), ...cardLine(K)}));
+      E.push(T(x + 14, y + 62, sw - 28, sh - 70, s.d, {size: fs, color: K.ink, lh: 1.5, wt: 500, minScale: .7})); });
+    y += sh + 26;
+    if (ms.length){
+      C3.head(E, {...K, head: K.head === 'pill' || K.head === 'bar' ? 'label' : K.head}, b.x, y, 300, 22, meth.h, {hi: true}); y += 34;
+      ms.forEach((m, k) => { const x = b.x + k * (mw2 + 16), c = C3.card(E, K, x, y, mw2, mh, {fillRule: true}), px = x + (c.pad || 0);
+        C3.num(E, {...K, num: K.num === 'big' ? 'plain' : K.num}, px + 14, y + (c.top || 16) + 12, 28, k + 1, {on: k === 0});
+        E.push(T(px, y + (c.top || 16) + 36, mw2 - (c.pad || 0) * 2, mh - (c.top || 16) - 44, m, {size: fs, color: c.on, lh: 1.5, wt: 500, minScale: .7})); });
+      y += mh + 18; }
+    if (bud){ const by = Math.min(b.y + b.h - 44, y); E.push(R(b.x, by, b.w, 44, K.soft, {r: Math.min(K.r, 22)})); E.push(T(b.x + 22, by, 140, 44, bud.h, {size: 13, bold: true, color: K.p, valign: 'middle'})); E.push(T(b.x + 160, by, b.w - 180, 44, bud.d, {size: 15, bold: true, color: K.dark ? K.ink : K.pDark, valign: 'middle', minScale: .6})); }
   },
   tkQuad(E, items, b, P, pg, K = K3(P, pg)){
     const meth = items.find(i => isMethod(i.h)), bud = items.find(i => isBudget(i.h)), q = items.filter(i => i !== meth && i !== bud).slice(0, 4);
     const lw = b.w * .62, g = 14, qw = (lw - g) / 2, qh = (b.h - g) / 2;
     q.forEach((it, i) => { const x = b.x + (i % 2) * (qw + g), y = b.y + Math.floor(i / 2) * (qh + g), c = C3.card(E, K, x, y, qw, qh, {fillRule: true}), px = x + (c.pad || 0), iw = qw - (c.pad || 0) * 2;
-      E.push(T(px, y + c.top, iw, 22, it.h, {size: 13.5, bold: true, color: K.p, ls: .3})); E.push(T(px, y + c.top + 30, iw, qh - c.top - 44, it.d, {size: 15, color: c.on, lh: 1.5, wt: 500, minScale: .7})); });
-    const rx = b.x + lw + 32, rw = b.w - lw - 32; let y = b.y;
-    if (pg.keyMsg){ const kh = Math.min(130, tH(pg.keyMsg, 20, rw - 8, 1.38, 800) + 30); E.push(R(rx, y, 4, kh - 20, K.p)); E.push(T(rx + 18, y, rw - 18, kh - 16, pg.keyMsg, {size: 20, bold: true, color: K.ink, lh: 1.38, minScale: .6})); y += kh; }
+      const dh = Math.min(qh - c.top - 44, tH(it.d, 15.5, iw, 1.5, 500)), y1 = y + Math.max(c.top, (qh - 32 - dh) / 2); E.push(T(px, y1, iw, 22, it.h, {size: 14, bold: true, color: K.p, ls: .3})); if (it.v) E.push(T(px, y1, iw, 22, it.v, {size: 12.5, bold: true, color: K.mute, align: 'right', minScale: .6})); E.push(T(px, y1 + 32, iw, dh + 4, it.d, {size: 15.5, color: c.on, lh: 1.5, wt: 500, minScale: .7})); });
+    const rx = b.x + lw + 32, rw = b.w - lw - 32, kh0 = pg.keyMsg ? Math.min(130, tH(pg.keyMsg, 20, rw - 8, 1.38, 800) + 30) : 0, mh0 = meth ? 30 + bl(meth.d).reduce((a, l) => a + tH(l.replace(/^\s*\d+[).]\s*/, ''), 15, rw - 40, 1.45, 500) + 12, 0) : 0;
+    let y = b.y + Math.max(0, (b.h - (bud ? 76 : 0) - kh0 - mh0) * .3);
+    if (pg.keyMsg){ const kh = kh0; E.push(R(rx, y, 4, kh - 20, K.p)); E.push(T(rx + 18, y, rw - 18, kh - 16, pg.keyMsg, {size: 20, bold: true, color: K.ink, lh: 1.38, minScale: .6})); y += kh; }
     if (meth){ E.push(T(rx, y, rw, 20, meth.h, {size: 13, bold: true, color: K.p, ls: .3})); y += 30; bl(meth.d).forEach((l, k) => { const t = l.replace(/^\s*\d+[).]\s*/, ''), hh = tH(t, 15, rw - 40, 1.45, 500); C3.num(E, {...K, num: K.num === 'big' ? 'plain' : K.num}, rx + 12, y + 11, 24, k + 1, {}); E.push(T(rx + 36, y, rw - 36, hh + 2, t, {size: 15, color: K.ink, lh: 1.45, wt: 500})); y += hh + 12; }); }
     if (bud){ const by = b.y + b.h - 60; E.push(R(rx, by, rw, 1, K.line)); E.push(T(rx, by + 10, rw, 16, bud.h, {size: 11.5, bold: true, color: K.mute})); E.push(T(rx, by + 28, rw, 30, bud.d, {size: 17, bold: true, color: K.p, minScale: .55})); }
   }
@@ -554,3 +561,14 @@ function darkify(E, i0, K){
     else if (e.k === 'r' || e.k === 'e' || e.k === 's'){ const l = L(e.fill); if (l !== null && l > .82) e.fill = K.panel; const ll = L(e.line); if (ll !== null && ll > .7) e.line = K.line; }
   }
 }
+
+/* ---------------- 섹션별 테마·포인트 컬러 (전체 테마 위에 섹션 단위로 덮어쓰기) ---------------- */
+const _bsSec = buildSpec;
+buildSpec = function(it){
+  const sec = it && it.kind === 'page' ? it.sec : null, th = sec && DS3[sec.theme] ? sec.theme : null, ac = sec && validHex(sec.accent || '') ? sec.accent : null;
+  if (!th && !ac) return contrastFix(_bsSec(it));
+  const g = S.design.theme, c0 = S.input.colors[0], h0 = c0 && c0.hex;
+  if (th) S.design.theme = th;
+  if (ac && c0) c0.hex = ac;
+  try { return contrastFix(_bsSec(it)); } finally { S.design.theme = g; if (ac && c0) c0.hex = h0; }
+};

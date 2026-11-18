@@ -212,15 +212,17 @@ Object.assign(LAY, {
       E.push(R(x, y, pw, ph, '#FFFFFF', {r: 18, line: '#D0D5DD'}));
       E.push(EL(x + 14, y + 14, 28, 28, P.draft ? '#BDBDBD' : P.c1)); E.push(T(x + 50, y + 14, pw - 64, 28, S.project.client || 'brand', {size: 12.5, bold: true, valign: 'middle'}));
       E.push(T(x + pw - 70, y + 14, 56, 28, 'Sponsored', {size: 9.5, color: '#98A2B3', align: 'right', valign: 'middle'}));
-      const iy = y + 54, ih = pw; mediaSlot(E, pg, i, x, iy, pw, ih, P, {label: it.v || '1:1', r: 0, video: true});
-      E.push(T(x + 14, iy + ih + 10, pw - 28, ph - ih - 64, it.d || '', {size: 12, color: '#1D2939', lh: 1.4, minScale: .7}));
+      const iy = y + 54, ih = Math.min(pw, ph - 54 - 52 - Math.min(110, tH(it.d || '', 12.5, pw - 28, 1.45, 500) + 14)); mediaSlot(E, pg, i, x, iy, pw, ih, P, {label: it.v || '1:1', r: 0, video: true});
+      E.push(T(x + 14, iy + ih + 10, pw - 28, ph - ih - 54 - 56, it.d || '', {size: 12.5, color: '#1D2939', lh: 1.45, wt: 500, minScale: .7}));
       E.push(R(x + 14, y + ph - 42, pw - 28, 30, P.draft ? '#EDEDED' : P.tint, {r: 6})); E.push(T(x + 24, y + ph - 42, pw - 48, 30, it.h || '자세히 보기', {size: 12, bold: true, color: P.ink, valign: 'middle'}));
     }
     const rx = b.x + n * (pw + g) + 8, rw = b.w - (rx - b.x);
     if (rw > 200){
       E.push(T(rx, b.y + 4, rw, 16, 'FEED PLAN', {size: 11, bold: true, color: P.ink, ls: 1.2}));
       E.push(T(rx, b.y + 30, rw, 100, pg.keyMsg || pg.subtitle || '', {size: 20, bold: true, lh: 1.4}));
-      let y = b.y + 150; items.slice(n).forEach(it => { E.push(R(rx, y + 6, 6, 6, P.draft ? '#3A3A3A' : P.c1)); E.push(T(rx + 16, y, rw - 16, 20, it.h, {size: 14, bold: true})); const dh = tH(lineTxt(it), 13.5, rw - 16, 1.5, 300); E.push(T(rx + 16, y + 22, rw - 16, dh, lineTxt(it), {size: 13.5, light: true, color: '#344054', lh: 1.5})); y += 34 + dh; });
+      let y = b.y + 30 + Math.min(110, tH(pg.keyMsg || pg.subtitle || '', 20, rw, 1.4, 700)) + 22;
+      items.slice(0, n).forEach((it, i) => { const t = `${it.v ? it.v + '\n' : ''}${it.d || ''}`, dh = Math.min(120, tH(t, 13.5, rw - 36, 1.5, 500)); E.push(R(rx, y, rw, dh + 52, P.draft ? '#F4F4F4' : P.tint, {r: 10})); E.push(T(rx + 18, y + 14, rw - 36, 20, `시안 ${i + 1}  ·  ${it.h || ''}`, {size: 14, bold: true, color: P.draft ? '#2B2B2B' : P.c1, minScale: .6})); E.push(T(rx + 18, y + 40, rw - 36, dh + 4, t, {size: 13.5, color: '#344054', lh: 1.5, wt: 500, minScale: .7})); y += dh + 66; });
+      items.slice(n).forEach(it => { E.push(R(rx, y + 6, 6, 6, P.draft ? '#3A3A3A' : P.c1)); E.push(T(rx + 16, y, rw - 16, 20, it.h, {size: 14, bold: true})); const dh = tH(lineTxt(it), 13.5, rw - 16, 1.5, 300); E.push(T(rx + 16, y + 22, rw - 16, dh, lineTxt(it), {size: 13.5, light: true, color: '#344054', lh: 1.5})); y += 34 + dh; });
     }
   }
 });

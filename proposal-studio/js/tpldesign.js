@@ -392,26 +392,28 @@ function tkChrome(tpl, it, P, opts = {}){ // 템플릿 머리말·꼬리말만
 }
 function tkSectionSpec(it, pg, P, tpl, kind){
   const K = tkTok(P), sp = tkChrome(tpl, it, P, {label: kind === 'divider' ? `${two(it.secNo || 0)} ${String(it.sec?.en || '').toUpperCase()}` : undefined}), E = sp.els;
-  if (kind === 'divider'){
-    const big = pg.title || it.secTitle || '', sub = pg.subtitle || '';
-    E.push(T(MX + 8, 200, 300, 120, two(it.secNo || 0), {size: 110, bold: true, color: K.p, lh: 1}));
-    E.push(R(MX + 12, 336, 64, 5, K.p, {r: 2.5}));
-    if (it.sec?.en) E.push(T(MX + 12, 360, 700, 26, String(it.sec.en).toUpperCase(), {size: 16, bold: true, color: K.mute, ls: 1.5}));
-    E.push(T(MX + 10, 392, W - MX * 2 - 300, 70, big, {size: 46, bold: true, color: K.ink, lh: 1.2, minScale: .6}));
-    if (sub) E.push(T(MX + 12, 470, W - MX * 2 - 300, 70, sub, {size: 19, color: K.sub, lh: 1.5, wt: 300}));
-    const list = (it.sec?.pageList || []).filter(p => p.type !== 'divider' && p.title).slice(0, 7);
-    if (list.length){ const ph = 60 + list.length * 50, py = 200 + Math.max(0, (340 - ph) / 2);
-      E.push(R(W - MX - 330, py, 330, ph, K.panel, {r: 16}));
-      E.push(T(W - MX - 306, py + 22, 200, 16, 'CONTENTS', {size: 11, bold: true, color: K.mute, ls: 1.2}));
-      list.forEach((p, i) => { const y = py + 50 + i * 50; E.push(T(W - MX - 306, y + 2, 30, 20, two(i + 1), {size: 13, bold: true, color: K.p})); E.push(T(W - MX - 270, y, 246, 44, p.title, {size: 14, color: '#333333', lh: 1.35, wt: 500, minScale: .7})); if (i < list.length - 1) E.push(R(W - MX - 306, y + 44, 282, 1, K.line)); }); }
+  if (kind === 'divider'){ // 가운데 정렬 간지 — 섹션 내 페이지 목록 패널 없음
+    const big = pg.title || it.secTitle || '', sub = pg.subtitle || '', cw = 900, cx = W / 2 - cw / 2;
+    const th = Math.min(2, Math.round(tH(big, 46, cw, 1.22, 800) / 56)) * 56, sh = sub ? Math.min(3, Math.ceil(tH(sub, 19, cw - 120, 1.5, 300) / 29)) * 29 : 0;
+    let y = Math.max(130, (H - (110 + 22 + 26 + 30 + th + (sub ? 18 + sh : 0))) / 2);
+    E.push(T(cx, y, cw, 110, two(it.secNo || 0), {size: 110, bold: true, color: K.p, align: 'center', lh: 1})); y += 122;
+    E.push(R(W / 2 - 32, y, 64, 5, K.p, {r: 2.5})); y += 26;
+    if (it.sec?.en) E.push(T(cx, y, cw, 22, String(it.sec.en).toUpperCase(), {size: 15, bold: true, color: K.mute, align: 'center', ls: 1.5})); y += 32;
+    E.push(T(cx, y, cw, th + 4, big, {size: 46, bold: true, color: K.ink, align: 'center', lh: 1.22, minScale: .6})); y += th + 18;
+    if (sub) E.push(T(cx + 60, y, cw - 120, sh + 6, sub, {size: 19, color: K.sub, align: 'center', lh: 1.5, wt: 300}));
   } else { // bridge
     const main = pg.keyMsg || pg.title, sub = pg.keyMsg ? (pg.subtitle || pg.title) : pg.subtitle, items = itemsOf(pg);
     const mh = Math.min(170, tH(main, 38, W - 320, 1.35, 800));
-    let y = Math.max(170, 120 + (520 - (56 + mh + 18 + (sub ? 70 : 0) + (items.length ? 44 : 0))) / 2);
+    let y = Math.max(140, 120 + (520 - (56 + mh + 18 + (sub ? 70 : 0) + (items.length ? (items.some(i => i.h && i.d) ? 130 : 44) : 0))) / 2);
     E.push(R(W / 2 - 70, y, 140, 32, K.p, {r: 16})); E.push(T(W / 2 - 70, y, 140, 32, it.secTitle || 'KEY POINT', {size: 13, bold: true, color: '#FFFFFF', align: 'center', valign: 'middle', minScale: .6})); y += 56;
     E.push(T(160, y, W - 320, mh, main, {size: 38, bold: true, color: K.ink, align: 'center', lh: 1.35})); y += mh + 18;
     if (sub){ E.push(T(200, y, W - 400, 60, sub, {size: 18, color: K.sub, align: 'center', lh: 1.5, wt: 300})); y += 70; }
-    if (items.length){ const ws = items.slice(0, 4), cw = 210, x0 = W / 2 - (ws.length * cw + (ws.length - 1) * 14) / 2; ws.forEach((w, i) => { E.push(R(x0 + i * (cw + 14), y, cw, 44, i === ws.length - 1 ? K.p : K.panel, {r: 22})); E.push(T(x0 + i * (cw + 14) + 10, y, cw - 20, 44, w.h || w.d, {size: 14, bold: true, color: i === ws.length - 1 ? '#FFFFFF' : K.dark, align: 'center', valign: 'middle', minScale: .6})); }); }
+    if (items.length){ const ws = items.slice(0, 4), n = ws.length, g = 16, cw = Math.min(300, (W - 240 - (n - 1) * g) / n), x0 = W / 2 - (n * cw + (n - 1) * g) / 2;
+      const ch = Math.min(150, Math.max(64, ...ws.map(w => 44 + (w.d && w.h ? tH(w.d, 14.5, cw - 40, 1.5, 500) : 0))));
+      ws.forEach((w, i) => { const x = x0 + i * (cw + g), hi = i === n - 1;
+        E.push(R(x, y, cw, ch, hi ? K.p : '#FFFFFF', {r: 14, ...(hi ? {} : {line: K.line})}));
+        E.push(T(x + 20, y + 16, cw - 40, 22, w.h || w.d, {size: 15, bold: true, color: hi ? '#FFFFFF' : K.p, minScale: .6}));
+        if (w.d && w.h) E.push(T(x + 20, y + 44, cw - 40, ch - 54, w.d, {size: 14.5, color: hi ? '#FFFFFF' : K.sub, lh: 1.5, wt: 500, minScale: .7})); }); }
   }
   return sp;
 }

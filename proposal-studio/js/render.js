@@ -29,7 +29,14 @@ function wrapPara(p, size, wt, w){
   out.push(line); return out;
 }
 const WT = e => e.bold ? 700 : e.light ? 300 : (e.wt || 400);
-function layoutText(text, size, wt, w){ const paras = String(text ?? '').split('\n').map(p => wrapPara(p, size, wt, w * .97)); return paras; }
+function balancePara(p, size, wt, w){ // 마지막 줄만 짧게 남는 줄바꿈을 피해 줄 길이를 고르게
+  const out = wrapPara(p, size, wt, w);
+  if (out.length < 2 || out.length > 4 || mw(out[out.length - 1], size, wt) > w * .6) return out;
+  let lo = w * .5, hi = w, best = out;
+  for (let k = 0; k < 9; k++){ const mid = (lo + hi) / 2, t = wrapPara(p, size, wt, mid); if (t.length <= out.length){ best = t; hi = mid; } else lo = mid; }
+  return best;
+}
+function layoutText(text, size, wt, w){ const paras = String(text ?? '').split('\n').map(p => balancePara(p, size, wt, w * .97)); return paras; }
 const PARA_GAP = .32;
 function textHeight(paras, size, lh){ const n = paras.reduce((a, p) => a + p.length, 0); return n * size * lh + Math.max(0, paras.length - 1) * size * PARA_GAP; }
 function tH(text, size, w, lh = 1.4, wt = 500){ if (!text) return 0; return Math.ceil(textHeight(layoutText(text, size, wt, w), size, lh)); }
@@ -835,6 +842,30 @@ const stripData = d => d.replace(/^data:/, '');
 const fname = n => `${(S.project.client || 'proposal')}_${n}`.replace(/[\\/:*?"<>|\s]+/g, '_');
 /* 가독성 보정 — 본문 영역의 너무 작은 글자를 키우고, 박스가 모자라면 prepText가 원래 크기까지만 줄임 */
 const READ_MIN = 13.5;
+/* 글자-배경 대비 보정 — 글자 바로 아래 면(도형) 색과 비교해 WCAG 대비(본문 4.5:1, 큰 글자 3:1)가 모자라면 글자색을 진하게/밝게 */
+const relL = h => { const c = [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16) / 255).map(v => v <= .03928 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4); return .2126 * c[0] + .7152 * c[1] + .0722 * c[2]; };
+const cRatio = (a, b) => { const x = relL(a), y = relL(b); return (Math.max(x, y) + .05) / (Math.min(x, y) + .05); };
+const isHex6 = c => /^#[0-9A-F]{6}$/i.test(c || '');
+function contrastFix(spec){
+  if (!spec || !spec.els || spec.fx) return spec;
+  const E = spec.els;
+  E.forEach((e, i) => {
+    if (e.k !== 't' || !e.text || !isHex6(e.color) || (e.alpha != null && e.alpha < .6) || e.keepColor) return;
+    const cx = e.x + e.w / 2, cy = e.y + Math.min(e.h, e.size * 1.6) / 2; let bg = spec.bgImg ? null : spec.bg, found = false;
+    for (let j = i - 1; j >= 0; j--){ const r = E[j];
+      if (cx < r.x || cx > r.x + r.w || cy < r.y || cy > r.y + r.h) continue;
+      if (r.k === 'i' || r.k === 'g' || r.k === 'rt') { bg = null; break; }
+      if ((r.k === 'r' || r.k === 'e' || r.k === 's') && !r.nofill && isHex6(r.fill) && (r.alpha == null || r.alpha >= .85)){ bg = r.fill; found = true; break; }
+    }
+    if (!bg || !isHex6(bg) || (!found && spec.bgCss)) return;
+    const need = e.size >= 18 || (e.bold && e.size >= 14) ? 3 : 4.5;
+    if (cRatio(e.color, bg) >= need) return;
+    const to = cRatio('#000000', bg) > cRatio('#FFFFFF', bg) ? '#000000' : '#FFFFFF';
+    let c = e.color; for (let k = 1; k <= 10 && cRatio(c, bg) < need; k++) c = mix(e.color, to, k / 10);
+    E[i] = {...e, color: c};
+  });
+  return spec;
+}
 function readable(spec){
   if (!spec || spec.fx || !spec.els) return spec;
   spec.els = spec.els.map(e => {
