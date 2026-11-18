@@ -674,7 +674,7 @@ function syncMediaPages(sec, o = {}){
       have.add(g); sec.pageList.push(pg); added++; });
   }
   // 매체 장표 레이아웃 5종을 순서대로 배정 (같은 모양 연속 금지)
-  let k = 0; sec.pageList.forEach(p => { if (isMediaPage(p) && p.mediaName){ p.layout = MEDIA_LAYOUTS[k % MEDIA_LAYOUTS.length]; if (p.washed) p.tkLayout = MEDIA_TK[p.layout]; if (p.draft) p.draft.layout = p.layout; k++; } });
+  let k = 0; sec.pageList.forEach(p => { if (p.mediaName && (MEDIA_LAYOUTS.includes(p.layout) || !p.layout) && (p.type === 'strategy' || p.type === 'explain')){ p.layout = MEDIA_LAYOUTS[k % MEDIA_LAYOUTS.length]; if (p.washed) p.tkLayout = MEDIA_TK[p.layout]; if (p.draft) p.draft.layout = p.layout; k++; } });
   sec.pages = sec.pageList.length;
   return added;
 }
