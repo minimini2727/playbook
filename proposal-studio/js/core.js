@@ -113,7 +113,7 @@ function newLibrary(){
   return L;
 }
 const LIB = () => LIST.find(p => p.id === LIB_ID);
-function libSection(role){ const L = LIB(); const s = L && L.sections.find(x => x.role === role && x.pageList.length); return s || null; }
+function libSection(role){ const L = LIB(); const s = L && L.sections.find(x => x.role === role && x.pageList.length && x.include !== false); return s || null; }
 function openProject(id, step){
   const p = LIST.find(x => x.id === id); if (!p) return;
   S = p; S.step = step || (S.step === 'manage' ? 'input' : S.step || 'input'); localStorage.setItem('ps_current', S.id); save(); render(); scrollTo(0, 0);

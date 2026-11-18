@@ -82,7 +82,8 @@ ${JSON_SCHEMA.replace(/\n}$/, `,
 }
 
 /* ---------- 심화 리서치 창: ① 브리프 → ② 프롬프트 → ③ 적용 ---------- */
-const briefKey = () => { const B = S.input.brief || {}; return JSON.stringify([B.points, B.flow, B.reorder, B.mediaDeep, S.input.notes]); };
+const PROMPT_VER = '2026-11-18b'; // 기본 프롬프트 규칙이 바뀌면 올림 → 예전에 직접 고친 프롬프트는 자동으로 무효화
+const briefKey = () => { const B = S.input.brief || {}; return JSON.stringify([PROMPT_VER, B.points, B.flow, B.reorder, B.mediaDeep, S.input.notes]); };
 const currentPrompt = () => { const B = S.input.brief || {}; return B.customPrompt && B.customFor === briefKey() ? B.customPrompt : claudePromptAll(); };
 const _openBridge0 = openClaudeBridge;
 openClaudeBridge = function(sec){
@@ -201,3 +202,4 @@ Object.assign(ACT, {
 });
 document.addEventListener('paste', e => { if (e.target && e.target.id === 'cjPaste') setTimeout(() => applyClaudeJSON(e.target.value, {quiet: true}), 30); });
 document.addEventListener('change', e => { if (e.target && e.target.id === 'cjFile'){ const f = e.target.files[0]; if (f) f.text().then(t => applyClaudeJSON(t, {name: f.name, noFile: true})); e.target.value = ''; } });
+document.addEventListener('change', e => { if (e.target && e.target.id === 'addBlank' && e.target.value){ const k = e.target.value; e.target.value = ''; ACT.addExtra({dataset: {k}}); } });
