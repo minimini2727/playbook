@@ -11,7 +11,7 @@ const DS3 = {
   bento: {name: '벤토 그리드', desc: '모듈 카드 · 큰 숫자 · 라운드 · 다크 시사점 카드', bg: '#F1F1EE', ink: '#151515', sub: '#55585C', mute: '#8E9196', panel: '#FFFFFF', line: '#E4E3DE', r: 18, card: 'fill', head: 'pill', num: 'circle', key: 'dark', chrome: 'bento', tw: 800},
   editorial: {name: '에디토리얼', desc: '페이퍼 톤 · 큰 번호 · 인용형 시사점 · 잡지 그리드', bg: '#FAF8F3', ink: '#1B1A17', sub: '#57534B', mute: '#948E82', panel: '#F2EEE5', line: '#DCD5C7', r: 4, card: 'rule', head: 'label', num: 'big', key: 'quote', chrome: 'editorial', tw: 800},
   dark: {name: '다크 프리미엄', desc: '차콜 배경 · 은은한 카드 · 밝은 포인트 컬러', bg: '#0E1116', ink: '#F4F6F8', sub: '#A8B0BB', mute: '#6E7782', panel: '#171C23', line: '#29303A', r: 14, card: 'fill', head: 'pill', num: 'circle', key: 'outline', chrome: 'dark', tw: 800, dark: true},
-  ref: {name: '레퍼런스 미니멀 (업로드 PDF)', desc: '얇은 브레드크럼 · 레귤러 타이틀 · 회색 섹션 밴드 · 검정 필 헤더 · 크리에이티브는 다크 페이지', bg: '#FFFFFF', ink: '#222222', sub: '#5A5A5A', mute: '#9A9A9A', panel: '#FFFFFF', line: '#DADADA', r: 8, card: 'fill', head: 'pill', num: 'plain', key: 'ref', chrome: 'ref', tw: 500, thead: 'light', band: true},
+  ref: {name: '레퍼런스 미니멀 (업로드 PDF)', desc: '레퍼런스 배치 적용 — 필 헤더 단계 카드 · 노출 지면+타겟팅 벤+기대효과 · 애드셋 컬럼 · 룰 표 · 사이클 · 휴대폰 흐름 목업', bg: '#FFFFFF', ink: '#222222', sub: '#5A5A5A', mute: '#9A9A9A', panel: '#FFFFFF', line: '#DADADA', r: 8, card: 'fill', head: 'pill', num: 'plain', key: 'ref', chrome: 'ref', tw: 500, thead: 'light', band: true},
   madupTpl: {name: 'MADUP 템플릿 (업로드 PPT)', desc: '업로드한 MADUP 장표의 머리말·필 헤더·라운드 패널', bg: '#FFFFFF', ink: '#222222', sub: '#5B5F5B', mute: '#8A8F8A', panel: '#F5F6F5', line: '#E3E6E3', r: 12, card: 'fill', head: 'pill', num: 'circle', key: 'tplbar', chrome: 'tpl', tw: 800}
 };
 const DS3_DRAFT = {bg: '#FFFFFF', ink: '#2B2B2B', sub: '#5E5E5E', mute: '#9A9A9A', panel: '#F4F4F4', line: '#E2E2E2', r: 8, card: 'fill', head: 'pill', num: 'circle', key: 'box', chrome: 'draft', tw: 800};
@@ -169,18 +169,18 @@ function ds3PageSpec(it){
   const pg = it.page, draft = !pg.washed, P0 = palette(!draft), E = [], items = itemsOf(pg); let K = ds3Tok(P0, draft);
   if (pg.type === 'divider') return ds3Divider(it, K);
   if (pg.type === 'bridge') return ds3Bridge(it, K);
-  const lay = ds3BodyLayout(pg);
-  if (K.chrome === 'ref' && /^cr/.test(lay)) K = {...K, bg: '#2A2A2A', ink: '#FFFFFF', sub: '#C2C2C2', mute: '#8C8C8C', panel: '#343434', line: '#4A4A4A', dark: true, band: false, soft: mix(K.p, '#2A2A2A', .78), pDark: '#151515'};
-  const P = ds3P(K, P0), keyOwn = KEY_SELF.includes(lay), showKey = !!pg.keyMsg && !keyOwn;
+  const lay0 = ds3BodyLayout(pg), isRef = K.chrome === 'ref' && typeof refMap === 'function', lay = isRef ? refMap(lay0, pg, items) : lay0;
+  if (K.chrome === 'ref' && (isRef ? REF_DARK.includes(lay0) : /^cr/.test(lay0))) K = {...K, bg: '#2A2A2A', ink: '#FFFFFF', sub: '#C2C2C2', mute: '#8C8C8C', panel: '#343434', line: '#4A4A4A', dark: true, band: false, soft: mix(K.p, '#2A2A2A', .78), pDark: '#151515'};
+  const P = ds3P(K, P0), keyOwn = KEY_SELF.includes(lay) || (isRef && REF_KEYSELF.includes(lay)), showKey = !!pg.keyMsg && !keyOwn;
   if (K.chrome === 'tpl'){ const tf = ds3Frame(); if (tf) return designSpec(it, {...pg, tplBody: lay, _K: K}, P, {...tf, mode: 'frame'}); }
   ds3Chrome(E, K, it);
   ds3Title(E, K, pg);
   const bottom = showKey ? GEO.keyY - 22 : (pg.source ? GEO.bodyEnd - 8 : GEO.bodyEnd);
   let box = {x: GEO.x, y: GEO.bodyY, w: GEO.w, h: bottom - GEO.bodyY};
-  if (K.band && pg.tag && !['tkSplit', 'tkSpec'].includes(lay)){ E.push(R(GEO.x, box.y, GEO.w, 26, '#EFEFEF')); E.push(T(GEO.x, box.y, GEO.w, 26, pg.tag, {size: 12.5, wt: 600, color: '#333333', align: 'center', valign: 'middle', minScale: .7, keepColor: true})); box = {...box, y: box.y + 38, h: box.h - 38}; }
-  if ((pg.image || pg.img) && lay !== 'image' && !/^cr/.test(lay)){ const bx = imgBoxes(pg, box); imgEl(E, pg, bx.img); box = bx.body; }
-  if (!items.length && !/^cr|image|quote/.test(lay)) E.push(T(box.x, box.y, box.w, 40, '세부 항목을 추가하세요', {size: 16, color: K.mute}));
-  else { const f = TKL[lay] || MEDIA3[lay]; if (f) f(E, items, box, P, pg, K); else { const i0 = E.length; (LAY[lay] || LAY.list)(E, items, box, P, pg); if (K.dark) darkify(E, i0, K); } }
+  if (K.band && pg.tag && !['tkSplit', 'tkSpec'].includes(lay) && !(isRef && (REF_OWN.includes(lay) || /^rf(Mock|Phone|Matrix)/.test(lay)))){ E.push(R(GEO.x, box.y, GEO.w, 26, '#EFEFEF')); E.push(T(GEO.x, box.y, GEO.w, 26, pg.tag, {size: 12.5, wt: 600, color: '#333333', align: 'center', valign: 'middle', minScale: .7, keepColor: true})); box = {...box, y: box.y + 38, h: box.h - 38}; }
+  if ((pg.image || pg.img) && lay !== 'image' && !/^cr/.test(lay0) && !(isRef && (REF_IMG.includes(lay) || /^rf(Mock|Phone|Matrix)/.test(lay)))){ const bx = imgBoxes(pg, box); imgEl(E, pg, bx.img); box = bx.body; }
+  if (!items.length && !/^cr|image|quote/.test(lay0)) E.push(T(box.x, box.y, box.w, 40, '세부 항목을 추가하세요', {size: 16, color: K.mute}));
+  else { const f = TKL[lay] || MEDIA3[lay] || (isRef && REFL[lay]); if (f) f(E, items, box, P, {...pg, _orig: lay0}, K); else { const i0 = E.length; (LAY[lay] || LAY.list)(E, items, box, P, pg); if (K.dark) darkify(E, i0, K); } }
   if (showKey) C3.key(E, K, GEO.x, GEO.keyY, GEO.w, GEO.keyH, pg.keyMsg);
   if (pg.source) E.push(T(GEO.x, showKey ? GEO.keyY + GEO.keyH + 10 : GEO.bodyEnd + 4, GEO.w - 260, 14, '출처: ' + pg.source, {size: 9.5, color: K.mute, minScale: .7}));
   return {bg: K.bg, els: E, ds3: true};
