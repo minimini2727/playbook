@@ -35,7 +35,7 @@ const PLAYBOOK_RULES = `[작성 규칙 — 반드시 따를 것]
    "데이터 기반의 효율적인 운영을 통해 성과를 극대화" → "매주 월요일 CPA 상위 20% 소재만 남기고 예산 재배분"
    "다양한 매체를 활용한 통합적인 마케팅 전략" → "검색은 네이버, 발견은 메타 릴스. 역할이 달라 KPI도 따로 관리"
    "고객 니즈에 부합하는 맞춤형 콘텐츠 제공" → "30~40대 사무직이 퇴근길에 보는 15초 숏폼 6종"
-7. 매체별 실행안은 매체마다 layout을 spec / mediaFlow / mediaQuad로 번갈아 써서 같은 모양이 연속되지 않게 할 것.
+7. 매체 전략 섹션에는 미디어믹스에 들어간 매체마다 장표를 1장 이상 만들고(빠지는 매체 없이), 각 장표의 mediaName에 매체명(예: "네이버", "메타", "크리테오")을 넣고 title도 매체명으로 시작할 것. layout은 매체마다 spec / mediaKpi / mediaFlow / mediaRoad / mediaQuad를 돌려 써서 같은 모양이 연속되지 않게 할 것.
 8. 밀도: strategy/explain 장표는 items 4~6개, 각 d는 줄바꿈 2~3줄(한 줄 25~40자). 한 줄짜리 빈약한 장표 금지. 각 장표에 이 브랜드 고유 정보(제품명·가격대·리뷰 표현·경쟁사명·판매 채널·시즌·RFP 문구) 최소 1개 포함. 다른 브랜드에 그대로 붙여도 말이 되는 문장은 다시 쓸 것.
 9. 전략가 관점: 장표마다 "관찰(데이터·리서치 사실) → 의미(그래서 무엇이 문제인가) → 실행(누가·언제·무엇을)"이 보이게. 브랜드 진단에는 고객 행동 인사이트 3개와 구매 여정별 공백 장표를 반드시 포함.
 10. 금지 표현: "~할 것입니다", "~하겠습니다", "기대됩니다", "성공적인 파트너", "함께 성장", "극대화", "시너지", "혁신", "최적의 솔루션", "다양한", "효과적인", "효율적인", "획기적", "차별화된", "고도화", "선제적", "유기적", "전방위", "원스톱", "인사이트 도출", "니즈 충족", "맞춤형 솔루션", "가치 창출", "패러다임", "게임체인저", "임팩트 있는". keyMsg는 숫자·조건·근거가 들어간 판단 문장으로.
@@ -43,7 +43,7 @@ const PLAYBOOK_RULES = `[작성 규칙 — 반드시 따를 것]
 11. 크리에이티브 섹션: 이미지·영상을 넣을 장표로 구성. crHero(대표 비주얼+컨셉: 첫 항목 h=컨셉 문장, 이후 항목 h=라벨/d=내용), crShorts(숏폼 3컷: 항목 h=훅 유형, v=길이·비율, d=장면·자막), crGrid(소재 라인업 4종: h=트랙·소재명, v=매체·규격, d=메시지), crStory(스토리보드 4~6장면: h=장면, v=시간, d=화면·자막), crAB(A/B안 2개: h=안 이름, d=메시지·차이, v=확인 지표, keyMsg=가설), crFeed(피드 목업 2개: h=CTA, v=규격, d=본문 카피) 중 4개 이상 사용.
 [layout 카탈로그 — items 필드 의미]
 cards(병렬 2~4: h 제목, d 설명, v 수치) · process(단계 3~6: h 단계명, d 내용, v 산출물) · kpi(2~4: h 지표, v 수치, d 설명) · hero(첫 항목 v 큰 숫자 + 나머지 근거) · split(keyMsg 핵심 주장 + 근거 3~5) · spec(매체 실행안: h 라벨, d 내용) · table(5행 이상 비교: h 구분, d 내용, v 수치) · compare(h 항목, v AS-IS, d TO-BE) · funnel(h 단계, d 매체·역할, v 지표) · timeline(h 시점, d 실행, v 산출물) · chart(h 항목, v "35%", d 설명) · matrix(4칸: h, d, v 라벨) · grid(6칸) · list(기타)
-추가 레이아웃: crHero · crShorts · crGrid · crStory · crAB · crFeed(위 11번 참조) · mediaFlow(매체: 대상→소재→랜딩→평가 흐름 + 운영 방법) · mediaQuad(매체: 4분면 + 운영 방법) · summary(현황→제안 요약표: h 항목, v 현황, d 제안) · statBars(막대+핵심 수치: h 항목, v 수치%, d 설명) · colCards(컬럼 카드: h 제목, d 줄바꿈 불릿 2~4줄) · stepCards(단계 박스: h 단계, d 줄바꿈 불릿)
+추가 레이아웃: crHero · crShorts · crGrid · crStory · crAB · crFeed(위 11번 참조) · mediaFlow(매체: 대상→소재→랜딩→평가 흐름 + 운영 방법) · mediaQuad(매체: 4분면 + 운영 방법) · mediaKpi(매체: 상단 KPI 보드 + 타겟팅/운영 실행안/소재 결합 3단) · mediaRoad(매체: 타겟팅·소재 결합 + 운영 실행 단계 타임라인) · summary(현황→제안 요약표: h 항목, v 현황, d 제안) · statBars(막대+핵심 수치: h 항목, v 수치%, d 설명) · colCards(컬럼 카드: h 제목, d 줄바꿈 불릿 2~4줄) · stepCards(단계 박스: h 단계, d 줄바꿈 불릿)
 page type: divider(간지) · bridge(논리 전환 한 문장, keyMsg가 크게 노출) · strategy(전략·실행) · explain(근거·설명)`;
 const SYS_BASE = `너는 한국 디지털 퍼포먼스 마케팅 대행사의 10년차 제안 전략가다. 경쟁 PT에서 이겨야 하는 제안자 입장에서 판단한다.\n${PLAYBOOK_RULES}\n모든 출력은 한국어, 요청한 JSON만 출력한다.`;
 
@@ -70,7 +70,7 @@ const JSON_SCHEMA = `{
  "colorConcept":"",
  "brandInsights":[""],
  "logic":{"concept":"제안 컨셉(캐치프레이즈)","message":"핵심 메시지","storyline":[{"title":"","point":""}]},
- "sections":[{"role":"company|team|brand|playbook|media|budget|creative|kpi|report|optimize|tech|case|issue|pricing|custom","title":"","en":"영문 섹션명","goal":"","divider":true,"pages":[{"type":"bridge|strategy|explain","layout":"","title":"","subtitle":"","keyMsg":"","tag":"","items":[{"h":"","d":"","v":""}],"source":"","notes":"발표자 노트"}]}]
+ "sections":[{"role":"company|team|brand|playbook|media|budget|creative|kpi|report|optimize|tech|case|issue|pricing|custom","title":"","en":"영문 섹션명","goal":"","divider":true,"pages":[{"type":"bridge|strategy|explain","layout":"","mediaName":"매체 장표면 매체명","title":"","subtitle":"","keyMsg":"","tag":"","items":[{"h":"","d":"","v":""}],"source":"","notes":"발표자 노트"}]}]
 }`;
 function claudePromptAll(){
   const A = S.input.analysis, eng = A?.engine ? `\n[내장 엔진 초안 — 더 날카롭게 개선할 것]\n우선순위: ${(A.priorities || []).map(p => p.title).join(' / ')}\n매체 믹스: ${(A.mix || []).map(m => `${m.name} ${m.pct}%`).join(', ')}\n섹션: ${(A.sections || []).map(s => s.title).join(' / ')}` : '';
@@ -443,7 +443,7 @@ function vSection(sec, si){
       <label class="ck"><input type="checkbox" data-bind="sections.${si}.include" ${sec.include !== false ? 'checked' : ''}>포함</label>
       <button class="btn sm pri" data-act="genSec" ${b}>${sec.pageList.length ? '↻ 재작성' : '✦ 자동 작성'}</button>
       ${!S.isLibrary && typeof libSection === 'function' && libSection(sec.role) ? `<button class="btn sm" data-act="libPut" ${b} title="기본 장표 라이브러리의 같은 유형 장표로 채우기">📚 라이브러리 넣기</button>` : ''}
-      <button class="btn sm" data-act="claudeSec" ${b} title="Claude 앱으로 이 섹션 고도화">Claude↗</button>
+      <button class="btn sm" data-act="claudeSec" ${b} title="Claude 앱으로 이 섹션 고도화">Claude↗</button>${sec.role === 'media' ? `<button class="btn sm" data-act="mediaSync" ${b} title="미디어믹스에 있는데 장표가 없는 매체를 추가하고, 매체마다 다른 레이아웃을 배정">매체별 장표 채우기</button>` : ''}
       <button class="btn sm" data-act="secPPT" ${b} ${sec.pageList.length ? '' : 'disabled'}>PPT</button><button class="btn sm" data-act="secPDF" ${b} ${sec.pageList.length ? '' : 'disabled'}>PDF</button>
       <button class="btn sm ghost" data-act="secMv" ${b} data-d="-1">▲</button><button class="btn sm ghost" data-act="secMv" ${b} data-d="1">▼</button>
       <button class="btn sm ghost" data-act="secFold" ${b}>${sec.collapsed ? '펼치기' : '접기'}</button><button class="btn sm ghost bad" data-act="secDel" ${b}>삭제</button></div>

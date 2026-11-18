@@ -134,12 +134,14 @@ function ds3Title(E, K, pg){
 }
 
 /* ---------------- 본문 페이지 ---------------- */
+const MEDIA_TK_EARLY = {mediaKpi: 'tkKpiBoard', mediaRoad: 'tkRoad'};
 const KEY_SELF = ['tkSplit', 'tkSpec', 'split', 'spec', 'hero', 'cycle', 'hub', 'quote', 'mediaQuad'];
 function ds3BodyLayout(pg){
   if (pg.tkLayout && (TKL[pg.tkLayout] || MEDIA3[pg.tkLayout])) return pg.tkLayout;
+  if (MEDIA_TK_EARLY[pg.layout]) return MEDIA_TK_EARLY[pg.layout];
   const l = String(pg.layout || '');
   if (l.startsWith('tk') && TKL[l]) return l;
-  if (MEDIA_LAYOUTS.includes(l)) return {spec: 'tkSpec', mediaFlow: 'tkFlow', mediaQuad: 'tkQuad'}[l];
+  if (MEDIA_LAYOUTS.includes(l)) return {spec: 'tkSpec', mediaFlow: 'tkFlow', mediaQuad: 'tkQuad', mediaKpi: 'tkKpiBoard', mediaRoad: 'tkRoad'}[l];
   if (/^cr/.test(l) || l === 'image') return l;
   return tkPick({...pg, tplBody: undefined}, '');
 }
@@ -488,7 +490,7 @@ Object.assign(LAY, MEDIA3);
 /* 내용에 맞춰 레이아웃 고르기 (연속 반복 피함) */
 tkPick = function(p, prev){
   const it = itemsOf(p), n = it.length, lay = p.draft?.layout || p.layout || '', withV = it.filter(i => i.v && isNum(i.v)).length, pct = it.filter(i => /%$/.test(String(i.v).trim())).length;
-  if (MEDIA_LAYOUTS.includes(lay)) return {spec: 'tkSpec', mediaFlow: 'tkFlow', mediaQuad: 'tkQuad'}[lay];
+  if (MEDIA_LAYOUTS.includes(lay)) return {spec: 'tkSpec', mediaFlow: 'tkFlow', mediaQuad: 'tkQuad', mediaKpi: 'tkKpiBoard', mediaRoad: 'tkRoad'}[lay];
   const c = [];
   if (/chart|statBars/.test(lay) && pct >= 3) c.push('tkBars');
   if (/hero/.test(lay) && it[0]?.v && n >= 2) c.push('tkHero');
@@ -547,7 +549,7 @@ unwash = function(p){ _unwash0(p); p.tkLayout = undefined; };
 const _shuffle0 = shuffleLayout;
 shuffleLayout = function(p){
   if (!ds3On()) return _shuffle0(p);
-  const L = ['tkPillCols', 'tkKpi', 'tkSteps', 'tkFunnel', 'tkTable', 'tkSplit', 'tkCompare', 'tkList', 'tkGrid', 'tkBars', 'tkHero', 'tkSpec', 'tkFlow', 'tkQuad'];
+  const L = ['tkPillCols', 'tkKpi', 'tkSteps', 'tkFunnel', 'tkTable', 'tkSplit', 'tkCompare', 'tkList', 'tkGrid', 'tkBars', 'tkHero', 'tkSpec', 'tkFlow', 'tkQuad', 'tkKpiBoard', 'tkRoad'];
   const cur = p.tkLayout || ds3BodyLayout(p), i = L.indexOf(cur);
   if (!p.washed){ p.draft = clone({...p, draft: undefined}); p.washed = true; }
   p.tkLayout = L[(i + 1) % L.length];
@@ -572,3 +574,130 @@ buildSpec = function(it){
   if (ac && c0) c0.hex = ac;
   try { return contrastFix(_bsSec(it)); } finally { S.design.theme = g; if (ac && c0) c0.hex = h0; }
 };
+
+/* ---------------- 매체 전략 레이아웃 추가 2종 (매체가 많아도 같은 모양이 반복되지 않게) ---------------- */
+const mParts = items => {
+  const f = re => items.find(i => re.test(i.h || ''));
+  const exe = items.find(i => isMethod(i.h)), bud = items.find(i => isBudget(i.h)), kpi = f(/KPI|목표/), tgt = f(/타겟팅|^대상|타겟\s*$/), pair = f(/결합|매칭|^소재/), scale = f(/증감|증액|확장 기준|판단 기준|평가/);
+  const used = [kpi, tgt, exe, pair, scale, bud].filter(Boolean), rest = items.filter(i => !used.includes(i));
+  return {kpi, tgt, exe, pair, scale, bud, rest};
+};
+const fitFs = (fn, avail, hi = 15.5, lo = 12.5) => { let f = hi; while (f > lo && fn(f) > avail) f -= .5; return f; };
+Object.assign(MEDIA3, {
+  tkKpiBoard(E, items, b, P, pg, K = K3(P, pg)){ // 상단 KPI 보드 + 타겟팅 / 실행 / 소재 결합 3단
+    const M = mParts(items), g = 16, topH = 118, kw = b.w * .36;
+    const kc = C3.card(E, K, b.x, b.y, kw, topH, {hi: !K.draft && K.card === 'fill'}), kon = kc.on, kp = b.x + (kc.pad || 18);
+    E.push(T(kp, b.y + 16, kw - 40, 16, 'KPI 목표', {size: 11.5, bold: true, color: kon, alpha: .8, ls: .8}));
+    E.push(T(kp, b.y + 36, kw - 40, 48, M.kpi?.v || (pg.keyMsg || '').split('·').pop().trim() || '-', {size: 30, bold: true, color: K.card === 'fill' && !K.draft ? kon : K.p, lh: 1.15, minScale: .45}));
+    if (M.kpi?.d) E.push(T(kp, b.y + 84, kw - 40, 28, bl(M.kpi.d)[0], {size: 13.5, color: kon, alpha: .9, wt: 500, minScale: .65}));
+    const sx = b.x + kw + g, sw = b.w - kw - g, sc = C3.card(E, K, sx, b.y, sw, topH, {fillRule: true}), sp = sx + (sc.pad || 18), half = (sw - (sc.pad || 18) * 2 - 24) / 2;
+    E.push(T(sp, b.y + 16, half, 16, M.scale?.h || '증감액 기준', {size: 11.5, bold: true, color: K.p, ls: .4}));
+    E.push(T(sp, b.y + 38, half, topH - 48, M.scale?.d || '-', {size: 14, color: K.ink, lh: 1.45, wt: 500, minScale: .65}));
+    E.push(R(sp + half + 12, b.y + 18, 1, topH - 36, K.line));
+    E.push(T(sp + half + 24, b.y + 16, half, 16, M.bud?.h || 'KPI 병목', {size: 11.5, bold: true, color: K.p, ls: .4}));
+    E.push(T(sp + half + 24, b.y + 38, half, topH - 48, M.bud?.d || bl(M.kpi?.d || '').slice(1).join('\n') || '-', {size: 14, color: K.ink, lh: 1.45, wt: 500, minScale: .65}));
+    const cols = [[M.tgt?.h || '타겟팅 어프로치', M.tgt?.d || ''], [M.exe?.h || '운영 실행안', M.exe?.d || ''], [M.pair?.h || '타겟 × 소재 결합', [M.pair?.d, ...M.rest.map(r => `${r.h}: ${r.d}`)].filter(Boolean).join('\n')]];
+    const cy = b.y + topH + 20, ch = b.y + b.h - cy, cw = (b.w - 2 * g) / 3, hd = 36;
+    const fs = fitFs(f => Math.max(...cols.map(c => bl(c[1]).reduce((a, l) => a + tH(l.replace(/^\s*\d+[).]\s*/, ''), f, cw - 64, 1.5, 500) + 8, 0))), ch - hd - 34);
+    cols.forEach(([h, d], i) => { const x = b.x + i * (cw + g);
+      C3.head(E, K, x, cy, cw, hd, h, {hi: i === 1});
+      const c = C3.card(E, K, x, cy + hd + 8, cw, ch - hd - 8, {fillRule: true}), px = x + (c.pad || 18); let y = cy + hd + 8 + (c.top || 16);
+      bl(d).forEach((l, k) => { const t = l.replace(/^\s*\d+[).]\s*/, ''), th = tH(t, fs, cw - (c.pad || 18) * 2 - 28, 1.5, 500); if (y + th > cy + ch - 8) return;
+        if (i === 1) C3.num(E, {...K, num: K.num === 'big' ? 'plain' : K.num}, px + 10, y + fs * .75, 22, k + 1, {}); else E.push(R(px + 2, y + fs * .6, 6, 6, K.p, {r: 3}));
+        E.push(T(px + 26, y, cw - (c.pad || 18) * 2 - 26, th + 2, t, {size: fs, color: c.on, lh: 1.5, wt: 500})); y += th + 8; });
+    });
+  },
+  tkRoad(E, items, b, P, pg, K = K3(P, pg)){ // 왼쪽 타겟·소재 결합 / 오른쪽 KPI 띠 + 실행 단계 타임라인 + 판단 기준
+    const M = mParts(items), g = 20, lw = b.w * .34, rx = b.x + lw + g, rw = b.w - lw - g;
+    const L = [[M.tgt?.h || '타겟팅 어프로치', M.tgt?.d || ''], [M.pair?.h || '타겟 × 소재 결합', [M.pair?.d, ...M.rest.map(r => `${r.h}: ${r.d}`)].filter(Boolean).join('\n')]];
+    const lh = (b.h - 14) / 2, lfs = fitFs(f => Math.max(...L.map(c => tH(c[1], f, lw - 48, 1.5, 500))), lh - 60);
+    L.forEach(([h, d], i) => { const y = b.y + i * (lh + 14), c = C3.card(E, K, b.x, y, lw, lh, {fillRule: true}), px = b.x + (c.pad || 18);
+      E.push(T(px, y + (c.top || 16), lw - 40, 20, h, {size: 14.5, bold: true, color: K.p}));
+      E.push(T(px, y + (c.top || 16) + 30, lw - (c.pad || 18) * 2, lh - (c.top || 16) - 40, d, {size: lfs, color: c.on, lh: 1.5, wt: 500, minScale: .7})); });
+    // KPI 띠
+    const kh = 64; E.push(R(rx, b.y, rw, kh, K.dark ? mix(K.p, K.bg, .5) : K.p, {r: Math.min(K.r, 14)})); const kf = onC(K.dark ? mix(K.p, K.bg, .5) : K.p);
+    E.push(T(rx + 22, b.y, 90, kh, 'KPI 목표', {size: 12, bold: true, color: kf, alpha: .8, valign: 'middle'}));
+    E.push(T(rx + 110, b.y, rw * .36, kh, M.kpi?.v || (pg.keyMsg || '').split('·').pop().trim() || '-', {size: 22, bold: true, color: kf, valign: 'middle', minScale: .5}));
+    if (M.kpi?.d) E.push(T(rx + 120 + rw * .36, b.y + 6, rw - rw * .36 - 140, kh - 12, M.kpi.d, {size: 13, color: kf, alpha: .92, valign: 'middle', lh: 1.4, wt: 500, minScale: .6}));
+    // 실행 타임라인
+    const st = bl(M.exe?.d || '').map(l => l.replace(/^\s*\d+[).]\s*/, '')).slice(0, 4), n = Math.max(1, st.length), sw = (rw - (n - 1) * 14) / n, ty = b.y + kh + 26;
+    E.push(T(rx, ty, 300, 18, M.exe?.h || '운영 실행안', {size: 13, bold: true, color: K.p, ls: .3}));
+    const ly = ty + 42; if (n > 1) E.push(R(rx + sw / 2, ly - 1, (n - 1) * (sw + 14), 2, K.line));
+    const botH = (M.scale || M.bud) ? 78 : 0, sh = b.y + b.h - botH - (botH ? 14 : 0) - (ly + 26);
+    const sfs = fitFs(f => Math.max(...st.map(t => tH(t, f, sw - 32, 1.5, 500))), sh - 30);
+    st.forEach((t, i) => { const x = rx + i * (sw + 14);
+      C3.num(E, {...K, num: K.num === 'big' || K.num === 'plain' ? 'circle' : K.num}, x + sw / 2, ly, 30, i + 1, {on: i === 0});
+      const c = C3.card(E, K, x, ly + 26, sw, sh, {fillRule: true});
+      E.push(T(x + 16, ly + 26 + 16, sw - 32, sh - 28, t, {size: sfs, color: c.on, lh: 1.5, wt: 500, minScale: .7})); });
+    if (botH){ const by = b.y + b.h - botH, bw = (rw - 14) / 2;
+      [[M.scale?.h || '증감액 기준', M.scale?.d], [M.bud?.h || '일정·예산', M.bud?.d]].filter(x => x[1]).forEach(([h, d], i, arr) => { const w2 = arr.length === 1 ? rw : bw, x = rx + i * (bw + 14);
+        E.push(R(x, by, w2, botH, K.soft, {r: Math.min(K.r, 12)})); E.push(T(x + 18, by + 12, w2 - 36, 16, h, {size: 11.5, bold: true, color: K.p, ls: .4}));
+        E.push(T(x + 18, by + 32, w2 - 36, botH - 38, d, {size: 13.5, bold: true, color: K.dark ? K.ink : K.pDark, lh: 1.4, minScale: .6})); }); }
+  }
+});
+Object.assign(LAY, {tkKpiBoard: MEDIA3.tkKpiBoard, tkRoad: MEDIA3.tkRoad, mediaKpi: MEDIA3.tkKpiBoard, mediaRoad: MEDIA3.tkRoad});
+MEDIA_LAYOUTS.push('mediaKpi', 'mediaRoad');
+Object.assign(LAYOUTS, {mediaKpi: '매체: KPI 보드 + 3단', mediaRoad: '매체: 실행 로드맵'});
+Object.assign(TK_NAMES, {tkKpiBoard: '매체: KPI 보드', tkRoad: '매체: 실행 로드맵', tkSpec: TK_NAMES.tkSpec || '매체: 스펙 시트', tkFlow: TK_NAMES.tkFlow || '매체: 흐름도', tkQuad: TK_NAMES.tkQuad || '매체: 4분면'});
+const MEDIA_TK = {spec: 'tkSpec', mediaFlow: 'tkFlow', mediaQuad: 'tkQuad', mediaKpi: 'tkKpiBoard', mediaRoad: 'tkRoad'};
+
+/* ---------------- 매체 이름 인식 · 미디어믹스 매체별 장표 보장 ---------------- */
+const MEDIA_GROUPS = [['네이버', /네이버|브랜드\s*검색|쇼핑\s*검색|파워링크|GFA|ADVoost/i], ['쿠팡', /쿠팡/], ['메타', /메타|META|Meta|페이스북|인스타그램|릴스/], ['구글·유튜브', /구글|Google|유튜브|YouTube|Demand\s*Gen|PMax|디맨드/i], ['카카오', /카카오|비즈보드|모먼트/], ['크리테오', /크리테오|Criteo/i], ['틱톡', /틱톡|TikTok/i], ['당근', /당근/], ['토스', /토스/], ['앱', /앱\s*설치|MMP|애플\s*검색/]];
+const mediaGroup = t => (MEDIA_GROUPS.find(([, re]) => re.test(t || '')) || [''])[0];
+function pageMedia(p){ if (p.mediaName) return p.mediaName; for (const t of [p.title, p.tag, p.keyMsg, (p.notes || '').slice(0, 40)]){ const g = mediaGroup(t); if (g) return g; } return ''; }
+const isMediaPage = p => (p.type === 'strategy' || p.type === 'explain') && (MEDIA_LAYOUTS.includes(p.layout) || (!!p.mediaName && !/^cr/.test(p.layout || '')));
+function mixMediaList(){
+  const rows = (S.input.mediaMix?.rows || []).filter(r => r.name && (+r.pct || 0) > 0);
+  if (rows.length) return rows.map(r => r.name);
+  const MR = S.input.analysis?.mediaResearch || S.input.claudeJson?.data?.mediaResearch;
+  if (MR?.length) return MR.map(m => m.media).filter(Boolean);
+  try { return allocate(mediaMix(signals()), 'base').map(m => m.name); } catch(e){ return []; }
+}
+const LIB_KEY = {'네이버': 'naverShop', '쿠팡': 'coupang', '메타': 'metaConv', '구글·유튜브': 'demandGen', '카카오': 'kakao', '크리테오': 'criteo', '틱톡': 'tiktok', '앱': 'appUA'};
+function mediaPageFromLib(name){ // 내장 매체 라이브러리로 매체 장표 1장 (KPI 목표 · 타겟팅 · 실행안 · 소재 결합 · 증감액 기준)
+  let c, L; try { c = signals(); L = MEDIA_LIB(c); } catch(e){ return null; }
+  const g = mediaGroup(name), key = Object.keys(L).find(k => L[k].name === name) || (/브랜드\s*검색/.test(name) ? 'naverBrand' : /파워링크|검색광고/.test(name) ? 'naverPL' : /GFA/.test(name) ? 'gfaConv' : /PMax|구글\s*검색/.test(name) ? 'googleSearch' : LIB_KEY[g]), m = key && L[key]; if (!m) return null;
+  const K = mediaKPI({...m, name}), row = (S.input.mediaMix?.rows || []).find(r => r.name === name), pct = row ? +row.pct || 0 : 0, mon = typeof mmMonthly === 'function' ? mmMonthly() : 0, stg = STAGE[row?.stage || m.stage] || STAGE.mid;
+  const amt = pct && mon ? ` (월 ${Math.round(mon * pct / 100 / 1e4).toLocaleString()}만 원)` : '';
+  return {layout: 'spec', title: `${name}: ${m.head}`, subtitle: m.sub, keyMsg: `${m.role} · ${K.target}`, tag: `${stg.en}  ${stg.type}`, mediaName: name, notes: `${name}은 ${K.lever.split('\n')[0]} 쪽부터 손봅니다.`,
+    items: [{h: 'KPI 목표', d: K.lever, v: K.target}, {h: '타겟팅 어프로치', d: `${m.who}\n${K.tgt}`}, {h: '운영 실행안', d: m.acts.map((a, k) => `${k + 1}) ${a}`).join('\n')}, {h: '타겟 × 소재 결합', d: `${m.who.split(',')[0]} → ${m.what} → ${m.land}`}, {h: '증감액 기준', d: K.scale}, {h: '일정·예산', d: m.when + (pct ? `, 비중 ${pct}%${amt}` : '')}]};
+}
+function syncMediaPages(sec, o = {}){
+  if (!sec || sec.role !== 'media') return 0;
+  sec.pageList.forEach(p => { if ((p.type === 'strategy' || p.type === 'explain') && !p.mediaName){ const m = pageMedia(p); if (m && (MEDIA_LAYOUTS.includes(p.layout) || /^(네이버|쿠팡|메타|구글|유튜브|카카오|크리테오|틱톡)/.test(p.title || ''))) p.mediaName = m; } });
+  const have = new Set(sec.pageList.filter(p => p.mediaName).map(p => mediaGroup(p.mediaName) || p.mediaName));
+  const want = mixMediaList(), missing = want.filter(n => !have.has(mediaGroup(n) || n));
+  let added = 0;
+  if (missing.length && typeof generateEngine === 'function'){
+    missing.forEach(n => { const g = mediaGroup(n) || n, src = mediaPageFromLib(n);
+      const pg = src ? newPage('strategy', src) : newPage('strategy', {layout: 'spec', title: `${n} 운영 전략 [작성 필요]`, subtitle: 'KPI 목표를 맞추기 위한 타겟팅 · 운영 실행안 · 소재 결합', keyMsg: '', mediaName: n, items: [{h: 'KPI 목표', d: '[가장 약한 KPI와 레버]', v: '[목표 수치]'}, {h: '타겟팅 어프로치', d: '[세그먼트·우선순위·확장 순서·제외]'}, {h: '운영 실행안', d: '1) [캠페인 구조]\n2) [입찰·학습 예산]\n3) [주차별 실행]'}, {h: '타겟 × 소재 결합', d: '[세그먼트 → 메시지·포맷 → 랜딩]'}, {h: '증감액 기준', d: '[세그먼트 단위 숫자 기준]'}, {h: '일정·예산', d: '[월 예산·일정]'}]});
+      have.add(g); sec.pageList.push(pg); added++; });
+  }
+  // 매체 장표 레이아웃 5종을 순서대로 배정 (같은 모양 연속 금지)
+  let k = 0; sec.pageList.forEach(p => { if (isMediaPage(p) && p.mediaName){ p.layout = MEDIA_LAYOUTS[k % MEDIA_LAYOUTS.length]; if (p.washed) p.tkLayout = MEDIA_TK[p.layout]; if (p.draft) p.draft.layout = p.layout; k++; } });
+  sec.pages = sec.pageList.length;
+  return added;
+}
+function syncAllMediaPages(){ let a = 0; S.sections.filter(s => s.role === 'media').forEach(s => { a += syncMediaPages(s); }); return a; }
+const _importClaude0 = importClaude;
+importClaude = function(j, withSec){ _importClaude0(j, withSec); if (j.mediaResearch) S.input.analysis.mediaResearch = j.mediaResearch; if (withSec) syncAllMediaPages(); };
+const _genSection0 = genSection;
+genSection = async function(si, quiet){ await _genSection0(si, true); const sec = S.sections[si]; if (sec?.role === 'media') syncMediaPages(sec); if (!quiet){ save(); render(); toast(`"${sec?.title}" ${sec?.pageList.length || 0}장 작성 완료`); } };
+ACT.mediaSync = b => { const sec = S.sections[+b.dataset.s]; const n = syncMediaPages(sec); save(); render(); toast(n ? `미디어믹스 기준 빠진 매체 ${n}개 장표를 추가했습니다` : '미디어믹스의 모든 매체가 장표에 있습니다 — 레이아웃만 매체별로 다시 배정했습니다', 4000); };
+
+/* 매체 장표 우상단 매체명 표시 (모든 테마 공통) */
+function mediaBadge(spec, it){
+  const pg = it.page; if (!spec || !spec.els || spec.fx || !pg?.mediaName || !(pg.type === 'strategy' || pg.type === 'explain')) return spec;
+  const ts = spec.els.filter(e => e.k === 't' && e.y < 140 && e.y > 40 && e.size >= 21 && !e.ls).sort((a, b) => b.size - a.size)[0];
+  const name = pg.mediaName, dark = lum(spec.bg || '#FFFFFF') < .4, c1 = pg.washed ? (palette(true).c1 || '#1F3A93') : '#3A3A3A', fill = dark && lum(c1) < .35 ? mix(c1, '#FFFFFF', .3) : c1;
+  const pw = Math.min(260, mw(name, 14, 700) + mw('MEDIA', 10, 700) + 56), ph = 32, x = W - 60 - pw, y = ts ? ts.y + Math.max(0, (Math.min(ts.h, ts.size * 1.3) - ph) / 2) : 72;
+  if (ts && ts.x + ts.w > x - 16) ts.w = Math.max(300, x - 16 - ts.x);
+  const sub = spec.els.find(e => e.k === 't' && ts && e !== ts && e.y > ts.y && e.y < ts.y + 120 && e.size < ts.size && e.size >= 14); if (sub && sub.x + sub.w > x - 16) sub.w = Math.max(300, x - 16 - sub.x);
+  spec.els.push(R(x, y, pw, ph, fill, {r: ph / 2}));
+  spec.els.push(T(x + 16, y, 52, ph, 'MEDIA', {size: 10, bold: true, color: onC(fill), alpha: .75, valign: 'middle', ls: .8, keepColor: true}));
+  spec.els.push(R(x + 64, y + 9, 1, ph - 18, onC(fill), {alpha: .4}));
+  spec.els.push(T(x + 74, y, pw - 86, ph, name, {size: 14, bold: true, color: onC(fill), valign: 'middle', minScale: .6, keepColor: true}));
+  return spec;
+}
+const _bsMedia = buildSpec;
+buildSpec = function(it){ const sp = _bsMedia(it); return it && it.kind === 'page' ? mediaBadge(sp, it) : sp; };
