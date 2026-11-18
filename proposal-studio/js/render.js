@@ -19,11 +19,12 @@ function mw(s, size, wt){ const k = wt + '|' + s; let w = MC.get(k); if (w == nu
 function wrapPara(p, size, wt, w){
   if (!p) return [''];
   const out = []; let line = '';
-  for (const t of p.split(' ')){
+  for (let t of p.split(' ')){
     const cand = line ? line + ' ' + t : t;
     if (mw(cand, size, wt) <= w){ line = cand; continue; }
     if (line) out.push(line);
     if (mw(t, size, wt) <= w){ line = t; continue; }
+    if (/[·\/]/.test(t)){ const parts = t.split(/(?<=[·\/])/); line = ''; for (const q of parts){ const c2 = line + q; if (mw(c2, size, wt) <= w || !line) line = c2; else { out.push(line); line = q; } } if (mw(line, size, wt) <= w) continue; t = line; line = ''; }
     let chunk = ''; for (const ch of t){ if (mw(chunk + ch, size, wt) > w && chunk){ out.push(chunk); chunk = ch; } else chunk += ch; } line = chunk;
   }
   out.push(line); return out;
@@ -43,7 +44,8 @@ function tH(text, size, w, lh = 1.4, wt = 500){ if (!text) return 0; return Math
 function prepText(e){ // 박스에 맞춰 크기 확정
   let size = e.size, paras = layoutText(e.text, size, WT(e), e.w);
   const min = e.size * (e.minScale || .62);
-  while (textHeight(paras, size, e.lh) > e.h * 1.02 && size > min){ size = Math.max(min, size * .94); paras = layoutText(e.text, size, WT(e), e.w); }
+  const toks = String(e.text ?? '').split(/[\s\n]+/).filter(Boolean), tooWide = sz => toks.some(t => mw(t, sz, WT(e)) > e.w * .97);
+  while ((textHeight(paras, size, e.lh) > e.h * 1.02 || tooWide(size)) && size > min){ size = Math.max(min, size * .94); paras = layoutText(e.text, size, WT(e), e.w); }
   return {size, paras};
 }
 

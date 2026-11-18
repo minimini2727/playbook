@@ -11,6 +11,7 @@ const DS3 = {
   bento: {name: '벤토 그리드', desc: '모듈 카드 · 큰 숫자 · 라운드 · 다크 시사점 카드', bg: '#F1F1EE', ink: '#151515', sub: '#55585C', mute: '#8E9196', panel: '#FFFFFF', line: '#E4E3DE', r: 18, card: 'fill', head: 'pill', num: 'circle', key: 'dark', chrome: 'bento', tw: 800},
   editorial: {name: '에디토리얼', desc: '페이퍼 톤 · 큰 번호 · 인용형 시사점 · 잡지 그리드', bg: '#FAF8F3', ink: '#1B1A17', sub: '#57534B', mute: '#948E82', panel: '#F2EEE5', line: '#DCD5C7', r: 4, card: 'rule', head: 'label', num: 'big', key: 'quote', chrome: 'editorial', tw: 800},
   dark: {name: '다크 프리미엄', desc: '차콜 배경 · 은은한 카드 · 밝은 포인트 컬러', bg: '#0E1116', ink: '#F4F6F8', sub: '#A8B0BB', mute: '#6E7782', panel: '#171C23', line: '#29303A', r: 14, card: 'fill', head: 'pill', num: 'circle', key: 'outline', chrome: 'dark', tw: 800, dark: true},
+  ref: {name: '레퍼런스 미니멀 (업로드 PDF)', desc: '얇은 브레드크럼 · 레귤러 타이틀 · 회색 섹션 밴드 · 검정 필 헤더 · 크리에이티브는 다크 페이지', bg: '#FFFFFF', ink: '#222222', sub: '#5A5A5A', mute: '#9A9A9A', panel: '#FFFFFF', line: '#DADADA', r: 8, card: 'fill', head: 'pill', num: 'plain', key: 'ref', chrome: 'ref', tw: 500, thead: 'light', band: true},
   madupTpl: {name: 'MADUP 템플릿 (업로드 PPT)', desc: '업로드한 MADUP 장표의 머리말·필 헤더·라운드 패널', bg: '#FFFFFF', ink: '#222222', sub: '#5B5F5B', mute: '#8A8F8A', panel: '#F5F6F5', line: '#E3E6E3', r: 12, card: 'fill', head: 'pill', num: 'circle', key: 'tplbar', chrome: 'tpl', tw: 800}
 };
 const DS3_DRAFT = {bg: '#FFFFFF', ink: '#2B2B2B', sub: '#5E5E5E', mute: '#9A9A9A', panel: '#F4F4F4', line: '#E2E2E2', r: 8, card: 'fill', head: 'pill', num: 'circle', key: 'box', chrome: 'draft', tw: 800};
@@ -63,6 +64,7 @@ const C3 = {
     if (st === 'dark'){ E.push(R(x, y, w, h, '#151515', {r: Math.min(K.r, h / 2)})); E.push(EL(x + 22, y + h / 2 - 5, 10, 10, K.p)); E.push(T(x + 44, y, w - 66, h, text, {size: 16.5, bold: true, color: '#FFFFFF', valign: 'middle', minScale: .65})); return; }
     if (st === 'outline'){ E.push(R(x, y, w, h, K.bg, {r: h / 2, line: K.p})); E.push(T(x + 28, y, w - 56, h, text, {size: 16.5, bold: true, color: K.ink, valign: 'middle', minScale: .65})); return; }
     if (st === 'quote'){ E.push(T(x, y - 14, 40, h + 10, '“', {size: 54, bold: true, color: K.p, lh: 1})); E.push(T(x + 44, y, w - 50, h, text, {size: 18, bold: true, color: K.ink, valign: 'middle', minScale: .65})); E.push(R(x + 44, y + h + 4, 80, 2, K.p)); return; }
+    if (st === 'ref'){ E.push(SH('trap-down', x + w / 2 - 16, y - 15, 32, 11, K.dark ? '#5A5A5A' : '#C4C4C4', {inset: 16})); E.push(R(x, y, w, h, K.dark ? '#333333' : '#FFFFFF', {r: Math.min(K.r, 10), line: K.dark ? '#555555' : K.line})); E.push(T(x + 24, y, w - 48, h, text, {size: 16, bold: true, color: K.dark ? '#FFFFFF' : K.p, align: 'center', valign: 'middle', minScale: .65, keepColor: true})); return; }
     if (st === 'tplbar'){ E.push(R(x - 16, y, w + 32, h, K.pDark, {r: h / 2})); E.push(EL(x, y + h / 2 - 4, 8, 8, K.p)); E.push(T(x + 16, y, w - 24, h, text, {size: 16, bold: true, color: onC(K.pDark), valign: 'middle', minScale: .65})); return; }
     E.push(R(x, y, w, h, K.soft, {r: K.r})); E.push(R(x, y, 5, h, K.p)); // box
     E.push(T(x + 24, y, 90, h, K.draft ? '시사점' : 'SO WHAT', {size: 11.5, bold: true, color: K.p, valign: 'middle', ls: .8}));
@@ -122,12 +124,26 @@ function ds3Chrome(E, K, it, o = {}){
       E.push(T(GEO.x, 680, 700, 14, client, {size: 9.5, color: K.mute}));
       E.push(T(W - GEO.x - 80, 680, 80, 14, no, {size: 10.5, bold: true, color: K.sub, align: 'right'}));
       break;
+    case 'ref': {
+      const en = sec?.en || it.secTitle || o.label || '', tail = it.page?.mediaName || '', crumb = `${en}${en && tail ? ' - ' + tail : tail}`;
+      E.push(T(GEO.x, 26, 700, 16, crumb, {size: 11, color: K.ink, wt: 500, minScale: .8}));
+      E.push(T(W - GEO.x - 80, 686, 80, 14, no ? String(+no) : '', {size: 10, color: K.mute, align: 'right'}));
+      break; }
     default: // draft
       E.push(T(GEO.x, 26, 600, 16, lab, {size: 10.5, bold: true, color: K.mute, ls: .8}));
       E.push(T(W - GEO.x - 80, 684, 80, 14, no, {size: 10, bold: true, color: K.mute, align: 'right'}));
   }
 }
 function ds3Title(E, K, pg){
+  if (K.chrome === 'ref'){
+    const tw = GEO.w - 20, t = pg.title || '', ci = t.indexOf(':');
+    let ts = 28; while (ts > 21 && tH(t, ts, tw, 1.3, 500) > ts * 1.35) ts -= 1;
+    const one = tH(t, ts, tw, 1.3, 500) <= ts * 1.35, ty = one ? GEO.titleY : GEO.titleY - 12, th = one ? ts * 1.3 : ts * 2.6;
+    if (one && ci > 0 && ci < 34){ const lead = t.slice(0, ci + 1), lw = mw(lead, ts, 800) * 1.02 + 6; E.push(T(GEO.x, ty, lw + 4, th + 2, lead, {size: ts, bold: true, color: K.ink, lh: 1.3})); E.push(T(GEO.x + lw, ty, tw - lw, th + 2, t.slice(ci + 1).trim(), {size: ts, color: K.ink, wt: 500, lh: 1.3, minScale: .8})); }
+    else E.push(T(GEO.x, ty, tw, th + 4, t, {size: ts, color: K.ink, wt: 500, lh: 1.3, minScale: .7}));
+    if (pg.subtitle) E.push(T(GEO.x + 1, ty + th + 8, tw, 44, pg.subtitle, {size: 15, color: K.sub, lh: 1.45, wt: 400, minScale: .75}));
+    return;
+  }
   const tw = GEO.w - (K.chrome === 'editorial' ? 140 : 40);
   let ts = 29; while (ts > 22 && tH(pg.title, ts, tw, 1.25, 800) > ts * 1.3 + 2) ts -= 1;
   const th = Math.min(2, Math.round(tH(pg.title, ts, tw, 1.25, 800) / (ts * 1.25))) > 1 ? ts * 2.5 : ts * 1.3;
@@ -150,15 +166,18 @@ function ds3BodyLayout(pg){
   return tkPick({...pg, tplBody: undefined}, '');
 }
 function ds3PageSpec(it){
-  const pg = it.page, draft = !pg.washed, P0 = palette(!draft), K = ds3Tok(P0, draft), P = ds3P(K, P0), E = [], items = itemsOf(pg);
+  const pg = it.page, draft = !pg.washed, P0 = palette(!draft), E = [], items = itemsOf(pg); let K = ds3Tok(P0, draft);
   if (pg.type === 'divider') return ds3Divider(it, K);
   if (pg.type === 'bridge') return ds3Bridge(it, K);
-  const lay = ds3BodyLayout(pg), keyOwn = KEY_SELF.includes(lay), showKey = !!pg.keyMsg && !keyOwn;
+  const lay = ds3BodyLayout(pg);
+  if (K.chrome === 'ref' && /^cr/.test(lay)) K = {...K, bg: '#2A2A2A', ink: '#FFFFFF', sub: '#C2C2C2', mute: '#8C8C8C', panel: '#343434', line: '#4A4A4A', dark: true, band: false, soft: mix(K.p, '#2A2A2A', .78), pDark: '#151515'};
+  const P = ds3P(K, P0), keyOwn = KEY_SELF.includes(lay), showKey = !!pg.keyMsg && !keyOwn;
   if (K.chrome === 'tpl'){ const tf = ds3Frame(); if (tf) return designSpec(it, {...pg, tplBody: lay, _K: K}, P, {...tf, mode: 'frame'}); }
   ds3Chrome(E, K, it);
   ds3Title(E, K, pg);
   const bottom = showKey ? GEO.keyY - 22 : (pg.source ? GEO.bodyEnd - 8 : GEO.bodyEnd);
   let box = {x: GEO.x, y: GEO.bodyY, w: GEO.w, h: bottom - GEO.bodyY};
+  if (K.band && pg.tag && !['tkSplit', 'tkSpec'].includes(lay)){ E.push(R(GEO.x, box.y, GEO.w, 26, '#EFEFEF')); E.push(T(GEO.x, box.y, GEO.w, 26, pg.tag, {size: 12.5, wt: 600, color: '#333333', align: 'center', valign: 'middle', minScale: .7, keepColor: true})); box = {...box, y: box.y + 38, h: box.h - 38}; }
   if ((pg.image || pg.img) && lay !== 'image' && !/^cr/.test(lay)){ const bx = imgBoxes(pg, box); imgEl(E, pg, bx.img); box = bx.body; }
   if (!items.length && !/^cr|image|quote/.test(lay)) E.push(T(box.x, box.y, box.w, 40, '세부 항목을 추가하세요', {size: 16, color: K.mute}));
   else { const f = TKL[lay] || MEDIA3[lay]; if (f) f(E, items, box, P, pg, K); else { const i0 = E.length; (LAY[lay] || LAY.list)(E, items, box, P, pg); if (K.dark) darkify(E, i0, K); } }
@@ -351,8 +370,9 @@ Object.assign(TKL, {
     const hs = hs0.map(h => Math.max(sc < 1 ? 16 : 40, h * (sc < 1 ? sc : grow))), fs = Math.max(.7, Math.min(1.06, sc < 1 ? sc * 1.05 : 1 + (grow - 1) * .25));
     const head = pg.cols || ['구분', '내용', '비고'], y0 = startY(b, hd + 8 + hs.reduce((a, c) => a + c + g, 0), .3) - (sc < 1 ? 6 : 0);
     if (K.head === 'rule' || K.head === 'label'){ E.push(R(b.x, y0 + hd - 2, b.w, 2, K.ink)); }
+    else if (K.thead === 'light') E.push(R(b.x, y0, b.w, hd, K.dark ? '#3A3A3A' : K.soft, {r: 4}));
     else E.push(R(b.x, y0, b.w, hd, K.pDark, {r: K.head === 'pill' ? hd / 2 : K.r}));
-    const hc = K.head === 'rule' || K.head === 'label' ? K.ink : onC(K.pDark);
+    const hc = K.head === 'rule' || K.head === 'label' || K.thead === 'light' ? K.ink : onC(K.pDark);
     [[b.x + 20, c1w - 30, head[0]], [b.x + c1w + 20, c2w - 30, head[1]], ...(hasV ? [[b.x + c1w + c2w + 16, c3w - 30, head[2] || '']] : [])].forEach(([x, w, t]) => E.push(T(x, y0, w, hd, t, {size: 13.5, bold: true, color: hc, valign: 'middle'})));
     let y = y0 + hd + 8;
     items.forEach((it, i) => { const rh = hs[i];
