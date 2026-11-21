@@ -40,7 +40,7 @@ function defaultState(){
     settings: {model: 'claude-sonnet-5-5', web: true},
     design: {theme: 'consult', brandColor: false},
     input: {
-      rfp: [], urls: [{type: '자사몰', url: ''}], product: '', brand: [], notes: '', competitors: '', currentMix: '',
+      rfp: [], sheets: [], gsheet: '', urls: [{type: '자사몰', url: ''}], product: '', brand: [], notes: '', competitors: '', currentMix: '',
       analysis: null,
       colors: [{hex: '#1F3A93', role: 'Main', name: 'Deep Navy', reason: ''}, {hex: '#4C8BF5', role: 'Sub', name: 'Sky Blue', reason: ''}, {hex: '#FFB020', role: 'Accent', name: 'Amber', reason: ''}],
       colorConcept: '',

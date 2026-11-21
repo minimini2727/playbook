@@ -151,7 +151,7 @@ function importClaude(j, withSec){
 /* ---------- 1) 인풋 분석 ---------- */
 async function analyze(mode){
   const I = S.input;
-  if (!I.rfp.length && !I.notes && !I.brand.length && !I.product){ toast('RFP 또는 제품 정보를 먼저 입력하세요'); return; }
+  if (!I.rfp.length && !I.notes && !I.brand.length && !I.product && !(I.sheets || []).length){ toast('스프레드시트·RFP·제품 정보 중 하나를 먼저 넣으세요'); return; }
   if (mode === 'api'){ await analyzeAPI(); return; }
   busy('전략가 분석 중…', 'RFP 신호 추출 → 우선순위 판단 → 로직·섹션 설계');
   await new Promise(r => setTimeout(r, 60));
@@ -353,32 +353,30 @@ function fileList(kind){
 function vInput(){
   const I = S.input, A = I.analysis;
   return `
-  <h2 class="pt">1. 인풋 — RFP·브랜드 자료를 넣으면 전략가 엔진이 우선순위와 로직을 판단합니다</h2>
-  <p class="pd">API 키 없이 즉시 분석합니다. 웹 검색·판매처 상세페이지 확인이 필요하면 <b>Claude 심화 리서치</b>로 Claude 앱에서 이어서 진행하세요.</p>
-  <div class="card"><h3>프로젝트 정보</h3>
-    <div class="grid3" style="grid-template-columns:2fr 1.2fr 1.2fr 1fr 1fr 1fr">
+  <h2 class="pt">1. 인풋 — 로직·팩트북 시트와 RFP를 넣으면 제안서 뼈대가 자동으로 잡힙니다</h2>
+  <p class="pd">시트 → RFP → 브랜드 자료 순으로 넣으세요. 시트에 있는 값은 아래 칸에 자동으로 채워지고, Claude 프롬프트에도 최우선 기준으로 들어갑니다.</p>
+  <div class="card"><div class="grid3" style="grid-template-columns:2fr 1.3fr 1fr">
       <div><label class="f">제안서 타이틀</label>${inp('project.name', '예) 2027 디지털 광고 운영 제안')}</div>
       <div><label class="f">광고주 / 브랜드</label>${inp('project.client', '예) 브랜드명')}</div>
-      <div><label class="f">제안사</label>${inp('project.proposer')}</div>
       <div><label class="f">제출 마감</label>${inp('project.due', '', 'date')}</div>
-      <div><label class="f">PT일</label>${inp('project.pt', '', 'date')}</div>
-      <div><label class="f">담당</label>${inp('project.owner', '담당자')}</div>
-    </div></div>
+    </div>
+    <details class="more mt8"><summary>제안사 · PT일 · 담당</summary><div class="grid3 mt8"><div><label class="f">제안사</label>${inp('project.proposer')}</div><div><label class="f">PT일</label>${inp('project.pt', '', 'date')}</div><div><label class="f">담당</label>${inp('project.owner', '담당자')}</div></div></details></div>
+  ${typeof vSheetCard === 'function' ? vSheetCard() : ''}
   <div class="grid2">
-    <div class="card"><h3><span class="n">A</span>RFP 업로드</h3><p class="hint">PDF · PPTX · DOCX · TXT (여러 개 가능)</p>
+    <div class="card"><h3><span class="n">B</span>RFP</h3><p class="hint">PDF · PPTX · DOCX · TXT (여러 개 가능)</p>
       <div class="drop" data-drop="rfp"><b>RFP 파일을 끌어놓거나 클릭</b>PDF / PPT(X) / WORD(DOCX)<input type="file" multiple accept=".pdf,.ppt,.pptx,.doc,.docx,.txt,.md" data-file="rfp"></div>${fileList('rfp')}</div>
-    <div class="card"><h3><span class="n">B</span>판매 채널 URL</h3><p class="hint">자사몰·네이버 스토어·쿠팡 등 복수 입력 — Claude 심화 리서치에서 상세페이지를 직접 확인합니다</p>
-      ${I.urls.map((u, i) => `<div class="row mb8"><select data-bind="input.urls.${i}.type" style="width:170px">${URL_TYPES.map(t => `<option ${u.type === t ? 'selected' : ''}>${t}</option>`).join('')}</select>${inp(`input.urls.${i}.url`, 'https://', 'url')}<button class="btn sm ghost bad" data-act="delUrl" data-i="${i}">✕</button></div>`).join('')}
+    <div class="card"><h3><span class="n">C</span>브랜드 자료</h3><p class="hint">소개서·성과 리포트(문서), 로고·제품 이미지(컬러칩 자동 추출)</p>
+      <div class="drop" data-drop="brand"><b>브랜드 자료를 끌어놓거나 클릭</b>PDF / PPTX / DOCX / PNG·JPG<input type="file" multiple accept=".pdf,.pptx,.docx,.txt,.md,.csv,.png,.jpg,.jpeg,.webp" data-file="brand"></div>${fileList('brand')}</div>
+  </div>
+  <details class="card more" ${I.product || I.competitors || I.currentMix || I.urls.some(u => u.url) ? '' : ''}><summary><b>추가 정보</b> <span class="meta">판매 채널 URL · 제품 · 경쟁사 · 현재 매체 — 시트에 있으면 자동으로 채워집니다 ${[I.urls.filter(u => u.url).length ? `URL ${I.urls.filter(u => u.url).length}개` : '', I.product ? '제품 ✓' : '', I.competitors ? '경쟁사 ✓' : '', I.currentMix ? '매체 ✓' : ''].filter(Boolean).join(' · ')}</span></summary>
+    <div class="mt12">${I.urls.map((u, i) => `<div class="row mb8"><select data-bind="input.urls.${i}.type" style="width:170px">${URL_TYPES.map(t => `<option ${u.type === t ? 'selected' : ''}>${t}</option>`).join('')}</select>${inp(`input.urls.${i}.url`, 'https://', 'url')}<button class="btn sm ghost bad" data-act="delUrl" data-i="${i}">✕</button></div>`).join('')}
       <button class="btn sm" data-act="addUrl">+ 채널 추가</button>
       <div class="grid2 mt12"><div><label class="f">주요 제품 / 서비스</label>${inp('input.product', '예) 대표 제품명, 가격대')}</div><div><label class="f">경쟁사</label>${inp('input.competitors', '예) 경쟁 브랜드 A, B')}</div></div>
-      <div class="mt12"><label class="f">현재 매체 비중·성과 (있으면)</label>${inp('input.currentMix', '예) 브랜드검색 30%, 메타 40%, 구글 20% ...')}</div></div>
-  </div>
-  <div class="card"><h3><span class="n">C</span>브랜드 자료</h3><p class="hint">브랜드북·소개서·성과 리포트(문서), 로고·제품·상세 이미지(컬러칩 자동 추출)</p>
-    <div class="drop" data-drop="brand"><b>브랜드 자료를 끌어놓거나 클릭</b>PDF / PPTX / DOCX / TXT / PNG·JPG<input type="file" multiple accept=".pdf,.pptx,.docx,.txt,.md,.csv,.png,.jpg,.jpeg,.webp" data-file="brand"></div>${fileList('brand')}</div>
+      <div class="mt12"><label class="f">현재 매체 비중·성과</label>${inp('input.currentMix', '예) 브랜드검색 30%, 메타 40%, 구글 20% ...')}</div></div></details>
   ${typeof vClaudeCard === 'function' ? vClaudeCard() : ''}
   <div style="text-align:center;margin:-6px 0 18px"><button class="btn sm ghost" data-act="analyze">Claude 없이 즉시 초안 만들기 (내장 엔진)</button></div>
   ${vColors()}
-  ${vRefLayouts()}
+  <details class="more"><summary class="card" style="display:block;cursor:pointer"><b>레퍼런스 레이아웃 (선택)</b> <span class="meta">참고 PPT의 장표 구조를 가져올 때만 사용</span></summary>${vRefLayouts()}</details>
   ${vMediaMix()}
   ${A ? vAnalysis() : ''}`;
 }
